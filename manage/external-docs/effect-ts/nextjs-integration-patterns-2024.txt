@@ -1,0 +1,122 @@
+# Effect.ts Next.js統合パターン (2024年最新)
+
+## 概要
+
+Effect.tsは、堅牢でタイプセーフなTypeScriptアプリケーションを構築するための強力なライブラリ。Next.jsと統合することで、複雑な非同期操作とエラーハンドリングを宣言的で合成可能な方法で管理できる。
+
+## 主要な統合アプローチ
+
+### 1. API RoutesでのEffect.ts使用
+
+Next.js App RouterのAPI Routesで、Effect.tsを使用してビジネスロジックを構造化する。
+
+```typescript
+// app/api/users/route.ts
+export async function GET(request: Request) {}
+export async function HEAD(request: Request) {}
+export async function POST(request: Request) {}
+```
+
+Effectは、すべての依存関係、エラー、戻り値をEffectタイプで収集する：
+`Effect.Effect<Dependencies, Errors, ReturnValue>`
+
+### 2. LayerとDependency Injection
+
+Layerモジュールは、サービス間の複雑な依存関係を管理するために使用される。
+
+#### サービスパターンの例：
+
+```typescript
+// サービスインターフェースの定義
+export interface ValidationService {
+  readonly parseEmail: (
+    email: string
+  ) => Either.Either<ParseResult.ParseError, EmailBrand>;
+}
+
+// Context.Tagを使用してサービスに一意のタグを割り当て
+```
+
+### 3. @effect/rpcによるtRPCの置き換え
+
+2024年において、多くの開発者がtRPCから@effect/rpcへの移行を行っている。
+
+#### 移行の理由：
+- tRPCはEffect schemaの変換とうまく連携しない
+- Effect schemasでは、バリデータ関数（decodeUnknownSync）の出力が入力と異なる場合がある
+
+#### サーバーのセットアップ：
+```typescript
+// RpcRouter.makeを使用してルーターを作成し、クライアント用の型としてエクスポート
+// ルートファイルで、RPCリクエストを処理するPOST関数をエクスポート
+```
+
+#### クライアントのセットアップ：
+- SSR中の認証が機能するよう、明示的にcookieを渡すカスタムHTTPクライアントが必要
+
+### 4. Schema検証
+
+Effect Schemaは以下を提供：
+- **Decoding**: データを数値、日付、配列などのより有用な型に検証・パースする
+- **Encoding**: これらの型をフォームで期待される文字列形式に変換する
+
+重要なルール：エンコードとデコードの両方の操作を実行した時、元の値で終わるようにスキーマを作成する必要がある。
+
+### 5. ストリーミングサポート
+
+Effect-RPCでは、ストリームを返すハンドラーを定義できる。これは、AIの補完やチャンクを時間をかけて出力する他のサービスを扱う時に特に有用。
+
+Effectには2種類のHTTPリゾルバがある：
+- **no-stream resolver**: ペイロードとレスポンスをJSONボディとして処理
+- **stream resolver**: ペイロードをJSONボディとして、レスポンスをndjson（改行区切りJSON）として処理
+
+## 2024年のベストプラクティス
+
+### 1. タイプセーフティ
+- TypeScript 5.4以降を使用
+- tsconfig.jsonでstrictフラグを有効化
+
+### 2. サービスレイヤー
+RPCレイヤーに依存せずにバックエンドから直接サービスを呼び出せるようにすることを推奨
+
+### 3. ミドルウェアサポート
+RpcMiddlewareを使用して、認証やその他の関心事を様々なRPCに適用できる
+
+### 4. 依存関係管理
+すべての依存関係は、ConfigまたはサービスでComposeする。EffectはServicesとLayersを導入することでこの問題を解決。
+
+### 5. テスト
+Effectでのテストは簡単で、非常に満足のいくもの。vitestとmsw（HTTPモッキング）を使用し、すべてが期待通りに動作。
+
+## 利点
+
+1. **タイプセーフティ**: EffectはTypescriptの型システムの全力を活用。型エラーがないことで、すべてが期待通りに動作することを確信できる（"コンパイルが通れば動作する"）
+
+2. **依存関係管理**: テスト中に偽の値やモックされた値を注入できない問題を、適切な依存関係注入により解決
+
+3. **統一されたアプローチ**: Effectは多くの一度きりの依存関係の統一された置き換えを提供
+
+## マイグレーション
+
+fp-tsからの移行：
+```bash
+npm uninstall fp-ts
+npm install @effect/io @effect/data
+```
+
+## 今後の展望
+
+Effect + XState + Local Firstが、TypeScriptの書き方を変える。2024年にTypeScriptの標準となる新しいプログラミング方法として、Webデベロッパーは必ず意識すべき。
+
+## パッケージ情報
+
+- **@effect/rpc**: 最新バージョン 0.64.2（執筆時点で3日前に公開）
+- **@effect/rpc-nextjs**: Next.js専用の統合パッケージ
+
+## 注意事項
+
+### Next.jsのTypeScript設定
+Next.jsは、プロジェクトにTypeScriptエラーがある場合、本番ビルド（next build）を失敗させる。エラーがあってもビルドを通したい場合は、組み込みの型チェックステップを無効にできるが、推奨されない。
+
+### 代替のDIソリューション
+Effect.tsを使用しない場合、Microsoftが開発したtsyringeを試すことができる。ただし、Next.js 12以降、BabelはSWCに置き換えられており、デコレーターの使用に制限がある。

@@ -1,0 +1,133 @@
+# Next.js Server Actions ベストプラクティス 2024
+
+## 概要
+Next.js 14でServer Actionsが安定版となり、デフォルトで有効になっている。
+Server ActionsはReact Server Componentsと連携して、サーバーサイドでのデータ変更を簡潔に実装できる機能。
+
+## コアベストプラクティス
+
+### 1. セキュリティと認証
+Server Actionsは必ず以下のセキュリティチェックから開始すべき：
+- 現在のユーザーがアクションを実行する権限があるか検証
+- 各引数の整合性を検証（手動またはzodなどのツールを使用）
+
+```typescript
+"use server";
+
+export async function deletePost(id: number) {
+  // 入力型の検証
+  if (typeof id !== 'number') {
+    throw new Error();
+  }
+  
+  // ユーザー認証
+  const user = await getCurrentUser();
+  
+  // アクションの認可
+  if (!canDeletePost(user, id)) {
+    throw new Error();
+  }
+  
+  // アクション実行
+}
+```
+
+### 2. データアクセス層パターン
+- データベースパッケージや環境変数はデータアクセス層以外でインポートしない
+- 関心の分離により、コードの理解・保守・再利用・テストが容易になる
+- Server Actionsは別ファイルに分離することが推奨される
+
+### 3. CSRF保護
+- Server ActionsはPOSTメソッドのみ使用可能
+- Next.jsはOriginヘッダーとHost（またはX-Forwarded-Host）ヘッダーを比較
+- 一致しない場合はリクエストを中止
+- Server Actionsはホストページと同じホストからのみ呼び出し可能
+
+### 4. 設定
+```javascript
+// next.config.js
+module.exports = {
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['my-proxy.com', '*.my-proxy.com'],
+      bodySizeLimit: '2mb', // デフォルト: 1MB
+    },
+  },
+}
+```
+
+### 5. プログレッシブエンハンスメント
+- Server Componentsはデフォルトでプログレッシブエンハンスメントをサポート
+- JavaScriptが読み込まれていない/無効でもフォーム送信が可能
+
+### 6. フォーム処理のベストプラクティス
+```typescript
+'use server'
+
+export async function createPost(formData: FormData) {
+  const title = formData.get('title')
+  const content = formData.get('content')
+  
+  // データ検証
+  // データベース更新
+  // キャッシュ再検証
+}
+```
+
+### 7. Client Componentとの統合
+Client ComponentsでServer Actionsを定義することはできないが、"use server"ディレクティブを持つファイルからインポートして使用可能：
+
+```typescript
+// actions.ts
+'use server'
+
+export async function createPost(formData: FormData) {
+  // アクション実装
+}
+
+// client-component.tsx
+'use client'
+
+import { createPost } from '@/app/actions'
+
+export function Button() {
+  return <button formAction={createPost}>Create</button>
+}
+```
+
+### 8. パフォーマンス最適化
+- Server ActionsはNext.jsのキャッシングアーキテクチャと統合
+- アクション実行時、更新されたUIと新しいデータを単一のサーバーラウンドトリップで返す
+
+### 9. エラーハンドリング
+- 処理前に必ず入力を検証
+- データベース操作にはtry-catchブロックを使用
+- ユーザーに意味のあるエラーメッセージを返す
+- デバッグ用に適切にエラーログを記録
+
+### 10. テストの考慮事項
+- Server Actionsは独立してテスト可能にする
+- 外部依存関係をモック化
+- 成功と失敗の両方のシナリオをテスト
+- 認証ロジックを徹底的に検証
+
+## 追加の推奨事項
+
+### ファイル構成
+- `lib/actions.ts`: Server Actions定義
+- `lib/definitions.ts`: 型定義
+- Server ComponentsとClient Componentsの明確な分離
+
+### 型安全性
+- TypeScriptの使用を強く推奨
+- zodなどのバリデーションライブラリの活用
+- FormDataの型安全な処理
+
+### リアルタイム更新
+- revalidatePath()やrevalidateTag()を使用してキャッシュを更新
+- 楽観的アップデートの実装を検討
+
+### 監視とログ
+- エラー追跡ツールの統合
+- パフォーマンスメトリクスの収集
+- ユーザーアクションの監査ログ

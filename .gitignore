@@ -26,3 +26,5 @@ scratchpad/*
 /prisma/*.db
 
 /generated/prisma
+
+/src/generated/prisma

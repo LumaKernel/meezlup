@@ -1,0 +1,17 @@
+# 外部ドキュメントインデックス
+
+このファイルは、プロジェクトで参照すべき外部ドキュメントの一覧を管理する。
+
+## Next.js Server Actions
+- manage/external-docs/nextjs-server-actions/best-practices-2024.txt
+  - Next.js 14以降のServer Actionsベストプラクティス
+  - セキュリティ、認証、CSRF保護、エラーハンドリング等の実装指針
+  - Client/Server Component統合パターン
+  - パフォーマンス最適化とテスト戦略
+
+## Effect.ts
+- manage/external-docs/effect-ts/nextjs-integration-patterns-2024.txt
+  - Effect.tsとNext.jsの統合パターン（2024年最新）
+  - API Routes、Layer、Dependency Injectionの実装方法
+  - @effect/rpcによるtRPCの置き換え手法
+  - Schema検証、ストリーミング、ベストプラクティス
