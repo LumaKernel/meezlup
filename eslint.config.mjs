@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
+const _compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
@@ -39,6 +39,7 @@ export default tseslint.config(
     plugins: {
       import: fixupPluginRules(_import),
       "luma-ts": lumaTs,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- sortDestructureKeys required for plugin
       "sort-destructure-keys": sortDestructureKeys,
       "simple-import-sort": simpleImportSort,
       codegen,
@@ -115,7 +116,7 @@ export default tseslint.config(
         "error",
         {
           fixStyle: "inline-type-imports",
-          prefer: "no-type-imports",
+          prefer: "type-imports",
         },
       ],
 
