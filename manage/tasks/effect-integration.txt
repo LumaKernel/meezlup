@@ -1,0 +1,12 @@
+Effect.tsの統合とサービスレイヤーの実装を行う。
+
+1. Effect.tsのベストプラクティスに基づいたディレクトリ構造の設計
+2. 基本的なサービスレイヤーの実装:
+   - DatabaseService (Prismaラッパー)
+   - EventService (イベント操作)
+   - UserService (ユーザー操作)
+   - ScheduleService (予定管理)
+3. エラーハンドリングパターンの実装
+4. Layerを使用した依存性注入の設定
+5. Next.js Server Actionsとの統合パターンの実装
+6. 各サービスのユニットテストの作成
