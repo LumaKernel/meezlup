@@ -9,7 +9,7 @@ export const ServicesLive = Layer.mergeAll(
   DatabaseServiceLive,
   EventServiceLive,
   UserServiceLive,
-  ScheduleServiceLive
+  ScheduleServiceLive,
 );
 
 // 各サービスの再エクスポート

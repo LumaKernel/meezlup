@@ -1,43 +1,56 @@
 import { Effect, Context, Layer, Schema } from "effect";
 import type { Event as PrismaEvent } from "@prisma/client";
 import { DatabaseService } from "../database";
+import { DatabaseServiceLive } from "../database/service";
 import { DatabaseError, NotFoundError, ValidationError } from "../../errors";
-import { CreateEventSchema, UpdateEventSchema, type CreateEventInput, type UpdateEventInput, type Event } from "./schemas";
+import {
+  CreateEventSchema,
+  UpdateEventSchema,
+  EventSchema,
+  type CreateEventInput,
+  type UpdateEventInput,
+  type Event,
+} from "./schemas";
 
 // EventServiceのインターフェース
-export interface EventService {
-  readonly create: (input: CreateEventInput) => Effect.Effect<Event, ValidationError | DatabaseError>;
-  readonly findById: (id: string) => Effect.Effect<Event, NotFoundError | DatabaseError>;
-  readonly update: (input: UpdateEventInput) => Effect.Effect<Event, ValidationError | NotFoundError | DatabaseError>;
-  readonly delete: (id: string) => Effect.Effect<void, NotFoundError | DatabaseError>;
-  readonly listByCreator: (creatorId: string) => Effect.Effect<ReadonlyArray<Event>, DatabaseError>;
+export interface EventServiceType {
+  readonly create: (
+    input: CreateEventInput,
+  ) => Effect.Effect<Event, ValidationError | DatabaseError>;
+  readonly findById: (
+    id: string,
+  ) => Effect.Effect<Event, NotFoundError | DatabaseError>;
+  readonly update: (
+    input: UpdateEventInput,
+  ) => Effect.Effect<Event, ValidationError | NotFoundError | DatabaseError>;
+  readonly delete: (
+    id: string,
+  ) => Effect.Effect<void, NotFoundError | DatabaseError>;
+  readonly listByCreator: (
+    creatorId: string,
+  ) => Effect.Effect<ReadonlyArray<Event>, DatabaseError>;
 }
 
 // EventServiceのタグ
 export class EventService extends Context.Tag("EventService")<
   EventService,
-  EventService
+  EventServiceType
 >() {}
 
 // PrismaのEventをアプリケーションのEventに変換
-const transformEvent = (event: PrismaEvent): Event => ({
-  ...event,
-  id: event.id as any,
-  name: event.name as any,
-  description: event.description,
-  dateRangeStart: event.dateRangeStart.toISOString() as any,
-  dateRangeEnd: event.dateRangeEnd.toISOString() as any,
-  timeSlotDuration: event.timeSlotDuration as any,
-  deadline: event.deadline?.toISOString() as any ?? null,
-  participantRestrictionType: event.participantRestrictionType as any,
-  allowedDomains: JSON.parse(event.allowedDomains) as any,
-  allowedEmails: JSON.parse(event.allowedEmails) as any,
-  creatorId: event.creatorId as any,
-  creatorCanSeeEmails: event.creatorCanSeeEmails,
-  participantsCanSeeEach: event.participantsCanSeeEach,
-  createdAt: event.createdAt.toISOString() as any,
-  updatedAt: event.updatedAt.toISOString() as any,
-});
+const transformEvent = (event: PrismaEvent): Event => {
+  const parsed = Schema.decodeUnknownSync(EventSchema)({
+    ...event,
+    dateRangeStart: event.dateRangeStart.toISOString(),
+    dateRangeEnd: event.dateRangeEnd.toISOString(),
+    deadline: event.deadline?.toISOString() ?? null,
+    allowedDomains: JSON.parse(event.allowedDomains) as Array<string>,
+    allowedEmails: JSON.parse(event.allowedEmails) as Array<string>,
+    createdAt: event.createdAt.toISOString(),
+    updatedAt: event.updatedAt.toISOString(),
+  });
+  return parsed;
+};
 
 // EventServiceの実装
 const make = Effect.gen(function* () {
@@ -46,11 +59,16 @@ const make = Effect.gen(function* () {
   const create = (input: CreateEventInput) =>
     Effect.gen(function* () {
       // 入力検証
-      const validated = yield* Schema.decodeUnknown(CreateEventSchema)(input).pipe(
-        Effect.mapError((error) => new ValidationError({
-          field: "input",
-          message: error.message,
-        }))
+      const validated = yield* Schema.decodeUnknown(CreateEventSchema)(
+        input,
+      ).pipe(
+        Effect.mapError(
+          (error) =>
+            new ValidationError({
+              field: "input",
+              message: error.message,
+            }),
+        ),
       );
 
       // データベースに保存
@@ -61,7 +79,9 @@ const make = Effect.gen(function* () {
               ...validated,
               dateRangeStart: new Date(validated.dateRangeStart),
               dateRangeEnd: new Date(validated.dateRangeEnd),
-              deadline: validated.deadline ? new Date(validated.deadline) : undefined,
+              deadline: validated.deadline
+                ? new Date(validated.deadline)
+                : undefined,
               allowedDomains: JSON.stringify(validated.allowedDomains),
               allowedEmails: JSON.stringify(validated.allowedEmails),
             },
@@ -95,7 +115,7 @@ const make = Effect.gen(function* () {
           new NotFoundError({
             resource: "Event",
             id,
-          })
+          }),
         );
       }
 
@@ -105,27 +125,46 @@ const make = Effect.gen(function* () {
   const update = (input: UpdateEventInput) =>
     Effect.gen(function* () {
       // 入力検証
-      const validated = yield* Schema.decodeUnknown(UpdateEventSchema)(input).pipe(
-        Effect.mapError((error) => new ValidationError({
-          field: "input",
-          message: error.message,
-        }))
+      const validated = yield* Schema.decodeUnknown(UpdateEventSchema)(
+        input,
+      ).pipe(
+        Effect.mapError(
+          (error) =>
+            new ValidationError({
+              field: "input",
+              message: error.message,
+            }),
+        ),
       );
 
       // 既存のイベントを確認
       yield* findById(validated.id);
 
       // 更新データの準備
-      const updateData: any = {};
-      if (validated.name !== undefined) updateData.name = validated.name;
-      if (validated.description !== undefined) updateData.description = validated.description;
-      if (validated.dateRangeEnd !== undefined) updateData.dateRangeEnd = new Date(validated.dateRangeEnd);
-      if (validated.deadline !== undefined) updateData.deadline = new Date(validated.deadline);
-      if (validated.participantRestrictionType !== undefined) updateData.participantRestrictionType = validated.participantRestrictionType;
-      if (validated.allowedDomains !== undefined) updateData.allowedDomains = JSON.stringify(validated.allowedDomains);
-      if (validated.allowedEmails !== undefined) updateData.allowedEmails = JSON.stringify(validated.allowedEmails);
-      if (validated.creatorCanSeeEmails !== undefined) updateData.creatorCanSeeEmails = validated.creatorCanSeeEmails;
-      if (validated.participantsCanSeeEach !== undefined) updateData.participantsCanSeeEach = validated.participantsCanSeeEach;
+      const updateData: Record<string, unknown> = {};
+      if (validated.name !== undefined) {
+        updateData.name = validated.name satisfies string;
+      }
+      if (validated.description !== undefined) {
+        updateData.description = validated.description;
+      }
+      if (validated.dateRangeEnd !== undefined) {
+        updateData.dateRangeEnd = new Date(validated.dateRangeEnd);
+      }
+      if (validated.deadline !== undefined) {
+        updateData.deadline = new Date(validated.deadline);
+      }
+      if (validated.participantRestrictionType !== undefined)
+        updateData.participantRestrictionType =
+          validated.participantRestrictionType;
+      if (validated.allowedDomains !== undefined)
+        updateData.allowedDomains = JSON.stringify(validated.allowedDomains);
+      if (validated.allowedEmails !== undefined)
+        updateData.allowedEmails = JSON.stringify(validated.allowedEmails);
+      if (validated.creatorCanSeeEmails !== undefined)
+        updateData.creatorCanSeeEmails = validated.creatorCanSeeEmails;
+      if (validated.participantsCanSeeEach !== undefined)
+        updateData.participantsCanSeeEach = validated.participantsCanSeeEach;
 
       // 更新実行
       const event = yield* Effect.tryPromise({
@@ -187,13 +226,12 @@ const make = Effect.gen(function* () {
     update,
     delete: deleteEvent,
     listByCreator,
-  } as unknown as EventService;
+  } satisfies EventServiceType;
 });
 
 // EventServiceのLayer
-import { DatabaseServiceLive } from "../database/service";
-
 const EventServiceLive = Layer.effect(EventService, make).pipe(
-  Layer.provide(DatabaseServiceLive)
+  Layer.provide(DatabaseServiceLive),
 );
+
 export { EventServiceLive };

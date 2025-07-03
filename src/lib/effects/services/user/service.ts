@@ -1,12 +1,18 @@
-import { Effect, Context, Layer } from "effect";
-import { Schema } from "effect";
+import { Effect, Context, Layer, Schema } from "effect";
 import type { User as PrismaUser } from "@prisma/client";
 import { DatabaseService } from "../database";
-import { DatabaseError, NotFoundError, ValidationError, ConflictError } from "../../errors";
+import { DatabaseServiceLive } from "../database/service";
+import {
+  DatabaseError,
+  NotFoundError,
+  ValidationError,
+  ConflictError,
+} from "../../errors";
 import {
   CreateUserSchema,
   UpdateUserSchema,
   Auth0UserSchema,
+  UserSchema,
   type CreateUserInput,
   type UpdateUserInput,
   type User,
@@ -14,30 +20,42 @@ import {
 } from "./schemas";
 
 // UserServiceのインターフェース
-export interface UserService {
-  readonly create: (input: CreateUserInput) => Effect.Effect<User, ValidationError | ConflictError | DatabaseError>;
-  readonly findById: (id: string) => Effect.Effect<User, NotFoundError | DatabaseError>;
-  readonly findByAuth0Id: (auth0Id: string) => Effect.Effect<User, NotFoundError | DatabaseError>;
-  readonly findByEmail: (email: string) => Effect.Effect<User, NotFoundError | DatabaseError>;
-  readonly update: (input: UpdateUserInput) => Effect.Effect<User, ValidationError | NotFoundError | DatabaseError>;
-  readonly createOrUpdateFromAuth0: (auth0User: Auth0User) => Effect.Effect<User, ValidationError | DatabaseError>;
+export interface UserServiceType {
+  readonly create: (
+    input: CreateUserInput,
+  ) => Effect.Effect<User, ValidationError | ConflictError | DatabaseError>;
+  readonly findById: (
+    id: string,
+  ) => Effect.Effect<User, NotFoundError | DatabaseError>;
+  readonly findByAuth0Id: (
+    auth0Id: string,
+  ) => Effect.Effect<User, NotFoundError | DatabaseError>;
+  readonly findByEmail: (
+    email: string,
+  ) => Effect.Effect<User, NotFoundError | DatabaseError>;
+  readonly update: (
+    input: UpdateUserInput,
+  ) => Effect.Effect<User, ValidationError | NotFoundError | DatabaseError>;
+  readonly createOrUpdateFromAuth0: (
+    auth0User: Auth0User,
+  ) => Effect.Effect<User, ValidationError | DatabaseError>;
 }
 
 // UserServiceのタグ
 export class UserService extends Context.Tag("UserService")<
   UserService,
-  UserService
+  UserServiceType
 >() {}
 
 // PrismaのUserをアプリケーションのUserに変換
-const transformUser = (user: PrismaUser): User => ({
-  id: user.id as any,
-  auth0Id: user.auth0Id as any,
-  email: user.email as any,
-  name: user.name as any,
-  createdAt: user.createdAt.toISOString() as any,
-  updatedAt: user.updatedAt.toISOString() as any,
-});
+const transformUser = (user: PrismaUser): User => {
+  const parsed = Schema.decodeUnknownSync(UserSchema)({
+    ...user,
+    createdAt: user.createdAt.toISOString(),
+    updatedAt: user.updatedAt.toISOString(),
+  });
+  return parsed;
+};
 
 // UserServiceの実装
 const make = Effect.gen(function* () {
@@ -46,11 +64,16 @@ const make = Effect.gen(function* () {
   const create = (input: CreateUserInput) =>
     Effect.gen(function* () {
       // 入力検証
-      const validated = yield* Schema.decodeUnknown(CreateUserSchema)(input).pipe(
-        Effect.mapError((error) => new ValidationError({
-          field: "input",
-          message: error.message,
-        }))
+      const validated = yield* Schema.decodeUnknown(CreateUserSchema)(
+        input,
+      ).pipe(
+        Effect.mapError(
+          (error) =>
+            new ValidationError({
+              field: "input",
+              message: error.message,
+            }),
+        ),
       );
 
       // 既存ユーザーのチェック
@@ -58,10 +81,7 @@ const make = Effect.gen(function* () {
         try: () =>
           database.client.user.findFirst({
             where: {
-              OR: [
-                { auth0Id: validated.auth0Id },
-                { email: validated.email },
-              ],
+              OR: [{ auth0Id: validated.auth0Id }, { email: validated.email }],
             },
           }),
         catch: (error) =>
@@ -76,7 +96,7 @@ const make = Effect.gen(function* () {
           new ConflictError({
             resource: "User",
             message: "User with this auth0Id or email already exists",
-          })
+          }),
         );
       }
 
@@ -115,7 +135,7 @@ const make = Effect.gen(function* () {
           new NotFoundError({
             resource: "User",
             id,
-          })
+          }),
         );
       }
 
@@ -140,8 +160,8 @@ const make = Effect.gen(function* () {
         return yield* Effect.fail(
           new NotFoundError({
             resource: "User",
-            id: `auth0Id:${auth0Id}`,
-          })
+            id: `auth0Id:${auth0Id satisfies string}`,
+          }),
         );
       }
 
@@ -166,8 +186,8 @@ const make = Effect.gen(function* () {
         return yield* Effect.fail(
           new NotFoundError({
             resource: "User",
-            id: `email:${email}`,
-          })
+            id: `email:${email satisfies string}`,
+          }),
         );
       }
 
@@ -177,11 +197,16 @@ const make = Effect.gen(function* () {
   const update = (input: UpdateUserInput) =>
     Effect.gen(function* () {
       // 入力検証
-      const validated = yield* Schema.decodeUnknown(UpdateUserSchema)(input).pipe(
-        Effect.mapError((error) => new ValidationError({
-          field: "input",
-          message: error.message,
-        }))
+      const validated = yield* Schema.decodeUnknown(UpdateUserSchema)(
+        input,
+      ).pipe(
+        Effect.mapError(
+          (error) =>
+            new ValidationError({
+              field: "input",
+              message: error.message,
+            }),
+        ),
       );
 
       // 既存ユーザーの確認
@@ -209,11 +234,16 @@ const make = Effect.gen(function* () {
   const createOrUpdateFromAuth0 = (auth0User: Auth0User) =>
     Effect.gen(function* () {
       // Auth0ユーザー情報の検証
-      const validated = yield* Schema.decodeUnknown(Auth0UserSchema)(auth0User).pipe(
-        Effect.mapError((error) => new ValidationError({
-          field: "auth0User",
-          message: error.message,
-        }))
+      const validated = yield* Schema.decodeUnknown(Auth0UserSchema)(
+        auth0User,
+      ).pipe(
+        Effect.mapError(
+          (error) =>
+            new ValidationError({
+              field: "auth0User",
+              message: error.message,
+            }),
+        ),
       );
 
       // 既存ユーザーを検索
@@ -275,12 +305,12 @@ const make = Effect.gen(function* () {
     findByEmail,
     update,
     createOrUpdateFromAuth0,
-  } as unknown as UserService;
+  } satisfies UserServiceType;
 });
 
 // UserServiceのLayer
-import { DatabaseServiceLive } from "../database/service";
 const UserServiceLive = Layer.effect(UserService, make).pipe(
-  Layer.provide(DatabaseServiceLive)
+  Layer.provide(DatabaseServiceLive),
 );
+
 export { UserServiceLive };

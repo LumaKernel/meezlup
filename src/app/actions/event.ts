@@ -1,7 +1,11 @@
 "use server";
 
 import { Effect } from "effect";
-import { EventService, type CreateEventInput, type UpdateEventInput } from "@/lib/effects";
+import {
+  EventService,
+  type CreateEventInput,
+  type UpdateEventInput,
+} from "@/lib/effects";
 import { runServerActionSafe } from "./runtime";
 
 // イベント作成のServer Action

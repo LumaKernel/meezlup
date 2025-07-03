@@ -3,23 +3,26 @@ import { PrismaClient } from "@prisma/client";
 import { DatabaseError } from "../../errors";
 
 // DatabaseServiceのインターフェース
-export interface DatabaseService {
+export interface DatabaseServiceType {
   readonly client: PrismaClient;
   readonly transaction: <A, E>(
-    effect: (tx: PrismaClient) => Effect.Effect<A, E>
+    effect: (tx: PrismaClient) => Effect.Effect<A, E>,
   ) => Effect.Effect<A, E | DatabaseError>;
 }
 
 // DatabaseServiceのタグ
 export class DatabaseService extends Context.Tag("DatabaseService")<
   DatabaseService,
-  DatabaseService
+  DatabaseServiceType
 >() {}
 
 // PrismaClientの作成
 const makePrismaClient = Effect.sync(() => {
   const client = new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    log:
+      process.env.NODE_ENV === "development"
+        ? ["query", "error", "warn"]
+        : ["error"],
   });
   return client;
 });
@@ -29,7 +32,7 @@ const make = Effect.gen(function* () {
   const client = yield* makePrismaClient;
 
   const transaction = <A, E>(
-    effect: (tx: PrismaClient) => Effect.Effect<A, E>
+    effect: (tx: PrismaClient) => Effect.Effect<A, E>,
   ) =>
     Effect.tryPromise({
       try: () =>
@@ -47,7 +50,7 @@ const make = Effect.gen(function* () {
   return {
     client,
     transaction,
-  } as unknown as DatabaseService;
+  } satisfies DatabaseServiceType;
 });
 
 // DatabaseServiceのLayer

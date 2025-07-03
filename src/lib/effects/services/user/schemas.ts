@@ -1,5 +1,10 @@
 import { Schema } from "effect";
-import { EmailString, NonEmptyString, UserId, DateTimeString } from "../../types";
+import {
+  EmailString,
+  NonEmptyString,
+  UserId,
+  DateTimeString,
+} from "../../types";
 
 // ユーザー作成のスキーマ
 export const CreateUserSchema = Schema.Struct({

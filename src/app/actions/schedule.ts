@@ -1,7 +1,11 @@
 "use server";
 
 import { Effect } from "effect";
-import { ScheduleService, type CreateScheduleInput, type UpdateScheduleInput } from "@/lib/effects";
+import {
+  ScheduleService,
+  type CreateScheduleInput,
+  type UpdateScheduleInput,
+} from "@/lib/effects";
 import { runServerActionSafe } from "./runtime";
 
 // スケジュール作成のServer Action
@@ -27,7 +31,10 @@ export const getSchedule = async (id: string) => {
 };
 
 // イベントとユーザーでスケジュール取得のServer Action
-export const getScheduleByEventAndUser = async (eventId: string, userId: string) => {
+export const getScheduleByEventAndUser = async (
+  eventId: string,
+  userId: string,
+) => {
   const effect = Effect.gen(function* () {
     const scheduleService = yield* ScheduleService;
     const schedule = yield* scheduleService.findByEventAndUser(eventId, userId);

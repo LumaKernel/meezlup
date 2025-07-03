@@ -15,17 +15,18 @@ export const appErrorToResponse = (error: AppError): ErrorResponse => {
       return {
         error: "DATABASE_ERROR",
         message: error.message,
-        details: process.env.NODE_ENV === "development" ? error.cause : undefined,
+        details:
+          process.env.NODE_ENV === "development" ? error.cause : undefined,
       };
     case "NotFoundError":
       return {
         error: "NOT_FOUND",
-        message: `${error.resource} with id '${error.id}' not found`,
+        message: `${error.resource satisfies string} with id '${error.id satisfies string}' not found`,
       };
     case "ValidationError":
       return {
         error: "VALIDATION_ERROR",
-        message: `Validation failed for field '${error.field}': ${error.message}`,
+        message: `Validation failed for field '${error.field satisfies string}': ${error.message satisfies string}`,
       };
     case "UnauthorizedError":
       return {
@@ -35,7 +36,7 @@ export const appErrorToResponse = (error: AppError): ErrorResponse => {
     case "ForbiddenError":
       return {
         error: "FORBIDDEN",
-        message: `You don't have permission to ${error.action} ${error.resource}`,
+        message: `You don't have permission to ${error.action satisfies string} ${error.resource satisfies string}`,
       };
     case "ConflictError":
       return {
@@ -46,11 +47,15 @@ export const appErrorToResponse = (error: AppError): ErrorResponse => {
 };
 
 // Causeからエラーメッセージを取得
-export const causeToErrorResponse = (cause: Cause.Cause<AppError>): ErrorResponse => {
+export const causeToErrorResponse = (
+  cause: Cause.Cause<AppError>,
+): ErrorResponse => {
   const failures = Cause.failures(cause);
-  if (failures.length > 0) {
+  const failureArray = Array.from(failures);
+  if (failureArray.length > 0) {
     // Chunkの最初の要素を取得
-    const firstFailure = Array.from(failures)[0];
+    const firstFailure = failureArray[0];
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- 配列の要素が存在しない可能性がある
     if (firstFailure) {
       return appErrorToResponse(firstFailure);
     }
@@ -61,7 +66,10 @@ export const causeToErrorResponse = (cause: Cause.Cause<AppError>): ErrorRespons
     return {
       error: "INTERNAL_ERROR",
       message: "An unexpected error occurred",
-      details: process.env.NODE_ENV === "development" ? Array.from(defects)[0] : undefined,
+      details:
+        process.env.NODE_ENV === "development"
+          ? Array.from(defects)[0]
+          : undefined,
     };
   }
 
@@ -80,7 +88,7 @@ export const causeToErrorResponse = (cause: Cause.Cause<AppError>): ErrorRespons
 
 // EffectをPromiseに変換（エラーハンドリング付き）
 export const runAsPromise = <A>(
-  effect: Effect.Effect<A, AppError>
+  effect: Effect.Effect<A, AppError>,
 ): Promise<A> =>
   Effect.runPromiseExit(effect).then((exit) => {
     if (Exit.isSuccess(exit)) {
@@ -98,30 +106,31 @@ export type ApiResponse<T> =
 
 // EffectをApiResponseに変換
 export const toApiResponse = <A>(
-  effect: Effect.Effect<A, AppError>
-): Effect.Effect<ApiResponse<A>, never> =>
+  effect: Effect.Effect<A, AppError>,
+): Effect.Effect<ApiResponse<A>> =>
   effect.pipe(
     Effect.map((data): ApiResponse<A> => ({ success: true, data })),
-    Effect.catchAll((error): Effect.Effect<ApiResponse<A>, never> =>
-      Effect.succeed({
-        success: false,
-        error: appErrorToResponse(error),
-      })
-    )
+    Effect.catchAll(
+      (error): Effect.Effect<ApiResponse<A>> =>
+        Effect.succeed({
+          success: false,
+          error: appErrorToResponse(error),
+        }),
+    ),
   );
 
 // ログ出力付きエラーハンドリング
 export const withErrorLogging = <A, E>(
   effect: Effect.Effect<A, E>,
-  context?: string
+  context?: string,
 ) =>
   effect.pipe(
     Effect.tapError((error) =>
       Effect.sync(() => {
         console.error(
-          `[${context ?? "Error"}]:`,
-          error instanceof Error ? error.message : error
+          `[${(context ?? "Error") satisfies string}]:`,
+          error instanceof Error ? error.message : error,
         );
-      })
-    )
+      }),
+    ),
   );

@@ -17,12 +17,22 @@ export const CreateEventSchema = Schema.Struct({
   dateRangeEnd: DateTimeString,
   timeSlotDuration: TimeSlotDuration,
   deadline: Schema.optional(DateTimeString),
-  participantRestrictionType: Schema.optionalWith(ParticipantRestrictionType, { default: () => "none" as const }),
-  allowedDomains: Schema.optionalWith(Schema.Array(NonEmptyString), { default: () => [] }),
-  allowedEmails: Schema.optionalWith(Schema.Array(EmailString), { default: () => [] }),
+  participantRestrictionType: Schema.optionalWith(ParticipantRestrictionType, {
+    default: () => "none" as const,
+  }),
+  allowedDomains: Schema.optionalWith(Schema.Array(NonEmptyString), {
+    default: () => [],
+  }),
+  allowedEmails: Schema.optionalWith(Schema.Array(EmailString), {
+    default: () => [],
+  }),
   creatorId: Schema.optional(UserId),
-  creatorCanSeeEmails: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  participantsCanSeeEach: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+  creatorCanSeeEmails: Schema.optionalWith(Schema.Boolean, {
+    default: () => false,
+  }),
+  participantsCanSeeEach: Schema.optionalWith(Schema.Boolean, {
+    default: () => false,
+  }),
 });
 
 // イベント更新のスキーマ

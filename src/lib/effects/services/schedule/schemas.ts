@@ -14,17 +14,20 @@ export const TimeRangeSchema = Schema.Struct({
   startTime: Schema.Number.pipe(
     Schema.int(),
     Schema.greaterThanOrEqualTo(0),
-    Schema.lessThan(1440)
+    Schema.lessThan(1440),
   ),
   endTime: Schema.Number.pipe(
     Schema.int(),
     Schema.greaterThan(0),
-    Schema.lessThanOrEqualTo(1440)
+    Schema.lessThanOrEqualTo(1440),
   ),
 }).pipe(
-  Schema.filter((range): range is typeof range => range.startTime < range.endTime, {
-    message: () => "Start time must be before end time",
-  })
+  Schema.filter(
+    (range): range is typeof range => range.startTime < range.endTime,
+    {
+      message: () => "Start time must be before end time",
+    },
+  ),
 );
 
 // 参加可能時間帯
@@ -47,7 +50,7 @@ export const CreateScheduleSchema = Schema.Struct({
       date: DateTimeString,
       startTime: Schema.Number,
       endTime: Schema.Number,
-    })
+    }),
   ),
 });
 
@@ -61,8 +64,8 @@ export const UpdateScheduleSchema = Schema.Struct({
         date: DateTimeString,
         startTime: Schema.Number,
         endTime: Schema.Number,
-      })
-    )
+      }),
+    ),
   ),
 });
 
@@ -88,13 +91,19 @@ export const TimeSlotAggregationSchema = Schema.Struct({
       scheduleId: ScheduleId,
       displayName: NonEmptyString,
       userId: Schema.NullOr(UserId),
-    })
+    }),
   ),
 });
 
 // 型エクスポート
-export type CreateScheduleInput = Schema.Schema.Type<typeof CreateScheduleSchema>;
-export type UpdateScheduleInput = Schema.Schema.Type<typeof UpdateScheduleSchema>;
+export type CreateScheduleInput = Schema.Schema.Type<
+  typeof CreateScheduleSchema
+>;
+export type UpdateScheduleInput = Schema.Schema.Type<
+  typeof UpdateScheduleSchema
+>;
 export type Schedule = Schema.Schema.Type<typeof ScheduleSchema>;
 export type Availability = Schema.Schema.Type<typeof AvailabilitySchema>;
-export type TimeSlotAggregation = Schema.Schema.Type<typeof TimeSlotAggregationSchema>;
+export type TimeSlotAggregation = Schema.Schema.Type<
+  typeof TimeSlotAggregationSchema
+>;

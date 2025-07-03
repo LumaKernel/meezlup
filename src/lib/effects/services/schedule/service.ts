@@ -1,55 +1,87 @@
-import { Effect, Context, Layer, Array as EffectArray } from "effect";
-import { Schema } from "effect";
-import type { Schedule as PrismaSchedule, Availability as PrismaAvailability } from "@prisma/client";
+import { Effect, Context, Layer, Schema } from "effect";
+import type {
+  Schedule as PrismaSchedule,
+  Availability as PrismaAvailability,
+} from "@prisma/client";
 import { DatabaseService } from "../database";
+import { DatabaseServiceLive } from "../database/service";
 import { EventService } from "../event";
-import { DatabaseError, NotFoundError, ValidationError, ConflictError, ForbiddenError } from "../../errors";
+import { EventServiceLive } from "../event/service";
+import {
+  DatabaseError,
+  NotFoundError,
+  ValidationError,
+  ConflictError,
+} from "../../errors";
 import {
   CreateScheduleSchema,
   UpdateScheduleSchema,
+  ScheduleSchema,
+  TimeSlotAggregationSchema,
   type CreateScheduleInput,
   type UpdateScheduleInput,
   type Schedule,
-  type Availability,
+  type Availability as _Availability,
   type TimeSlotAggregation,
 } from "./schemas";
 
 // ScheduleServiceのインターフェース
-export interface ScheduleService {
-  readonly create: (input: CreateScheduleInput) => Effect.Effect<Schedule, ValidationError | NotFoundError | ConflictError | DatabaseError>;
-  readonly findById: (id: string) => Effect.Effect<Schedule, NotFoundError | DatabaseError>;
-  readonly findByEventAndUser: (eventId: string, userId: string) => Effect.Effect<Schedule | null, DatabaseError>;
-  readonly update: (input: UpdateScheduleInput) => Effect.Effect<Schedule, ValidationError | NotFoundError | DatabaseError>;
-  readonly delete: (id: string) => Effect.Effect<void, NotFoundError | DatabaseError>;
-  readonly listByEvent: (eventId: string) => Effect.Effect<ReadonlyArray<Schedule>, DatabaseError>;
-  readonly aggregateTimeSlots: (eventId: string) => Effect.Effect<ReadonlyArray<TimeSlotAggregation>, NotFoundError | DatabaseError>;
+export interface ScheduleServiceType {
+  readonly create: (
+    input: CreateScheduleInput,
+  ) => Effect.Effect<
+    Schedule,
+    ValidationError | NotFoundError | ConflictError | DatabaseError
+  >;
+  readonly findById: (
+    id: string,
+  ) => Effect.Effect<Schedule, NotFoundError | DatabaseError>;
+  readonly findByEventAndUser: (
+    eventId: string,
+    userId: string,
+  ) => Effect.Effect<Schedule | null, DatabaseError>;
+  readonly update: (
+    input: UpdateScheduleInput,
+  ) => Effect.Effect<Schedule, ValidationError | NotFoundError | DatabaseError>;
+  readonly delete: (
+    id: string,
+  ) => Effect.Effect<void, NotFoundError | DatabaseError>;
+  readonly listByEvent: (
+    eventId: string,
+  ) => Effect.Effect<ReadonlyArray<Schedule>, DatabaseError>;
+  readonly aggregateTimeSlots: (
+    eventId: string,
+  ) => Effect.Effect<
+    ReadonlyArray<TimeSlotAggregation>,
+    NotFoundError | DatabaseError
+  >;
 }
 
 // ScheduleServiceのタグ
 export class ScheduleService extends Context.Tag("ScheduleService")<
   ScheduleService,
-  ScheduleService
+  ScheduleServiceType
 >() {}
 
 // PrismaのデータをアプリケーションのScheduleに変換
 const transformSchedule = (
-  schedule: PrismaSchedule & { availabilities: PrismaAvailability[] }
-): Schedule => ({
-  id: schedule.id as any,
-  eventId: schedule.eventId as any,
-  userId: schedule.userId as any,
-  displayName: schedule.displayName as any,
-  createdAt: schedule.createdAt.toISOString() as any,
-  updatedAt: schedule.updatedAt.toISOString() as any,
-  availabilities: schedule.availabilities.map((a) => ({
-    id: a.id as any,
-    scheduleId: a.scheduleId as any,
-    date: a.date.toISOString() as any,
-    startTime: a.startTime,
-    endTime: a.endTime,
-    createdAt: a.createdAt.toISOString() as any,
-  })),
-});
+  schedule: PrismaSchedule & { availabilities: Array<PrismaAvailability> },
+): Schedule => {
+  const parsed = Schema.decodeUnknownSync(ScheduleSchema)({
+    ...schedule,
+    createdAt: schedule.createdAt.toISOString(),
+    updatedAt: schedule.updatedAt.toISOString(),
+    availabilities: schedule.availabilities.map((a) => ({
+      id: a.id,
+      scheduleId: a.scheduleId,
+      date: a.date.toISOString(),
+      startTime: a.startTime,
+      endTime: a.endTime,
+      createdAt: a.createdAt.toISOString(),
+    })),
+  });
+  return parsed;
+};
 
 // ScheduleServiceの実装
 const make = Effect.gen(function* () {
@@ -59,11 +91,16 @@ const make = Effect.gen(function* () {
   const create = (input: CreateScheduleInput) =>
     Effect.gen(function* () {
       // 入力検証
-      const validated = yield* Schema.decodeUnknown(CreateScheduleSchema)(input).pipe(
-        Effect.mapError((error) => new ValidationError({
-          field: "input",
-          message: error.message,
-        }))
+      const validated = yield* Schema.decodeUnknown(CreateScheduleSchema)(
+        input,
+      ).pipe(
+        Effect.mapError(
+          (error) =>
+            new ValidationError({
+              field: "input",
+              message: error.message,
+            }),
+        ),
       );
 
       // イベントの存在確認
@@ -91,7 +128,7 @@ const make = Effect.gen(function* () {
             new ConflictError({
               resource: "Schedule",
               message: "Schedule already exists for this user and event",
-            })
+            }),
           );
         }
       }
@@ -151,7 +188,7 @@ const make = Effect.gen(function* () {
           });
 
           return scheduleWithAvailabilities!;
-        })
+        }),
       );
 
       return transformSchedule(schedule);
@@ -177,7 +214,7 @@ const make = Effect.gen(function* () {
           new NotFoundError({
             resource: "Schedule",
             id,
-          })
+          }),
         );
       }
 
@@ -205,11 +242,16 @@ const make = Effect.gen(function* () {
   const update = (input: UpdateScheduleInput) =>
     Effect.gen(function* () {
       // 入力検証
-      const validated = yield* Schema.decodeUnknown(UpdateScheduleSchema)(input).pipe(
-        Effect.mapError((error) => new ValidationError({
-          field: "input",
-          message: error.message,
-        }))
+      const validated = yield* Schema.decodeUnknown(UpdateScheduleSchema)(
+        input,
+      ).pipe(
+        Effect.mapError(
+          (error) =>
+            new ValidationError({
+              field: "input",
+              message: error.message,
+            }),
+        ),
       );
 
       // 既存スケジュールの確認
@@ -250,7 +292,7 @@ const make = Effect.gen(function* () {
             });
 
             // 新しい参加可能時間帯を作成
-            if (validated.availabilities && validated.availabilities.length > 0) {
+            if (validated.availabilities.length > 0) {
               yield* Effect.tryPromise({
                 try: () =>
                   tx.availability.createMany({
@@ -285,7 +327,7 @@ const make = Effect.gen(function* () {
           });
 
           return updatedSchedule!;
-        })
+        }),
       );
 
       return transformSchedule(schedule);
@@ -332,31 +374,44 @@ const make = Effect.gen(function* () {
   const aggregateTimeSlots = (eventId: string) =>
     Effect.gen(function* () {
       // イベントの存在確認
-      const event = yield* eventService.findById(eventId);
+      yield* eventService.findById(eventId);
 
       // すべてのスケジュールを取得
       const schedules = yield* listByEvent(eventId);
 
       // 時間帯ごとに集計
-      const aggregationMap = new Map<string, TimeSlotAggregation>();
+      const aggregationMap = new Map<
+        string,
+        {
+          date: string;
+          startTime: number;
+          endTime: number;
+          count: number;
+          participants: Array<{
+            scheduleId: string;
+            displayName: string;
+            userId: string | null;
+          }>;
+        }
+      >();
 
       for (const schedule of schedules) {
         for (const availability of schedule.availabilities) {
-          const key = `${availability.date}-${availability.startTime}-${availability.endTime}`;
-          
+          const key = `${availability.date satisfies string}-${availability.startTime satisfies number}-${availability.endTime satisfies number}`;
+
           if (!aggregationMap.has(key)) {
             aggregationMap.set(key, {
               date: availability.date,
               startTime: availability.startTime,
               endTime: availability.endTime,
-              participantCount: 0 as any,
+              count: 0,
               participants: [],
             });
           }
 
           const slot = aggregationMap.get(key)!;
-          (slot as any).participantCount = (slot.participantCount + 1) as any;
-          (slot.participants as any[]).push({
+          slot.count += 1;
+          slot.participants.push({
             scheduleId: schedule.id,
             displayName: schedule.displayName,
             userId: schedule.userId,
@@ -364,12 +419,24 @@ const make = Effect.gen(function* () {
         }
       }
 
-      // 配列に変換してソート
-      return Array.from(aggregationMap.values()).sort((a, b) => {
-        const dateCompare = a.date.localeCompare(b.date);
-        if (dateCompare !== 0) return dateCompare;
-        return a.startTime - b.startTime;
-      });
+      // 配列に変換してソートし、Schemaでバリデーション
+      const rawAggregations = Array.from(aggregationMap.values())
+        .sort((a, b) => {
+          const dateCompare = a.date.localeCompare(b.date);
+          if (dateCompare !== 0) return dateCompare;
+          return a.startTime - b.startTime;
+        })
+        .map((slot) => ({
+          date: slot.date,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          participantCount: slot.count,
+          participants: slot.participants,
+        }));
+
+      return rawAggregations.map((agg) =>
+        Schema.decodeUnknownSync(TimeSlotAggregationSchema)(agg),
+      );
     });
 
   return {
@@ -380,13 +447,12 @@ const make = Effect.gen(function* () {
     delete: deleteSchedule,
     listByEvent,
     aggregateTimeSlots,
-  } as unknown as ScheduleService;
+  } satisfies ScheduleServiceType;
 });
 
 // ScheduleServiceのLayer
-import { DatabaseServiceLive } from "../database/service";
-import { EventServiceLive } from "../event/service";
 const ScheduleServiceLive = Layer.effect(ScheduleService, make).pipe(
-  Layer.provide(Layer.merge(DatabaseServiceLive, EventServiceLive))
+  Layer.provide(Layer.merge(DatabaseServiceLive, EventServiceLive)),
 );
+
 export { ScheduleServiceLive };

@@ -20,7 +20,7 @@ export const getRuntime = () => {
 
 // Server ActionでEffectを実行するヘルパー
 export const runServerAction = <A, E extends AppError>(
-  effect: Effect.Effect<A, E, Layer.Layer.Success<typeof ServicesLive>>
+  effect: Effect.Effect<A, E, Layer.Layer.Success<typeof ServicesLive>>,
 ): Promise<A> => {
   const rt = getRuntime();
   return rt.runPromise(effect);
@@ -33,22 +33,25 @@ export type ActionResponse<T> =
 
 // Server ActionでEffectを実行し、ActionResponseを返すヘルパー
 export const runServerActionSafe = async <A, E extends AppError>(
-  effect: Effect.Effect<A, E, Layer.Layer.Success<typeof ServicesLive>>
+  effect: Effect.Effect<A, E, Layer.Layer.Success<typeof ServicesLive>>,
 ): Promise<ActionResponse<A>> => {
   const rt = getRuntime();
   const exit = await rt.runPromiseExit(effect);
-  
+
   return Exit.match(exit, {
     onFailure: (cause) => {
       const failures = Cause.failures(cause);
       const failureArray = Array.from(failures);
-      const firstError = failureArray[0];
-      const error = firstError && 'message' in firstError && typeof firstError.message === 'string'
-        ? firstError.message
-        : "Unknown error";
-      
+      let error = "Unknown error";
+      if (failureArray.length > 0) {
+        const firstError = failureArray[0];
+        if ("message" in firstError && typeof firstError.message === "string") {
+          error = firstError.message;
+        }
+      }
+
       console.error("Server action failed:", cause);
-      
+
       return {
         success: false,
         error,
