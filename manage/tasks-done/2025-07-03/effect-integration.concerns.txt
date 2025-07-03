@@ -1,0 +1,53 @@
+# Effect.ts統合 - 懸念事項とやり残し (2025-07-03)
+
+## 完了した内容
+- Effect.tsのディレクトリ構造設計と実装
+  - src/lib/effects/ 配下に整理
+  - errors, types, utils, services の各モジュール
+- 基本的なサービスレイヤーの実装
+  - DatabaseService (Prismaラッパー)
+  - EventService (イベント操作)
+  - UserService (ユーザー操作)  
+  - ScheduleService (予定管理)
+- エラーハンドリングパターンの実装
+  - AppErrorの型定義
+  - エラー変換ユーティリティ
+- Layerを使用した依存性注入の設定
+  - ServicesLiveで全サービスを統合
+- Next.js Server Actionsとの統合パターン実装
+  - ManagedRuntimeを使用した実装
+  - runServerActionSafeヘルパー関数
+
+## やり残し・懸念事項
+
+### 1. 型安全性の問題
+- ServiceタグとServiceインターフェースの型定義で`as unknown as`を使用
+- より良い型定義方法の検討が必要
+
+### 2. Lintエラーの対応
+- 多数のlintエラーが残存
+- 特にany型の使用、unsafe assignment、テンプレートリテラルのsatisfiesなど
+- プロジェクトのlintルールとの調整が必要
+
+### 3. テストの未実装
+- 各サービスのユニットテストが未実装
+- Effect.tsのテストパターンの確立が必要
+- モックとスタブの戦略
+
+### 4. トランザクション処理の改善
+- DatabaseServiceのトランザクション実装が基本的
+- より複雑なトランザクションパターンへの対応
+
+### 5. エラーハンドリングの拡充
+- カスタムエラーの追加
+- エラーログの統合
+- 開発/本番環境でのエラー表示の制御
+
+### 6. パフォーマンス最適化
+- ManagedRuntimeのキャッシュ戦略
+- コネクションプーリングの最適化
+
+### 次のステップで優先すべきこと
+1. Lintエラーの解消
+2. 基本的なユニットテストの作成
+3. 実際のUI実装でのEffect統合パターンの確立
