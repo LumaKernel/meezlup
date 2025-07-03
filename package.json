@@ -1,12 +1,17 @@
 {
-  "name": "meetz-up",
+  "name": "meetzup",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "npm run _lint:eslint && npm run _lint:prettier",
+    "_lint:eslint": "eslint \"**/{src,test,examples,scripts,dtslint}/**/*.{ts,mjs}\"",
+    "_lint:prettier": "prettier . --list-different",
+    "lint-fix": "npm run lint -- --fix && prettier . --write",
+    "test": "vitest",
+    "coverage": "vitest --coverage"
   },
   "dependencies": {
     "react": "^19.0.0",

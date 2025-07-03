@@ -1,0 +1,1 @@
+eslint.configを書き換えたので,必要なものをインストールして、npm run lint-fixが通る状態にせよ。 eslint.config はなるべく書き換えず、必要なら確認せよ。

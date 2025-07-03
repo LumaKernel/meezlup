@@ -1,0 +1,23 @@
+{
+  "$schema": "https://www.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npm i:*)",
+      "Bash(npm ci:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(ls:*)",
+      "Bash(tree:*)",
+      "Bash(rg:*)"
+    ],
+    "deny": [
+      "Bash(pnpm:*)",
+      "Bash(yarn:*)",
+      "Read(*.local)",
+      "Write(*.local)",
+      "Read(*.local.*)",
+      "Write(*.local.*)",
+      "Write(package.json)"
+    ]
+  }
+}
