@@ -3,25 +3,22 @@
  * サーバーレス環境のウォームアップにも使用
  */
 
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { warmupPrisma } from "@/lib/prisma/serverless-optimized";
-import { Effect, Runtime } from "effect";
-import { EventLiveLayer } from "@/lib/effects/services/event/layer";
-import { UserLiveLayer } from "@/lib/effects/services/user/layer";
-import { ScheduleLiveLayer } from "@/lib/effects/services/schedule/layer";
 
 // Node.js Runtimeを使用（フルPrisma機能が必要）
 export const runtime = "nodejs";
 
-// ヘルスチェックプログラム
-const healthCheckProgram = Effect.gen(function* () {
+// ヘルスチェック実行
+async function performHealthCheck() {
   const startTime = Date.now();
   
   // Prismaコネクションのウォームアップ
-  yield* Effect.tryPromise({
-    try: () => warmupPrisma(),
-    catch: () => new Error("Prisma warmup failed"),
-  });
+  try {
+    await warmupPrisma();
+  } catch (error) {
+    throw new Error(`Prisma warmup failed: ${(error instanceof Error ? error.message : String(error)) satisfies string}`);
+  }
   
   // 各サービスの基本的な動作確認
   const checks = {
@@ -36,20 +33,15 @@ const healthCheckProgram = Effect.gen(function* () {
   // サービスレイヤーの動作確認
   try {
     // 簡単なクエリで動作確認
-    yield* Effect.tryPromise({
-      try: async () => {
-        const { getServerlessPrisma } = await import("@/lib/prisma/serverless-optimized");
-        const prisma = getServerlessPrisma();
-        await prisma.$queryRaw`SELECT 1`;
-        return true;
-      },
-      catch: () => false,
-    });
+    const { getServerlessPrisma } = await import("@/lib/prisma/serverless-optimized");
+    const prisma = getServerlessPrisma();
+    await prisma.$queryRaw`SELECT 1`;
     
     checks.services.event = true;
     checks.services.user = true;
     checks.services.schedule = true;
-  } catch {
+  } catch (error) {
+    console.warn("Service checks failed:", error);
     // サービスチェックの失敗は許容
   }
   
@@ -58,27 +50,17 @@ const healthCheckProgram = Effect.gen(function* () {
   return {
     status: "healthy",
     timestamp: new Date().toISOString(),
-    runtime: process.env.VERCEL_ENV || process.env.NODE_ENV || "development",
+    runtime: (process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "development") satisfies string,
     checks,
     performance: {
       warmupDuration: duration,
     },
   };
-});
+}
 
-// レイヤーの結合
-const MainLayer = EventLiveLayer.pipe(
-  Runtime.provideMerge(UserLiveLayer),
-  Runtime.provideMerge(ScheduleLiveLayer)
-);
-
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    const runtime = Runtime.defaultRuntime.pipe(
-      Runtime.provideMerge(MainLayer)
-    );
-    
-    const result = await Runtime.runPromise(runtime)(healthCheckProgram);
+    const result = await performHealthCheck();
     
     return Response.json(result, {
       status: 200,

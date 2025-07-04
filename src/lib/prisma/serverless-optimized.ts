@@ -4,14 +4,12 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import { PrismaAdapter } from "@prisma/adapter-neon";
 import { Pool, neonConfig } from "@neondatabase/serverless";
-import { PRISMA_CONFIG } from "./config";
+import { buildConnectionUrl } from "./config";
 
 // Edge Runtime向けの設定
-if (typeof window === "undefined" && typeof EdgeRuntime !== "undefined") {
-  // WebSocket実装をポリフィルから使用
-  neonConfig.webSocketConstructor = require("ws");
+if (typeof window === "undefined") {
+  neonConfig.poolQueryViaFetch = true;
 }
 
 // Prismaクライアントのシングルトンインスタンス
@@ -31,7 +29,7 @@ export function getServerlessPrisma(): PrismaClient {
 
   if (process.env.NODE_ENV === "production" && process.env.DATABASE_URL) {
     // 本番環境: Neon Serverless Driverを使用
-    const connectionString = process.env.DATABASE_URL;
+    const connectionString = buildConnectionUrl(process.env.DATABASE_URL);
     
     // プールの作成（再利用可能）
     if (!poolInstance) {
@@ -44,47 +42,32 @@ export function getServerlessPrisma(): PrismaClient {
       });
     }
 
-    const adapter = new PrismaAdapter(poolInstance);
-    
     prismaInstance = new PrismaClient({
-      adapter,
-      // ログを最小限に
+      datasources: {
+        db: {
+          url: connectionString,
+        },
+      },
       log: process.env.DEBUG ? ["query", "error", "warn"] : ["error"],
-      // エラーフォーマットを最小化
       errorFormat: "minimal",
     });
 
-    // クエリの最適化設定
-    prismaInstance.$use(async (params, next) => {
-      const before = Date.now();
-      
+    // コネクション監視設定（シンプル版）
+    const originalConnect = prismaInstance.$connect.bind(prismaInstance);
+    prismaInstance.$connect = async () => {
       try {
-        const result = await next(params);
-        const after = Date.now();
-        
-        // スロークエリの監視（100ms以上）
-        if (after - before > 100) {
-          console.warn(`Slow query detected: ${params.model}.${params.action} took ${after - before}ms`);
-        }
-        
-        return result;
+        await originalConnect();
       } catch (error) {
-        // コネクションエラーの場合はリトライ
         if (isConnectionError(error)) {
           console.warn("Connection error, retrying...");
-          // プールをリセット
-          await poolInstance?.end();
+          await poolInstance?.end().catch(() => {});
           poolInstance = null;
           prismaInstance = null;
-          // 再帰的に新しいインスタンスを作成
-          return getServerlessPrisma().$transaction([
-            // トランザクション内で再実行
-            prismaInstance.$queryRaw`SELECT 1`,
-          ]);
+          throw error;
         }
         throw error;
       }
-    });
+    };
   } else {
     // 開発環境: 通常のPrismaクライアント
     prismaInstance = new PrismaClient({
@@ -145,7 +128,7 @@ export async function disconnectPrisma(): Promise<void> {
 
 // プロセス終了時のクリーンアップ（開発環境のみ）
 if (process.env.NODE_ENV !== "production") {
-  process.on("beforeExit", async () => {
-    await disconnectPrisma();
+  process.on("beforeExit", () => {
+    disconnectPrisma().catch(console.error);
   });
 }

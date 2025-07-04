@@ -23,14 +23,14 @@ const CACHE_TTL = {
 
 // キャッシュキーの生成
 function cacheKey(prefix: string, id: string | number): string {
-  return `${prefix}:${id}`;
+  return `${prefix satisfies string}:${id satisfies string | number}`;
 }
 
 // グローバルキャッシュインスタンス
 const globalCache = Cache.make({
   capacity: 100, // 最大100エントリ
   timeToLive: Duration.minutes(5), // デフォルト5分
-  lookup: (key: string) => Effect.succeed(Option.none()),
+  lookup: (_key: string) => Effect.succeed(Option.none()),
 });
 
 /**
@@ -54,7 +54,7 @@ export function cachedQuery<T>(
     // キャッシュミスの場合はクエリを実行
     const result = yield* Effect.tryPromise({
       try: queryFn,
-      catch: (error) => new Error(`Query failed: ${error}`),
+      catch: (error) => new Error(`Query failed: ${error satisfies unknown}`),
     });
     
     // 結果をキャッシュに保存
@@ -118,7 +118,7 @@ export const getCachedEvent = (eventId: string) =>
 /**
  * キャッシュの無効化
  */
-export function invalidateCache(pattern: string): Effect.Effect<void, never> {
+export function invalidateCache(_pattern: string): Effect.Effect<void> {
   return Effect.gen(function* () {
     const cache = yield* globalCache;
     
@@ -134,9 +134,9 @@ export function invalidateCache(pattern: string): Effect.Effect<void, never> {
  */
 export function batchQuery<T extends { id: string }>(
   modelName: string,
-  ids: readonly string[],
-  queryFn: (ids: readonly string[]) => Promise<T[]>
-): Effect.Effect<readonly T[], Error> {
+  ids: ReadonlyArray<string>,
+  queryFn: (ids: ReadonlyArray<string>) => Promise<Array<T>>
+): Effect.Effect<ReadonlyArray<T>, Error> {
   return Effect.gen(function* () {
     if (ids.length === 0) {
       return [];
@@ -148,13 +148,13 @@ export function batchQuery<T extends { id: string }>(
     // バッチクエリを実行
     const results = yield* Effect.tryPromise({
       try: () => queryFn(uniqueIds),
-      catch: (error) => new Error(`Batch query failed: ${error}`),
+      catch: (error) => new Error(`Batch query failed: ${error satisfies unknown}`),
     });
     
     // 結果を個別にキャッシュ
     const cache = yield* globalCache;
     for (const result of results) {
-      const key = cacheKey(modelName, result.id);
+      const key = cacheKey(modelName, result.id satisfies string);
       yield* cache.set(key, result, CACHE_TTL.static);
     }
     
@@ -183,13 +183,13 @@ export function prefetchCommonData(): Effect.Effect<void, Error> {
             dateRangeEnd: true,
           },
         }),
-      catch: (error) => new Error(`Prefetch failed: ${error}`),
+      catch: (error) => new Error(`Prefetch failed: ${error satisfies unknown}`),
     });
     
     // キャッシュに保存
     const cache = yield* globalCache;
     for (const event of recentEvents) {
-      const key = cacheKey("event:summary", event.id);
+      const key = cacheKey("event:summary", event.id satisfies string);
       yield* cache.set(key, event, CACHE_TTL.static);
     }
   });
@@ -201,7 +201,7 @@ export function prefetchCommonData(): Effect.Effect<void, Error> {
  */
 export function compressQueryResult<T>(
   data: T,
-  fields: readonly (keyof T)[]
+  fields: ReadonlyArray<keyof T>
 ): Partial<T> {
   const compressed: Partial<T> = {};
   

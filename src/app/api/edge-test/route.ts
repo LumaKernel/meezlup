@@ -2,22 +2,22 @@
  * Edge Runtime動作確認用エンドポイント
  */
 
-import { NextRequest } from "next/server";
-import { testEdgeCompatibility, runtime, createEdgePrismaClient } from "@/lib/prisma/edge-compat";
+import type { NextRequest } from "next/server";
+import { testEdgeCompatibility, runtime as edgeRuntime, createEdgePrismaClient } from "@/lib/prisma/edge-compat";
 
 // Edge Runtimeを明示的に指定
 export const runtime = "edge";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const results = {
-    runtime: runtime.type,
+    runtime: edgeRuntime.type,
     timestamp: new Date().toISOString(),
     compatibility: await testEdgeCompatibility(),
     environment: {
-      hasWebSocket: runtime.hasWebSocket,
-      hasStreams: runtime.hasStreams,
-      canAccessFileSystem: runtime.canAccessFileSystem,
-      canUseNativeModules: runtime.canUseNativeModules,
+      hasWebSocket: edgeRuntime.hasWebSocket,
+      hasStreams: edgeRuntime.hasStreams,
+      canAccessFileSystem: edgeRuntime.canAccessFileSystem,
+      canUseNativeModules: edgeRuntime.canUseNativeModules,
     },
     prismaTest: {
       success: false,
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   // Prisma接続テスト
   if (process.env.DATABASE_URL) {
     try {
-      const prisma = createEdgePrismaClient(process.env.DATABASE_URL);
+      const prisma = await createEdgePrismaClient(process.env.DATABASE_URL);
       
       // 基本的なクエリテスト
       const testQuery = await prisma.$queryRaw`SELECT 1 as test, NOW() as timestamp`;

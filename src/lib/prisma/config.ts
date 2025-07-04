@@ -40,9 +40,7 @@ export function buildConnectionUrl(baseUrl: string, options?: Record<string, unk
     url.searchParams.set("connection_limit", PRISMA_CONFIG.serverless.connection_limit.toString());
     url.searchParams.set("pool_timeout", PRISMA_CONFIG.serverless.pool_timeout.toString());
     
-    if (PRISMA_CONFIG.serverless.pgbouncer) {
-      url.searchParams.set("pgbouncer", "true");
-    }
+    url.searchParams.set("pgbouncer", String(PRISMA_CONFIG.serverless.pgbouncer));
     
     url.searchParams.set("connect_timeout", PRISMA_CONFIG.serverless.connect_timeout.toString());
   }

@@ -2,15 +2,21 @@
  * Edge Runtime互換性の確認と対策
  */
 
-import { PrismaClient } from "@prisma/client/edge";
-import { PrismaAdapter } from "@prisma/adapter-neon";
-import { Pool, neonConfig } from "@neondatabase/serverless";
+import type { PrismaClient } from "@prisma/client";
+import { neonConfig } from "@neondatabase/serverless";
 
 // Edge Runtimeの検出
-export const isEdgeRuntime = typeof EdgeRuntime !== "undefined";
+export const isEdgeRuntime = typeof globalThis !== "undefined" && "EdgeRuntime" in globalThis;
 
 // Node.js固有のAPIが利用可能かチェック
-export const hasNodeApis = typeof process !== "undefined" && process.versions?.node;
+export const hasNodeApis = (() => {
+  try {
+    return typeof process !== "undefined" && process.versions !== null && "node" in process.versions;
+  } catch (error) {
+    console.warn("Node.js API check failed:", error);
+    return false;
+  }
+})();
 
 /**
  * Edge Runtime向けの設定
@@ -23,7 +29,7 @@ export function configureForEdgeRuntime() {
   // WebSocket実装の設定
   // Edge Runtimeでは標準のWebSocketを使用
   neonConfig.useSecureWebSocket = true;
-  neonConfig.wsProxy = (host) => `${host}/v1`;
+  neonConfig.wsProxy = (host) => `${host satisfies string}/v1`;
   
   // フェッチ実装の設定
   neonConfig.poolQueryViaFetch = true;
@@ -34,22 +40,18 @@ export function configureForEdgeRuntime() {
 /**
  * Edge Runtime対応のPrismaクライアント作成
  */
-export function createEdgePrismaClient(databaseUrl: string): PrismaClient {
+export async function createEdgePrismaClient(databaseUrl: string): Promise<PrismaClient> {
   configureForEdgeRuntime();
   
-  const pool = new Pool({
-    connectionString: databaseUrl,
-    // Edge Runtime向けの設定
-    max: 1,
-    idleTimeoutMillis: 0,
-    connectionTimeoutMillis: 3000,
-  });
-
-  const adapter = new PrismaAdapter(pool);
+  // 通常のPrismaClientを返す（Neon Serverlessが自動でEdge対応）
+  const { PrismaClient: EdgePrismaClient } = await import("@prisma/client");
   
-  return new PrismaClient({
-    adapter,
-    // Edge Runtimeでは最小限のログ
+  return new EdgePrismaClient({
+    datasources: {
+      db: {
+        url: databaseUrl,
+      },
+    },
     log: ["error"],
     errorFormat: "minimal",
   });
@@ -76,21 +78,24 @@ export const edgeCompat = {
   
   // crypto APIの使用
   generateId: (): string => {
-    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
       return crypto.randomUUID();
     }
     // フォールバック実装
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${(Date.now() satisfies number)}-${(Math.random().toString(36).substring(2, 11) satisfies string)}`;
   },
   
   // 環境変数の取得（Edge Runtimeセーフ）
   getEnv: (key: string): string | undefined => {
-    // Vercel Edge Runtimeの場合
-    if (typeof process === "undefined") {
-      // @ts-expect-error - Edge Runtimeでの環境変数アクセス
-      return globalThis[key];
+    try {
+      if (typeof process === "undefined") {
+        return (globalThis as Record<string, unknown>)[key] as string | undefined;
+      }
+      return process.env[key];
+    } catch (error) {
+      console.warn(`Failed to get environment variable ${key}:`, error);
+      return undefined;
     }
-    return process.env[key];
   },
 };
 
@@ -99,16 +104,16 @@ export const edgeCompat = {
  */
 export async function testEdgeCompatibility(): Promise<{
   compatible: boolean;
-  issues: string[];
+  issues: Array<string>;
 }> {
-  const issues: string[] = [];
+  const issues: Array<string> = [];
   
   // 必須のグローバルAPIチェック
-  const requiredGlobals = ["fetch", "crypto", "TextEncoder", "TextDecoder"];
+  const requiredGlobals: Array<string> = ["fetch", "crypto", "TextEncoder", "TextDecoder"];
   
   for (const api of requiredGlobals) {
     if (!(api in globalThis)) {
-      issues.push(`Missing required API: ${api}`);
+      issues.push(`Missing required API: ${(api satisfies string)}`);
     }
   }
   
@@ -117,11 +122,11 @@ export async function testEdgeCompatibility(): Promise<{
     issues.push("WebSocket API not available");
   }
   
-  // Prisma Edge Client確認
+  // Prisma Client確認
   try {
-    await import("@prisma/client/edge");
-  } catch {
-    issues.push("Prisma Edge Client not available");
+    await import("@prisma/client");
+  } catch (error) {
+    issues.push(`Prisma Client not available: ${error instanceof Error ? error.message : String(error)}`);
   }
   
   return {
@@ -133,7 +138,13 @@ export async function testEdgeCompatibility(): Promise<{
 /**
  * ランタイム固有の機能を抽象化
  */
-export const runtime = {
+export const runtime: {
+  readonly type: "edge" | "node" | "browser";
+  readonly canAccessFileSystem: boolean;
+  readonly canUseNativeModules: boolean;
+  readonly hasWebSocket: boolean;
+  readonly hasStreams: boolean;
+} = {
   // 現在のランタイムタイプ
   type: isEdgeRuntime ? "edge" : hasNodeApis ? "node" : "browser",
   
