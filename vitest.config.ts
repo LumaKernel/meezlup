@@ -8,16 +8,14 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: "./src/test/setup.ts",
-    include: [
-      'src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
-    ],
+    include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     exclude: [
-      'node_modules',
-      'node_modules.trashed',
-      'dist',
-      '.nuxt',
-      'coverage',
-      'src/stories.trashed',
+      "node_modules",
+      "node_modules.trashed",
+      "dist",
+      ".nuxt",
+      "coverage",
+      "src/stories.trashed",
     ],
     coverage: {
       reporter: ["text", "json", "html"],

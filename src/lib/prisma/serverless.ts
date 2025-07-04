@@ -1,13 +1,13 @@
 // サーバーレス環境用のPrismaクライアント設定
 import { PrismaClient } from "@prisma/client";
-import { neonConfig } from '@neondatabase/serverless';
+import { neonConfig } from "@neondatabase/serverless";
 import { PRISMA_CONFIG, buildConnectionUrl } from "./config";
 
 // 統一されたPrismaクライアントを作成
 function createPrismaClient() {
   // Neon設定の初期化
   neonConfig.poolQueryViaFetch = true;
-  
+
   // DATABASE_URLが設定されている場合はそれを使用
   if (process.env.DATABASE_URL) {
     const connectionString = buildConnectionUrl(process.env.DATABASE_URL);
@@ -21,7 +21,7 @@ function createPrismaClient() {
       errorFormat: PRISMA_CONFIG.common.errorFormat,
     });
   }
-  
+
   // デフォルト（SQLite）
   return new PrismaClient({
     log: PRISMA_CONFIG.common.log as never,

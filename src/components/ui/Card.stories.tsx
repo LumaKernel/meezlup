@@ -1,62 +1,64 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { Card } from './Card'
-import { Button } from './Button'
+import type { Meta, StoryObj } from "@storybook/react";
+import { Card } from "./Card";
+import { Button } from "./Button";
 
 const meta = {
-  title: 'UI/Card',
+  title: "UI/Card",
   component: Card,
   parameters: {
-    layout: 'centered',
+    layout: "centered",
   },
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   argTypes: {
     shadow: {
-      control: 'select',
-      options: ['none', 'sm', 'md', 'lg'],
+      control: "select",
+      options: ["none", "sm", "md", "lg"],
     },
     radius: {
-      control: 'select',
-      options: ['none', 'sm', 'md', 'lg'],
+      control: "select",
+      options: ["none", "sm", "md", "lg"],
     },
     isBlurred: {
-      control: 'boolean',
+      control: "boolean",
     },
     isFooterBlurred: {
-      control: 'boolean',
+      control: "boolean",
     },
   },
-} satisfies Meta<typeof Card>
+} satisfies Meta<typeof Card>;
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 // 基本的なカード
 export const Default: Story = {
   args: {
-    children: 'これはカードの内容です。',
+    children: "これはカードの内容です。",
   },
-}
+};
 
 // ヘッダー付きカード
 export const WithHeader: Story = {
   args: {
     header: <h3 className="text-lg font-bold">カードタイトル</h3>,
-    children: 'これはカードの内容です。ヘッダーが表示されています。',
+    children: "これはカードの内容です。ヘッダーが表示されています。",
   },
-}
+};
 
 // フッター付きカード
 export const WithFooter: Story = {
   args: {
-    children: 'これはカードの内容です。',
+    children: "これはカードの内容です。",
     footer: (
       <div className="flex gap-2">
         <Button size="sm">キャンセル</Button>
-        <Button size="sm" color="primary">保存</Button>
+        <Button size="sm" color="primary">
+          保存
+        </Button>
       </div>
     ),
   },
-}
+};
 
 // フルカード
 export const FullCard: Story = {
@@ -72,17 +74,21 @@ export const FullCard: Story = {
     ),
     footer: (
       <div className="flex justify-between w-full">
-        <Button size="sm" variant="light">詳細を見る</Button>
-        <Button size="sm" color="primary">参加する</Button>
+        <Button size="sm" variant="light">
+          詳細を見る
+        </Button>
+        <Button size="sm" color="primary">
+          参加する
+        </Button>
       </div>
     ),
   },
-}
+};
 
 // 影のバリエーション
 export const Shadows: Story = {
   args: {
-    children: "影のテスト"
+    children: "影のテスト",
   },
   render: () => (
     <div className="flex flex-wrap gap-4">
@@ -100,12 +106,12 @@ export const Shadows: Story = {
       </Card>
     </div>
   ),
-}
+};
 
 // ブラー効果
 export const Blurred: Story = {
   args: {
     isBlurred: true,
-    children: 'ブラー効果が適用されたカード',
+    children: "ブラー効果が適用されたカード",
   },
-}
+};

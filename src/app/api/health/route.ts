@@ -12,14 +12,16 @@ export const runtime = "nodejs";
 // ヘルスチェック実行
 async function performHealthCheck() {
   const startTime = Date.now();
-  
+
   // Prismaコネクションのウォームアップ
   try {
     await warmupPrisma();
   } catch (error) {
-    throw new Error(`Prisma warmup failed: ${(error instanceof Error ? error.message : String(error)) satisfies string}`);
+    throw new Error(
+      `Prisma warmup failed: ${(error instanceof Error ? error.message : String(error)) satisfies string}`,
+    );
   }
-  
+
   // 各サービスの基本的な動作確認
   const checks = {
     prisma: true,
@@ -29,14 +31,16 @@ async function performHealthCheck() {
       schedule: false,
     },
   };
-  
+
   // サービスレイヤーの動作確認
   try {
     // 簡単なクエリで動作確認
-    const { getServerlessPrisma } = await import("@/lib/prisma/serverless-optimized");
+    const { getServerlessPrisma } = await import(
+      "@/lib/prisma/serverless-optimized"
+    );
     const prisma = getServerlessPrisma();
     await prisma.$queryRaw`SELECT 1`;
-    
+
     checks.services.event = true;
     checks.services.user = true;
     checks.services.schedule = true;
@@ -44,13 +48,14 @@ async function performHealthCheck() {
     console.warn("Service checks failed:", error);
     // サービスチェックの失敗は許容
   }
-  
+
   const duration = Date.now() - startTime;
-  
+
   return {
     status: "healthy",
     timestamp: new Date().toISOString(),
-    runtime: (process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "development") satisfies string,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- NODE_ENVは実行時に未定義の可能性がある
+    runtime: process.env.NODE_ENV || "development",
     checks,
     performance: {
       warmupDuration: duration,
@@ -61,7 +66,7 @@ async function performHealthCheck() {
 export async function GET(_request: NextRequest) {
   try {
     const result = await performHealthCheck();
-    
+
     return Response.json(result, {
       status: 200,
       headers: {
@@ -80,7 +85,7 @@ export async function GET(_request: NextRequest) {
         headers: {
           "Cache-Control": "no-store",
         },
-      }
+      },
     );
   }
 }

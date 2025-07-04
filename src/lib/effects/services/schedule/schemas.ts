@@ -22,12 +22,9 @@ export const TimeRangeSchema = Schema.Struct({
     Schema.lessThanOrEqualTo(1440),
   ),
 }).pipe(
-  Schema.filter(
-    (range): range is typeof range => range.startTime < range.endTime,
-    {
-      message: () => "Start time must be before end time",
-    },
-  ),
+  Schema.filter((range) => range.startTime < range.endTime, {
+    message: () => "Start time must be before end time",
+  }),
 );
 
 // 参加可能時間帯

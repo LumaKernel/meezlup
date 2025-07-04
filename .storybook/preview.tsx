@@ -1,9 +1,9 @@
-import type { Preview } from '@storybook/react'
-import React from 'react'
-import { HeroUIProvider } from '@heroui/react'
-import { I18nextProvider } from 'react-i18next'
-import i18n from '../src/lib/i18n/client'
-import '../src/app/globals.css'
+import type { Preview } from "@storybook/react";
+import React from "react";
+import { HeroUIProvider } from "@heroui/react";
+import { I18nextProvider } from "react-i18next";
+import i18n from "../src/lib/i18n/client";
+import "../src/app/globals.css";
 
 // グローバルデコレーター
 const withProviders = (Story: any) => (
@@ -14,7 +14,7 @@ const withProviders = (Story: any) => (
       </div>
     </HeroUIProvider>
   </I18nextProvider>
-)
+);
 
 const preview: Preview = {
   parameters: {
@@ -28,15 +28,15 @@ const preview: Preview = {
       appDirectory: true,
     },
     backgrounds: {
-      default: 'light',
+      default: "light",
       values: [
         {
-          name: 'light',
-          value: '#ffffff',
+          name: "light",
+          value: "#ffffff",
         },
         {
-          name: 'dark',
-          value: '#0f0f0f',
+          name: "dark",
+          value: "#0f0f0f",
         },
       ],
     },
@@ -44,19 +44,19 @@ const preview: Preview = {
   decorators: [withProviders],
   globalTypes: {
     locale: {
-      name: 'Locale',
-      description: 'Internationalization locale',
-      defaultValue: 'ja',
+      name: "Locale",
+      description: "Internationalization locale",
+      defaultValue: "ja",
       toolbar: {
-        icon: 'globe',
+        icon: "globe",
         items: [
-          { value: 'ja', title: '日本語' },
-          { value: 'en', title: 'English' },
+          { value: "ja", title: "日本語" },
+          { value: "en", title: "English" },
         ],
         showName: true,
       },
     },
   },
-}
+};
 
-export default preview
+export default preview;

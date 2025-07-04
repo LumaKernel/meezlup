@@ -30,7 +30,7 @@ export function getServerlessPrisma(): PrismaClient {
   if (process.env.NODE_ENV === "production" && process.env.DATABASE_URL) {
     // 本番環境: Neon Serverless Driverを使用
     const connectionString = buildConnectionUrl(process.env.DATABASE_URL);
-    
+
     // プールの作成（再利用可能）
     if (!poolInstance) {
       poolInstance = new Pool({
@@ -85,7 +85,7 @@ export function getServerlessPrisma(): PrismaClient {
  */
 export async function warmupPrisma(): Promise<void> {
   const prisma = getServerlessPrisma();
-  
+
   try {
     // 軽量なクエリでコネクションを確立
     await prisma.$queryRaw`SELECT 1`;
@@ -119,7 +119,7 @@ export async function disconnectPrisma(): Promise<void> {
     await prismaInstance.$disconnect();
     prismaInstance = null;
   }
-  
+
   if (poolInstance) {
     await poolInstance.end();
     poolInstance = null;

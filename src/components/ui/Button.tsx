@@ -1,10 +1,13 @@
-import { Button as HeroButton, type ButtonProps as HeroButtonProps } from '@heroui/react'
-import { forwardRef } from 'react'
-import { cn } from '@/lib/utils'
+import {
+  Button as HeroButton,
+  type ButtonProps as HeroButtonProps,
+} from "@heroui/react";
+import { forwardRef } from "react";
+import { cn } from "@/lib/utils";
 
 export type ButtonProps = HeroButtonProps & {
-  loading?: boolean
-}
+  loading?: boolean;
+};
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ children, className, disabled, loading, ...props }, ref) => {
@@ -24,8 +27,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           children
         )}
       </HeroButton>
-    )
-  }
-)
+    );
+  },
+);
 
-Button.displayName = 'Button'
+Button.displayName = "Button";
