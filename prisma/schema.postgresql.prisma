@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// ユーザー情報（Auth0連携）
+model User {
+  id        String   @id @default(cuid())
+  auth0Id   String   @unique
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  eventsCreated Event[]
+  schedules     Schedule[]
+
+  @@index([auth0Id])
+  @@index([email])
+}
+
+// イベント情報
+model Event {
+  id               String    @id @default(cuid())
+  name             String
+  description      String?
+  dateRangeStart   DateTime
+  dateRangeEnd     DateTime
+  timeSlotDuration Int       // 15, 30, 60 (分)
+  deadline         DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // 参加制限
+  participantRestrictionType String   @default("none") // "none", "login_required", "domain", "specific_users"
+  allowedDomains             Json     @default("[]") // PostgreSQLのJSON型を使用
+  allowedEmails              Json     @default("[]") // PostgreSQLのJSON型を使用
+
+  // 権限設定
+  creatorId              String?
+  creator                User?      @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  creatorCanSeeEmails    Boolean    @default(false)
+  participantsCanSeeEach Boolean    @default(false)
+
+  // Relations
+  schedules Schedule[]
+
+  @@index([creatorId])
+  @@index([dateRangeStart, dateRangeEnd])
+}
+
+// 参加者の予定情報
+model Schedule {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId      String? // ログインユーザーのみ
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  displayName String   // イベント専用の表示名
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  availabilities Availability[]
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+// 参加可能な時間帯
+model Availability {
+  id         String   @id @default(cuid())
+  scheduleId String
+  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date // PostgreSQLのDate型を明示
+  startTime  Int      // 0-1439 (分単位: 0:00-23:59)
+  endTime    Int      // 0-1439 (分単位: 0:00-23:59)
+  createdAt  DateTime @default(now())
+
+  @@unique([scheduleId, date, startTime])
+  @@index([scheduleId])
+  @@index([date])
+  @@index([scheduleId, date]) // 複合インデックスを追加
+}

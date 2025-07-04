@@ -1,0 +1,215 @@
+/**
+ * サーバーレス環境向けのキャッシュ戦略
+ * メモリキャッシュとクエリ結果の最適化
+ */
+
+import { Effect } from "effect";
+import * as Duration from "effect/Duration";
+import * as Cache from "effect/Cache";
+import * as Option from "effect/Option";
+import { getServerlessPrisma } from "./serverless-optimized";
+
+// キャッシュのTTL設定
+const CACHE_TTL = {
+  // ユーザー情報: 5分
+  user: Duration.minutes(5),
+  // イベント情報: 1分
+  event: Duration.minutes(1),
+  // スケジュール情報: 30秒
+  schedule: Duration.seconds(30),
+  // 静的データ: 1時間
+  static: Duration.hours(1),
+} as const;
+
+// キャッシュキーの生成
+function cacheKey(prefix: string, id: string | number): string {
+  return `${prefix}:${id}`;
+}
+
+// グローバルキャッシュインスタンス
+const globalCache = Cache.make({
+  capacity: 100, // 最大100エントリ
+  timeToLive: Duration.minutes(5), // デフォルト5分
+  lookup: (key: string) => Effect.succeed(Option.none()),
+});
+
+/**
+ * キャッシュ付きクエリの実行
+ */
+export function cachedQuery<T>(
+  key: string,
+  queryFn: () => Promise<T>,
+  ttl: Duration.Duration = Duration.minutes(1)
+): Effect.Effect<T, Error> {
+  return Effect.gen(function* () {
+    const cache = yield* globalCache;
+    
+    // キャッシュから取得を試みる
+    const cached = yield* cache.get(key);
+    
+    if (Option.isSome(cached)) {
+      return cached.value as T;
+    }
+    
+    // キャッシュミスの場合はクエリを実行
+    const result = yield* Effect.tryPromise({
+      try: queryFn,
+      catch: (error) => new Error(`Query failed: ${error}`),
+    });
+    
+    // 結果をキャッシュに保存
+    yield* cache.set(key, result, ttl);
+    
+    return result;
+  });
+}
+
+/**
+ * ユーザー情報のキャッシュ付き取得
+ */
+export const getCachedUser = (userId: string) =>
+  cachedQuery(
+    cacheKey("user", userId),
+    async () => {
+      const prisma = getServerlessPrisma();
+      return prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          avatarUrl: true,
+          createdAt: true,
+        },
+      });
+    },
+    CACHE_TTL.user
+  );
+
+/**
+ * イベント情報のキャッシュ付き取得
+ */
+export const getCachedEvent = (eventId: string) =>
+  cachedQuery(
+    cacheKey("event", eventId),
+    async () => {
+      const prisma = getServerlessPrisma();
+      return prisma.event.findUnique({
+        where: { id: eventId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          _count: {
+            select: {
+              schedules: true,
+            },
+          },
+        },
+      });
+    },
+    CACHE_TTL.event
+  );
+
+/**
+ * キャッシュの無効化
+ */
+export function invalidateCache(pattern: string): Effect.Effect<void, never> {
+  return Effect.gen(function* () {
+    const cache = yield* globalCache;
+    
+    // パターンに一致するキーを無効化
+    // 注: 実際の実装では、キャッシュライブラリがパターンマッチングをサポートしている必要がある
+    yield* cache.invalidateAll();
+  });
+}
+
+/**
+ * バッチクエリの最適化
+ * 複数のIDに対するクエリをバッチ化
+ */
+export function batchQuery<T extends { id: string }>(
+  modelName: string,
+  ids: readonly string[],
+  queryFn: (ids: readonly string[]) => Promise<T[]>
+): Effect.Effect<readonly T[], Error> {
+  return Effect.gen(function* () {
+    if (ids.length === 0) {
+      return [];
+    }
+    
+    // 重複を除去
+    const uniqueIds = [...new Set(ids)];
+    
+    // バッチクエリを実行
+    const results = yield* Effect.tryPromise({
+      try: () => queryFn(uniqueIds),
+      catch: (error) => new Error(`Batch query failed: ${error}`),
+    });
+    
+    // 結果を個別にキャッシュ
+    const cache = yield* globalCache;
+    for (const result of results) {
+      const key = cacheKey(modelName, result.id);
+      yield* cache.set(key, result, CACHE_TTL.static);
+    }
+    
+    return results;
+  });
+}
+
+/**
+ * プリフェッチ戦略
+ * よく使われるデータを事前に取得
+ */
+export function prefetchCommonData(): Effect.Effect<void, Error> {
+  return Effect.gen(function* () {
+    const prisma = getServerlessPrisma();
+    
+    // 最近のイベントを事前取得
+    const recentEvents = yield* Effect.tryPromise({
+      try: () =>
+        prisma.event.findMany({
+          take: 10,
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            title: true,
+            dateRangeStart: true,
+            dateRangeEnd: true,
+          },
+        }),
+      catch: (error) => new Error(`Prefetch failed: ${error}`),
+    });
+    
+    // キャッシュに保存
+    const cache = yield* globalCache;
+    for (const event of recentEvents) {
+      const key = cacheKey("event:summary", event.id);
+      yield* cache.set(key, event, CACHE_TTL.static);
+    }
+  });
+}
+
+/**
+ * クエリ結果の圧縮
+ * 大きなデータセットを圧縮してメモリ使用量を削減
+ */
+export function compressQueryResult<T>(
+  data: T,
+  fields: readonly (keyof T)[]
+): Partial<T> {
+  const compressed: Partial<T> = {};
+  
+  for (const field of fields) {
+    if (field in data) {
+      compressed[field] = data[field];
+    }
+  }
+  
+  return compressed;
+}

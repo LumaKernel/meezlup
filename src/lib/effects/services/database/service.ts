@@ -1,5 +1,6 @@
 import { Effect, Context, Layer } from "effect";
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
+import { prisma as serverlessPrisma } from "@/lib/prisma/serverless";
 import { DatabaseError } from "../../errors";
 
 // DatabaseServiceのインターフェース
@@ -16,15 +17,10 @@ export class DatabaseService extends Context.Tag("DatabaseService")<
   DatabaseServiceType
 >() {}
 
-// PrismaClientの作成
+// PrismaClientの作成（サーバーレス対応）
 const makePrismaClient = Effect.sync(() => {
-  const client = new PrismaClient({
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["query", "error", "warn"]
-        : ["error"],
-  });
-  return client;
+  // サーバーレス用のPrismaクライアントを使用
+  return serverlessPrisma;
 });
 
 // DatabaseServiceの実装

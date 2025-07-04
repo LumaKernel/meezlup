@@ -1,0 +1,22 @@
+{
+  "functions": {
+    "src/app/api/edge-test/route.ts": {
+      "runtime": "edge",
+      "maxDuration": 10
+    },
+    "src/app/api/health/route.ts": {
+      "maxDuration": 10
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/health",
+      "schedule": "*/5 * * * *"
+    }
+  ],
+  "env": {
+    "PRISMA_HIDE_UPDATE_MESSAGE": "true",
+    "EDGE_RUNTIME": "true"
+  },
+  "buildCommand": "npm run prisma:setup-env && npm run build"
+}

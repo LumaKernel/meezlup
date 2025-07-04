@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # 開発環境用PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: meetzup
+      POSTGRES_PASSWORD: meetzup_dev
+      POSTGRES_DB: meetzup
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meetzup"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # PgBouncer (コネクションプーリング)
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    ports:
+      - "6432:5432"
+    environment:
+      DATABASES_HOST: postgres
+      DATABASES_PORT: 5432
+      DATABASES_USER: meetzup
+      DATABASES_PASSWORD: meetzup_dev
+      DATABASES_NAME: meetzup
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 100
+      DEFAULT_POOL_SIZE: 25
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
