@@ -3,7 +3,6 @@
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { UserProfile } from "@/components/auth/UserProfile";
 import { LoginButton } from "@/components/auth/LoginButton";
-import { useAuth } from "@/lib/auth/hooks";
 
 /**
  * プロフィールページ

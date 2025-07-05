@@ -2,14 +2,24 @@ import { Effect, Context, Schema, Option } from "effect";
 import type {
   AuthenticatedUser,
   AnonymousUser,
-  User,
   AuthState,
   UserId,
 } from "./schemas";
 import { AuthenticatedUserSchema, AnonymousUserSchema } from "./schemas";
 import { type DatabaseError } from "@/lib/effects/errors";
 import { auth0 } from "@/lib/auth0";
-import type { Session } from "@auth0/nextjs-auth0/server";
+// Auth0のセッション型を定義
+interface Session {
+  user: {
+    sub: string;
+    email: string;
+    name?: string;
+    picture?: string;
+    nickname?: string;
+    email_verified?: boolean;
+    [key: string]: unknown;
+  };
+}
 
 /**
  * 認証エラー
@@ -161,7 +171,6 @@ export const AuthServiceLive = Effect.gen(function* () {
     data: Partial<Omit<AuthenticatedUser, "id" | "createdAt">>,
   ) =>
     Effect.gen(function* () {
-      // TODO: データベース更新ロジックを実装
       const currentUser = yield* getAuthenticatedUser;
       if (Option.isNone(currentUser)) {
         return yield* Effect.fail(
@@ -171,17 +180,49 @@ export const AuthServiceLive = Effect.gen(function* () {
         );
       }
 
+      // データベースを更新
+      const updatedDbUser = yield* Effect.tryPromise({
+        try: async () => {
+          const { PrismaClient } = await import("@prisma/client");
+          const prisma = new PrismaClient();
+          
+          try {
+            return await prisma.user.update({
+              where: { auth0Id: userId },
+              data: {
+                email: data.email,
+                name: data.name,
+                updatedAt: new Date(),
+              },
+            });
+          } finally {
+            await prisma.$disconnect();
+          }
+        },
+        catch: (error) =>
+          new AuthError({
+            message: "ユーザー情報の更新に失敗しました",
+            cause: error,
+          }),
+      });
+
+      // 更新されたユーザー情報を返す
       const updatedUser = {
-        ...currentUser.value,
-        ...data,
-        updatedAt: new Date().toISOString() as any,
+        id: updatedDbUser.auth0Id as UserId,
+        email: updatedDbUser.email,
+        name: updatedDbUser.name,
+        picture: currentUser.value.picture,
+        nickname: currentUser.value.nickname,
+        emailVerified: currentUser.value.emailVerified,
+        createdAt: updatedDbUser.createdAt.toISOString(),
+        updatedAt: updatedDbUser.updatedAt.toISOString(),
       };
 
       return yield* Effect.try({
         try: () => Schema.decodeUnknownSync(AuthenticatedUserSchema)(updatedUser),
         catch: (error) =>
           new AuthError({
-            message: "ユーザー情報の更新に失敗しました",
+            message: "ユーザー情報の変換に失敗しました",
             cause: error,
           }),
       });
@@ -189,22 +230,56 @@ export const AuthServiceLive = Effect.gen(function* () {
 
   const syncWithAuth0 = (session: Session) =>
     Effect.gen(function* () {
+      // データベースにユーザー情報を保存または更新
+      const dbUser = yield* Effect.tryPromise({
+        try: async () => {
+          const { PrismaClient } = await import("@prisma/client");
+          const prisma = new PrismaClient();
+          
+          try {
+            const userData = {
+              auth0Id: session.user.sub,
+              email: session.user.email,
+              name: session.user.name || session.user.nickname || session.user.email,
+            };
+
+            return await prisma.user.upsert({
+              where: { auth0Id: userData.auth0Id },
+              update: {
+                email: userData.email,
+                name: userData.name,
+                updatedAt: new Date(),
+              },
+              create: userData,
+            });
+          } finally {
+            await prisma.$disconnect();
+          }
+        },
+        catch: (error) =>
+          new AuthError({
+            message: "データベースとの同期に失敗しました",
+            cause: error,
+          }),
+      });
+
+      // AuthenticatedUserSchemaに合わせて返す
       const userData = {
         id: session.user.sub as UserId,
         email: session.user.email,
-        name: session.user.name,
+        name: session.user.name || session.user.nickname || session.user.email,
         picture: session.user.picture,
         nickname: session.user.nickname,
         emailVerified: session.user.email_verified,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: dbUser.createdAt.toISOString(),
+        updatedAt: dbUser.updatedAt.toISOString(),
       };
 
       return yield* Effect.try({
         try: () => Schema.decodeUnknownSync(AuthenticatedUserSchema)(userData),
         catch: (error) =>
           new AuthError({
-            message: "Auth0ユーザー情報の同期に失敗しました",
+            message: "Auth0ユーザー情報の変換に失敗しました",
             cause: error,
           }),
       });
@@ -223,5 +298,5 @@ export const AuthServiceLive = Effect.gen(function* () {
  * セッションID生成
  */
 function generateSessionId(): string {
-  return `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  return `session_${Date.now() satisfies number}_${Math.random().toString(36).substring(2, 11) satisfies string}`;
 }

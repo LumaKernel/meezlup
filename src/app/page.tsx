@@ -1,7 +1,6 @@
 "use client";
 
 import { LoginButton } from "@/components/auth/LoginButton";
-import { UserProfile } from "@/components/auth/UserProfile";
 import { useAuth } from "@/lib/auth/hooks";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";

@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/require-await */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useAuth, useAuthActions } from "./hooks";
-import type { ReactNode } from "react";
 
 // fetchのモック
 global.fetch = vi.fn();
@@ -113,6 +113,7 @@ describe("useAuthActions", () => {
   });
 
   afterEach(() => {
+    // @ts-expect-error - location is read-only  
     window.location = originalLocation;
   });
 
