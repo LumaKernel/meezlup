@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack --port 5825",
     "build": "npm run prisma:generate && next build",
     "start": "next start",
     "lint": "npm run _lint:eslint && npm run _lint:prettier -- --list-different",

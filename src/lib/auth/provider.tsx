@@ -1,6 +1,6 @@
 "use client";
 
-import { UserProvider } from "@auth0/nextjs-auth0/client";
+import { Auth0Provider } from "@auth0/nextjs-auth0";
 import type { ReactNode } from "react";
 
 interface AuthProviderProps {
@@ -13,13 +13,13 @@ interface AuthProviderProps {
  */
 export function AuthProvider({ children }: AuthProviderProps) {
   return (
-    <UserProvider
+    <Auth0Provider
       // エラー時のリダイレクト先
       loginUrl="/api/auth/login"
       // プロフィール取得のエンドポイント
       profileUrl="/api/auth/me"
     >
       {children}
-    </UserProvider>
+    </Auth0Provider>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser as useAuth0User } from "@auth0/nextjs-auth0/client";
+import { useUser as useAuth0User } from "@auth0/nextjs-auth0";
 import { useMemo } from "react";
 
 /**

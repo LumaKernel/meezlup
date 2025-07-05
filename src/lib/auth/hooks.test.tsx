@@ -1,15 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useAuth, useAuthActions } from "./hooks";
-import { UserProvider } from "@auth0/nextjs-auth0/client";
+import { Auth0Provider } from "@auth0/nextjs-auth0";
 import type { ReactNode } from "react";
 
 // Auth0のuseUserフックをモック
 const mockUseUser = vi.fn();
 
-vi.mock("@auth0/nextjs-auth0/client", () => ({
+vi.mock("@auth0/nextjs-auth0", () => ({
   useUser: () => mockUseUser(),
-  UserProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+  Auth0Provider: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
 describe("useAuth", () => {
