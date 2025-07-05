@@ -1,6 +1,5 @@
 "use client";
 
-import { Auth0Provider } from "@auth0/nextjs-auth0";
 import type { ReactNode } from "react";
 
 interface AuthProviderProps {
@@ -9,17 +8,9 @@ interface AuthProviderProps {
 
 /**
  * Auth0認証プロバイダー
- * アプリケーション全体で認証状態を管理
+ * Auth0 v4ではmiddlewareで認証を処理するため、
+ * クライアント側のプロバイダーは不要
  */
 export function AuthProvider({ children }: AuthProviderProps) {
-  return (
-    <Auth0Provider
-      // エラー時のリダイレクト先
-      loginUrl="/api/auth/login"
-      // プロフィール取得のエンドポイント
-      profileUrl="/api/auth/me"
-    >
-      {children}
-    </Auth0Provider>
-  );
+  return <>{children}</>;
 }

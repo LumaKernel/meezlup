@@ -1,0 +1,34 @@
+Auth0 v4 トラブルシューティング
+
+## 現在の問題
+- /auth/login にアクセスすると404エラー
+- middlewareが正しく動作していない可能性
+
+## 確認事項
+
+1. **開発サーバーの再起動**
+   - Ctrl+C で停止
+   - npm run dev で再起動
+   - 環境変数の変更は再起動が必要
+
+2. **Auth0管理画面の設定確認**
+   - Application Type: Regular Web Application (SPAではない)
+   - Allowed Callback URLs に http://localhost:5825/auth/callback を追加
+   - Allowed Logout URLs に http://localhost:5825 を追加
+
+3. **コンソールログの確認**
+   - [Middleware] のログが表示されているか
+   - エラーメッセージが表示されていないか
+
+4. **環境変数の確認**
+   - AUTH0_SECRET: 32バイトのランダム文字列
+   - APP_BASE_URL: http://localhost:5825
+   - AUTH0_DOMAIN: luma.jp.auth0.com
+   - AUTH0_CLIENT_ID: 正しい値
+   - AUTH0_CLIENT_SECRET: 正しい値
+
+## 次のステップ
+1. 開発サーバーを再起動
+2. http://localhost:5825/auth/login にアクセス
+3. コンソールログを確認
+4. Auth0のUniversal Login画面にリダイレクトされることを確認

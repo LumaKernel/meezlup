@@ -8,8 +8,8 @@ import type {
 } from "./schemas";
 import { AuthenticatedUserSchema, AnonymousUserSchema } from "./schemas";
 import { type DatabaseError } from "@/lib/effects/errors";
-import type { Session } from "@auth0/nextjs-auth0";
-import { getSession } from "@auth0/nextjs-auth0";
+import { auth0 } from "@/lib/auth0";
+import type { Session } from "@auth0/nextjs-auth0/server";
 
 /**
  * 認証エラー
@@ -73,7 +73,7 @@ export const AuthServiceLive = Effect.gen(function* () {
     try {
       // Auth0セッションを取得
       const session = yield* Effect.tryPromise({
-        try: () => getSession(),
+        try: () => auth0.getSession(),
         catch: (error) =>
           new AuthError({
             message: "セッション取得に失敗しました",

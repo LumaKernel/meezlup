@@ -1,24 +1,13 @@
 "use client";
 
-import { useUser as useAuth0User } from "@auth0/nextjs-auth0";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * ユーザー認証状態
  */
-export interface AuthState {
-  readonly isAuthenticated: boolean;
-  readonly isLoading: boolean;
-  readonly user: AuthUser | null;
-  readonly error?: Error;
-}
-
-/**
- * 認証済みユーザー情報
- */
 export interface AuthUser {
   readonly id: string;
-  readonly email?: string;
+  readonly email: string;
   readonly name?: string;
   readonly picture?: string;
   readonly nickname?: string;
@@ -26,73 +15,94 @@ export interface AuthUser {
 }
 
 /**
- * 認証状態を取得するカスタムフック
+ * 認証状態のインターフェース
  */
-export function useAuth(): AuthState {
-  const { error, isLoading, user } = useAuth0User();
-
-  const authState = useMemo<AuthState>(() => {
-    if (isLoading) {
-      return {
-        isAuthenticated: false,
-        isLoading: true,
-        user: null,
-      };
-    }
-
-    if (error) {
-      return {
-        isAuthenticated: false,
-        isLoading: false,
-        user: null,
-        error,
-      };
-    }
-
-    if (!user) {
-      return {
-        isAuthenticated: false,
-        isLoading: false,
-        user: null,
-      };
-    }
-
-    // Auth0のユーザー情報を正規化
-    const authUser: AuthUser = {
-      id: user.sub ?? "",
-      email: user.email,
-      name: user.name,
-      picture: user.picture,
-      nickname: user.nickname,
-      emailVerified: user.email_verified,
-    };
-
-    return {
-      isAuthenticated: true,
-      isLoading: false,
-      user: authUser,
-    };
-  }, [user, error, isLoading]);
-
-  return authState;
+export interface UseAuthResult {
+  readonly isAuthenticated: boolean;
+  readonly isLoading: boolean;
+  readonly user: AuthUser | null;
+  readonly error?: Error;
 }
 
 /**
- * ログイン・ログアウト機能を提供するフック
+ * 認証状態を取得するカスタムフック
+ * Auth0 v4ではクライアント側でuseUserフックが提供されないため、
+ * /auth/profileエンドポイントから取得
  */
-export function useAuthActions() {
+export function useAuth(): UseAuthResult {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | undefined>(undefined);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/auth/profile");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.user) {
+            setUser({
+              id: data.user.sub,
+              email: data.user.email,
+              name: data.user.name,
+              picture: data.user.picture,
+              nickname: data.user.nickname,
+              emailVerified: data.user.email_verified,
+            });
+          }
+        } else if (response.status !== 401) {
+          throw new Error("Failed to fetch user profile");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error("Unknown error"));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   return {
-    login: (returnTo?: string) => {
-      const loginUrl = returnTo
-        ? `/api/auth/login?returnTo=${encodeURIComponent(returnTo)}`
-        : "/api/auth/login";
+    isAuthenticated: !!user,
+    isLoading,
+    user,
+    error,
+  };
+}
+
+/**
+ * 認証アクションのインターフェース
+ */
+export interface UseAuthActionsResult {
+  readonly login: (returnTo?: string) => void;
+  readonly logout: (returnTo?: string) => void;
+}
+
+/**
+ * 認証アクションを提供するカスタムフック
+ */
+export function useAuthActions(): UseAuthActionsResult {
+  const login = (returnTo?: string) => {
+    const loginUrl = "/auth/login";
+    if (returnTo) {
+      window.location.href = `${loginUrl}?returnTo=${encodeURIComponent(returnTo)}`;
+    } else {
       window.location.href = loginUrl;
-    },
-    logout: (returnTo?: string) => {
-      const logoutUrl = returnTo
-        ? `/api/auth/logout?returnTo=${encodeURIComponent(returnTo)}`
-        : "/api/auth/logout";
+    }
+  };
+
+  const logout = (returnTo?: string) => {
+    const logoutUrl = "/auth/logout";
+    if (returnTo) {
+      window.location.href = `${logoutUrl}?returnTo=${encodeURIComponent(returnTo)}`;
+    } else {
       window.location.href = logoutUrl;
-    },
+    }
+  };
+
+  return {
+    login,
+    logout,
   };
 }

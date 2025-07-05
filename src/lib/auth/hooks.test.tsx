@@ -1,24 +1,20 @@
-import { describe, it, expect, vi } from "vitest";
-import { renderHook } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook, waitFor } from "@testing-library/react";
 import { useAuth, useAuthActions } from "./hooks";
-import { Auth0Provider } from "@auth0/nextjs-auth0";
 import type { ReactNode } from "react";
 
-// Auth0のuseUserフックをモック
-const mockUseUser = vi.fn();
-
-vi.mock("@auth0/nextjs-auth0", () => ({
-  useUser: () => mockUseUser(),
-  Auth0Provider: ({ children }: { children: ReactNode }) => <>{children}</>,
-}));
+// fetchのモック
+global.fetch = vi.fn();
 
 describe("useAuth", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("ローディング中の状態を返す", () => {
-    mockUseUser.mockReturnValue({
-      user: undefined,
-      error: undefined,
-      isLoading: true,
+    (fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ user: null }),
     });
 
     const { result } = renderHook(() => useAuth());
@@ -27,26 +23,31 @@ describe("useAuth", () => {
       isAuthenticated: false,
       isLoading: true,
       user: null,
+      error: undefined,
     });
   });
 
-  it("未認証状態を返す", () => {
-    mockUseUser.mockReturnValue({
-      user: undefined,
-      error: undefined,
-      isLoading: false,
+  it("未認証状態を返す", async () => {
+    (fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ user: null }),
     });
 
     const { result } = renderHook(() => useAuth());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
 
     expect(result.current).toEqual({
       isAuthenticated: false,
       isLoading: false,
       user: null,
+      error: undefined,
     });
   });
 
-  it("認証済み状態を返す", () => {
+  it("認証済み状態を返す", async () => {
     const mockUser = {
       sub: "auth0|123456",
       email: "test@example.com",
@@ -56,13 +57,16 @@ describe("useAuth", () => {
       email_verified: true,
     };
 
-    mockUseUser.mockReturnValue({
-      user: mockUser,
-      error: undefined,
-      isLoading: false,
+    (fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ user: mockUser }),
     });
 
     const { result } = renderHook(() => useAuth());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
 
     expect(result.current).toEqual({
       isAuthenticated: true,
@@ -75,25 +79,24 @@ describe("useAuth", () => {
         nickname: "testuser",
         emailVerified: true,
       },
+      error: undefined,
     });
   });
 
-  it("エラー状態を処理する", () => {
-    const mockError = new Error("認証エラー");
-
-    mockUseUser.mockReturnValue({
-      user: undefined,
-      error: mockError,
-      isLoading: false,
-    });
+  it("エラー状態を処理する", async () => {
+    (fetch as any).mockRejectedValueOnce(new Error("Network error"));
 
     const { result } = renderHook(() => useAuth());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
 
     expect(result.current).toEqual({
       isAuthenticated: false,
       isLoading: false,
       user: null,
-      error: mockError,
+      error: expect.any(Error),
     });
   });
 });
@@ -117,11 +120,11 @@ describe("useAuthActions", () => {
     const { result } = renderHook(() => useAuthActions());
 
     result.current.login();
-    expect(window.location.href).toBe("/api/auth/login");
+    expect(window.location.href).toBe("/auth/login");
 
     result.current.login("/dashboard");
     expect(window.location.href).toBe(
-      "/api/auth/login?returnTo=%2Fdashboard",
+      "/auth/login?returnTo=%2Fdashboard",
     );
   });
 
@@ -129,9 +132,9 @@ describe("useAuthActions", () => {
     const { result } = renderHook(() => useAuthActions());
 
     result.current.logout();
-    expect(window.location.href).toBe("/api/auth/logout");
+    expect(window.location.href).toBe("/auth/logout");
 
     result.current.logout("/");
-    expect(window.location.href).toBe("/api/auth/logout?returnTo=%2F");
+    expect(window.location.href).toBe("/auth/logout?returnTo=%2F");
   });
 });
