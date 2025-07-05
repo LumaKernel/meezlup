@@ -1,0 +1,126 @@
+# Auth0 Setup Guide for Meetzup
+
+## 管理画面での設定手順
+
+### 1. Auth0テナントへのアクセス
+- URL: https://luma.jp.auth0.com にアクセス
+- 管理者アカウントでログイン
+
+### 2. アプリケーションの作成
+1. Applications > Applications に移動
+2. "Create Application" をクリック
+3. 設定内容:
+   - Name: Meetzup Development (開発環境用)
+   - Application Type: Single Page Application
+   - Technology: React を選択
+
+### 3. アプリケーション設定
+Settings タブで以下を設定:
+
+#### 基本設定
+- Domain: luma.jp.auth0.com （自動設定）
+- Client ID: （自動生成される値をコピー）
+- Client Secret: （自動生成される値をコピー）
+
+#### 重要な設定変更
+- Token Endpoint Authentication Method: **None** に変更（SPAの場合必須）
+
+#### URLs設定
+- **Allowed Callback URLs**:
+  ```
+  http://localhost:3000/api/auth/callback
+  ```
+
+- **Allowed Logout URLs**:
+  ```
+  http://localhost:3000
+  ```
+
+- **Allowed Web Origins**:
+  ```
+  http://localhost:3000
+  ```
+
+- **Allowed Origins (CORS)**:
+  ```
+  http://localhost:3000
+  ```
+
+### 4. Advanced Settings
+- Grant Types タブ:
+  - Authorization Code: ✓
+  - Implicit: ✗ （無効にする）
+  - Refresh Token: ✓
+  - Client Credentials: ✗
+
+### 5. 本番環境用の追加設定
+本番環境デプロイ時は、上記URLsに以下を追加:
+- Allowed Callback URLs: `https://meetzup.app/api/auth/callback`
+- Allowed Logout URLs: `https://meetzup.app`
+- Allowed Web Origins: `https://meetzup.app`
+- Allowed Origins (CORS): `https://meetzup.app`
+
+## 環境変数の設定
+
+### 1. .env.localファイルの作成
+`.env.example`をコピーして`.env.local`を作成:
+
+```bash
+cp .env.example .env.local
+```
+
+### 2. Auth0関連の環境変数を設定
+管理画面から取得した値を設定:
+
+```env
+# Auth0
+AUTH0_SECRET="[32文字以上のランダム文字列を生成]" # openssl rand -hex 32
+AUTH0_BASE_URL="http://localhost:3000"
+AUTH0_ISSUER_BASE_URL="https://luma.jp.auth0.com"
+AUTH0_CLIENT_ID="[管理画面からコピーしたClient ID]"
+AUTH0_CLIENT_SECRET="[管理画面からコピーしたClient Secret]"
+```
+
+### 3. Auth0 Secretの生成方法
+```bash
+openssl rand -hex 32
+```
+
+## 実装の確認事項
+
+### 現在の実装状況
+1. **@auth0/nextjs-auth0** パッケージを使用（React SDKではなくNext.js用SDK）
+2. API Route Handler (`/api/auth/[auth0]/route.ts`) で認証フローを処理
+3. Effect.tsを使用した認証サービスの実装
+4. 認証ガード、ログインボタン等のコンポーネント実装済み
+
+### 動作確認手順
+1. 開発サーバーを起動
+   ```bash
+   npm run dev
+   ```
+
+2. http://localhost:3000 にアクセス
+
+3. ログインボタンをクリックし、Auth0のUniversal Login画面が表示されることを確認
+
+4. ログイン後、正常にリダイレクトされることを確認
+
+## 追加の設定（オプション）
+
+### Social Connections（ソーシャルログイン）
+1. Auth0管理画面 > Authentication > Social
+2. Google, GitHub等を有効化
+3. 各プロバイダーのClient ID/Secretを設定
+
+### Database Connection（メール/パスワード）
+1. Auth0管理画面 > Authentication > Database
+2. Username-Password-Authentication を確認
+3. パスワードポリシー等を設定
+
+### Rules/Actions
+1. Auth0管理画面 > Actions > Flows
+2. Login フローでカスタムロジックを追加可能
+   - ユーザー情報の拡張
+   - 権限の付与
+   - 外部システムとの連携

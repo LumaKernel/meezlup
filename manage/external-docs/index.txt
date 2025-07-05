@@ -15,3 +15,10 @@
   - API Routes、Layer、Dependency Injectionの実装方法
   - @effect/rpcによるtRPCの置き換え手法
   - Schema検証、ストリーミング、ベストプラクティス
+
+## Auth0
+- manage/external-docs/auth0/setup.txt
+  - Auth0公式のReact SDKセットアップガイド（参考用）
+- manage/external-docs/auth0/meetzup-setup-guide.txt
+  - MeetzupプロジェクトのAuth0セットアップガイド
+  - 管理画面での設定手順、環境変数設定、動作確認方法

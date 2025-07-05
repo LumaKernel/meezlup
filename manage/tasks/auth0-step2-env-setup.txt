@@ -1,0 +1,20 @@
+Auth0環境変数設定と動作確認タスク
+
+1. .env.localファイルの作成
+   - .env.exampleをコピーして.env.localを作成
+   - AUTH0_SECRET: openssl rand -hex 32 で生成した値を設定
+   - AUTH0_CLIENT_ID/CLIENT_SECRET: Auth0管理画面から取得した値を設定
+
+2. Auth0管理画面での最終確認
+   - Token Endpoint Authentication Method が "None" になっているか確認
+   - 各種URLs設定が正しく設定されているか確認
+
+3. 開発環境での動作確認
+   - npm run dev でサーバー起動
+   - ログイン/ログアウトフローの確認
+   - ユーザー情報表示の確認
+
+4. エラーが発生した場合のトラブルシューティング
+   - ブラウザのコンソールログを確認
+   - Auth0ダッシュボードのログを確認
+   - 環境変数が正しく読み込まれているか確認
