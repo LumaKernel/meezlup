@@ -32,7 +32,7 @@ export default function Home() {
             日程調整を
             <span className="text-primary">もっとシンプル</span>に
           </h2>
-          
+
           <p className="text-xl text-gray-600">
             友達や同僚との日程調整を簡単に。
             <br />

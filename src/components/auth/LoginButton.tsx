@@ -27,7 +27,9 @@ export function LoginButton({ className, returnTo }: LoginButtonProps) {
   if (isAuthenticated && user) {
     return (
       <Button
-        onClick={() => { logout(returnTo); }}
+        onPress={() => {
+          logout(returnTo);
+        }}
         variant="light"
         className={className}
       >
@@ -38,7 +40,9 @@ export function LoginButton({ className, returnTo }: LoginButtonProps) {
 
   return (
     <Button
-      onClick={() => { login(returnTo); }}
+      onPress={() => {
+        login(returnTo);
+      }}
       color="primary"
       className={className}
     >

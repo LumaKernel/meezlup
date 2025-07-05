@@ -25,7 +25,7 @@ export function AuthGuard({
     if (!isLoading && !isAuthenticated) {
       // 現在のURLを保持してログイン画面へリダイレクト
       const currentPath = window.location.pathname;
-      const loginUrl = `${redirectTo}?returnTo=${encodeURIComponent(currentPath)}`;
+      const loginUrl = `${redirectTo satisfies string}?returnTo=${encodeURIComponent(currentPath) satisfies string}`;
       router.push(loginUrl);
     }
   }, [isAuthenticated, isLoading, redirectTo, router]);

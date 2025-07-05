@@ -25,6 +25,20 @@ export interface UseAuthResult {
 }
 
 /**
+ * Auth0プロファイルレスポンスの型定義
+ */
+interface Auth0ProfileResponse {
+  user?: {
+    sub: string;
+    email: string;
+    name?: string;
+    picture?: string;
+    nickname?: string;
+    email_verified?: boolean;
+  };
+}
+
+/**
  * 認証状態を取得するカスタムフック
  * Auth0 v4ではクライアント側でuseUserフックが提供されないため、
  * /auth/profileエンドポイントから取得
@@ -39,7 +53,7 @@ export function useAuth(): UseAuthResult {
       try {
         const response = await fetch("/auth/profile");
         if (response.ok) {
-          const data = await response.json();
+          const data = (await response.json()) as Auth0ProfileResponse;
           if (data.user) {
             setUser({
               id: data.user.sub,
@@ -60,7 +74,9 @@ export function useAuth(): UseAuthResult {
       }
     };
 
-    fetchUser();
+    fetchUser().catch((err: unknown) => {
+      setError(err instanceof Error ? err : new Error("Unknown error"));
+    });
   }, []);
 
   return {
@@ -86,7 +102,7 @@ export function useAuthActions(): UseAuthActionsResult {
   const login = (returnTo?: string) => {
     const loginUrl = "/auth/login";
     if (returnTo) {
-      window.location.href = `${loginUrl}?returnTo=${encodeURIComponent(returnTo)}`;
+      window.location.href = `${loginUrl satisfies string}?returnTo=${encodeURIComponent(returnTo) satisfies string}`;
     } else {
       window.location.href = loginUrl;
     }
@@ -95,7 +111,7 @@ export function useAuthActions(): UseAuthActionsResult {
   const logout = (returnTo?: string) => {
     const logoutUrl = "/auth/logout";
     if (returnTo) {
-      window.location.href = `${logoutUrl}?returnTo=${encodeURIComponent(returnTo)}`;
+      window.location.href = `${logoutUrl satisfies string}?returnTo=${encodeURIComponent(returnTo) satisfies string}`;
     } else {
       window.location.href = logoutUrl;
     }

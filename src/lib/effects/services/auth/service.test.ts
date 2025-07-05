@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Effect, Context, Option } from "effect";
-import { AuthService, AuthServiceLive, AuthError } from "./service";
+import { AuthServiceLive } from "./service";
 // Auth0のセッション型を定義
 interface Session {
   user: {
@@ -73,7 +73,7 @@ describe("AuthService", () => {
 
       const authService = await Effect.runPromise(AuthServiceLive);
       const result = await Effect.runPromise(
-        Effect.provide(authService.syncWithAuth0(testSession), Context.empty())
+        Effect.provide(authService.syncWithAuth0(testSession), Context.empty()),
       );
 
       expect(mockPrismaUser.upsert).toHaveBeenCalledWith({
@@ -116,7 +116,10 @@ describe("AuthService", () => {
 
       const authService = await Effect.runPromise(AuthServiceLive);
       const result = await Effect.runPromise(
-        Effect.provide(authService.syncWithAuth0(updatedSession), Context.empty())
+        Effect.provide(
+          authService.syncWithAuth0(updatedSession),
+          Context.empty(),
+        ),
       );
 
       expect(result.name).toBe("Updated Name");
@@ -127,11 +130,14 @@ describe("AuthService", () => {
       mockPrismaUser.upsert.mockRejectedValue(new Error("Database error"));
 
       const authService = await Effect.runPromise(AuthServiceLive);
-      
+
       await expect(
         Effect.runPromise(
-          Effect.provide(authService.syncWithAuth0(testSession), Context.empty())
-        )
+          Effect.provide(
+            authService.syncWithAuth0(testSession),
+            Context.empty(),
+          ),
+        ),
       ).rejects.toThrow("データベースとの同期に失敗しました");
     });
 
@@ -157,7 +163,10 @@ describe("AuthService", () => {
 
       const authService = await Effect.runPromise(AuthServiceLive);
       await Effect.runPromise(
-        Effect.provide(authService.syncWithAuth0(sessionWithoutName), Context.empty())
+        Effect.provide(
+          authService.syncWithAuth0(sessionWithoutName),
+          Context.empty(),
+        ),
       );
 
       expect(mockPrismaUser.upsert).toHaveBeenCalledWith(
@@ -165,7 +174,7 @@ describe("AuthService", () => {
           create: expect.objectContaining({
             name: "testuser",
           }),
-        })
+        }),
       );
     });
   });
@@ -176,14 +185,16 @@ describe("AuthService", () => {
       (auth0.getSession as any).mockResolvedValue(null);
 
       const authService = await Effect.runPromise(AuthServiceLive);
-      
+
       await expect(
         Effect.runPromise(
           Effect.provide(
-            authService.updateUser("auth0|test123" as any, { name: "Updated Name" }),
-            Context.empty()
-          )
-        )
+            authService.updateUser("auth0|test123" as any, {
+              name: "Updated Name",
+            }),
+            Context.empty(),
+          ),
+        ),
       ).rejects.toThrow("認証されていません");
     });
 
@@ -205,9 +216,11 @@ describe("AuthService", () => {
       const authService = await Effect.runPromise(AuthServiceLive);
       const result = await Effect.runPromise(
         Effect.provide(
-          authService.updateUser("auth0|test123" as any, { name: "Updated Name" }),
-          Context.empty()
-        )
+          authService.updateUser("auth0|test123" as any, {
+            name: "Updated Name",
+          }),
+          Context.empty(),
+        ),
       );
 
       expect(mockPrismaUser.update).toHaveBeenCalledWith({
@@ -229,11 +242,11 @@ describe("AuthService", () => {
 
       const authService = await Effect.runPromise(AuthServiceLive);
       const result = await Effect.runPromise(
-        Effect.provide(authService.getCurrentAuthState, Context.empty())
+        Effect.provide(authService.getCurrentAuthState, Context.empty()),
       );
 
       expect(result.isAuthenticated).toBe(true);
-      if ('email' in result.user) {
+      if ("email" in result.user) {
         expect(result.user.email).toBe("test@example.com");
         expect(result.user.name).toBe("Test User");
       }
@@ -255,11 +268,11 @@ describe("AuthService", () => {
 
       const authService = await Effect.runPromise(AuthServiceLive);
       const result = await Effect.runPromise(
-        Effect.provide(authService.getCurrentAuthState, Context.empty())
+        Effect.provide(authService.getCurrentAuthState, Context.empty()),
       );
 
       expect(result.isAuthenticated).toBe(false);
-      if ('isAnonymous' in result.user) {
+      if ("isAnonymous" in result.user) {
         expect(result.user.isAnonymous).toBe(true);
         expect(result.user.sessionId).toBe("test-session-id");
       }
@@ -273,7 +286,7 @@ describe("AuthService", () => {
 
       const authService = await Effect.runPromise(AuthServiceLive);
       const result = await Effect.runPromise(
-        Effect.provide(authService.getAuthenticatedUser, Context.empty())
+        Effect.provide(authService.getAuthenticatedUser, Context.empty()),
       );
 
       expect(Option.isSome(result)).toBe(true);
@@ -288,7 +301,7 @@ describe("AuthService", () => {
 
       const authService = await Effect.runPromise(AuthServiceLive);
       const result = await Effect.runPromise(
-        Effect.provide(authService.getAuthenticatedUser, Context.empty())
+        Effect.provide(authService.getAuthenticatedUser, Context.empty()),
       );
 
       expect(Option.isNone(result)).toBe(true);

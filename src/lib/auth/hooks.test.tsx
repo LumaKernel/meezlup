@@ -113,7 +113,7 @@ describe("useAuthActions", () => {
   });
 
   afterEach(() => {
-    // @ts-expect-error - location is read-only  
+    // @ts-expect-error - location is read-only
     window.location = originalLocation;
   });
 
@@ -124,9 +124,7 @@ describe("useAuthActions", () => {
     expect(window.location.href).toBe("/auth/login");
 
     result.current.login("/dashboard");
-    expect(window.location.href).toBe(
-      "/auth/login?returnTo=%2Fdashboard",
-    );
+    expect(window.location.href).toBe("/auth/login?returnTo=%2Fdashboard");
   });
 
   it("ログアウト関数が正しいURLを設定する", () => {

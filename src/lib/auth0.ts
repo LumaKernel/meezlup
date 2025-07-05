@@ -6,7 +6,10 @@ export const auth0 = new Auth0Client({
     if (error) {
       console.error("Auth0 callback error:", error);
       return NextResponse.redirect(
-        new URL(`/error?error=${encodeURIComponent(error.message) satisfies string}`, process.env.APP_BASE_URL || "http://localhost:5825")
+        new URL(
+          `/error?error=${encodeURIComponent(error.message) satisfies string}`,
+          process.env.APP_BASE_URL || "http://localhost:5825",
+        ),
       );
     }
 
@@ -23,7 +26,10 @@ export const auth0 = new Auth0Client({
 
     // ログイン成功後のリダイレクト
     return NextResponse.redirect(
-      new URL(context.returnTo || "/", process.env.APP_BASE_URL || "http://localhost:5825")
+      new URL(
+        context.returnTo || "/",
+        process.env.APP_BASE_URL || "http://localhost:5825",
+      ),
     );
   },
 });
@@ -31,7 +37,9 @@ export const auth0 = new Auth0Client({
 /**
  * Auth0セッションとデータベースを同期
  */
-async function syncUserWithDatabase(session: { user: { sub: string; email?: string; name?: string; nickname?: string } }) {
+async function syncUserWithDatabase(session: {
+  user: { sub: string; email?: string; name?: string; nickname?: string };
+}) {
   const { PrismaClient } = await import("@prisma/client");
   const prisma = new PrismaClient();
 

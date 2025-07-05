@@ -16,7 +16,9 @@ export const AuthenticatedUserSchema = Schema.Struct({
   updatedAt: Schema.DateTimeUtc,
 });
 
-export type AuthenticatedUser = Schema.Schema.Type<typeof AuthenticatedUserSchema>;
+export type AuthenticatedUser = Schema.Schema.Type<
+  typeof AuthenticatedUserSchema
+>;
 
 // 匿名ユーザー
 export const AnonymousUserSchema = Schema.Struct({
@@ -29,7 +31,10 @@ export const AnonymousUserSchema = Schema.Struct({
 export type AnonymousUser = Schema.Schema.Type<typeof AnonymousUserSchema>;
 
 // ユーザー（認証済み or 匿名）
-export const UserSchema = Schema.Union(AuthenticatedUserSchema, AnonymousUserSchema);
+export const UserSchema = Schema.Union(
+  AuthenticatedUserSchema,
+  AnonymousUserSchema,
+);
 export type User = Schema.Schema.Type<typeof UserSchema>;
 
 // 認証状態

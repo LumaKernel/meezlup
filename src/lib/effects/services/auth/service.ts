@@ -1,11 +1,10 @@
 import { Effect, Context, Schema, Option } from "effect";
-import type {
-  AuthenticatedUser,
-  AnonymousUser,
-  AuthState,
+import type { AuthenticatedUser, AnonymousUser, AuthState } from "./schemas";
+import {
+  AuthenticatedUserSchema,
+  AnonymousUserSchema,
   UserId,
 } from "./schemas";
-import { AuthenticatedUserSchema, AnonymousUserSchema } from "./schemas";
 import { type DatabaseError } from "@/lib/effects/errors";
 import { auth0 } from "@/lib/auth0";
 // Auth0のセッション型を定義
@@ -17,6 +16,7 @@ interface Session {
     picture?: string;
     nickname?: string;
     email_verified?: boolean;
+    sid?: string;
     [key: string]: unknown;
   };
 }
@@ -24,13 +24,10 @@ interface Session {
 /**
  * 認証エラー
  */
-export class AuthError extends Schema.TaggedError<AuthError>()(
-  "AuthError",
-  {
-    message: Schema.String,
-    cause: Schema.optional(Schema.Unknown),
-  },
-) {}
+export class AuthError extends Schema.TaggedError<AuthError>()("AuthError", {
+  message: Schema.String,
+  cause: Schema.optional(Schema.Unknown),
+}) {}
 
 /**
  * 認証サービスインターフェース
@@ -78,7 +75,7 @@ export const AuthService = Context.GenericTag<AuthService>("AuthService");
 /**
  * 認証サービスの実装
  */
-export const AuthServiceLive = Effect.gen(function* () {
+export const AuthServiceLive = Effect.sync(() => {
   const getCurrentAuthState = Effect.gen(function* () {
     try {
       // Auth0セッションを取得
@@ -115,7 +112,9 @@ export const AuthServiceLive = Effect.gen(function* () {
         return {
           isAuthenticated: true,
           user,
-          sessionId: session.user.sid || generateSessionId(),
+          sessionId: Schema.decodeUnknownOption(Schema.String)(
+            session.user.sid,
+          ).pipe(Option.getOrElse(() => generateSessionId())),
         };
       } else {
         // 匿名ユーザー
@@ -126,7 +125,7 @@ export const AuthServiceLive = Effect.gen(function* () {
           sessionId: anonymousUser.sessionId,
         };
       }
-    } catch (error) {
+    } catch {
       // エラーの場合も匿名ユーザーとして扱う
       const anonymousUser = yield* getOrCreateAnonymousUser;
       return {
@@ -139,8 +138,10 @@ export const AuthServiceLive = Effect.gen(function* () {
 
   const getAuthenticatedUser = Effect.gen(function* () {
     const authState = yield* getCurrentAuthState;
-    if (authState.isAuthenticated && authState.user && "email" in authState.user) {
-      return Option.some(authState.user);
+    if (authState.isAuthenticated && "email" in authState.user) {
+      return Option.some(
+        Schema.decodeUnknownSync(AuthenticatedUserSchema)(authState.user),
+      );
     }
     return Option.none();
   });
@@ -185,7 +186,7 @@ export const AuthServiceLive = Effect.gen(function* () {
         try: async () => {
           const { PrismaClient } = await import("@prisma/client");
           const prisma = new PrismaClient();
-          
+
           try {
             return await prisma.user.update({
               where: { auth0Id: userId },
@@ -208,7 +209,7 @@ export const AuthServiceLive = Effect.gen(function* () {
 
       // 更新されたユーザー情報を返す
       const updatedUser = {
-        id: updatedDbUser.auth0Id as UserId,
+        id: Schema.decodeUnknownSync(UserId)(updatedDbUser.auth0Id),
         email: updatedDbUser.email,
         name: updatedDbUser.name,
         picture: currentUser.value.picture,
@@ -219,7 +220,8 @@ export const AuthServiceLive = Effect.gen(function* () {
       };
 
       return yield* Effect.try({
-        try: () => Schema.decodeUnknownSync(AuthenticatedUserSchema)(updatedUser),
+        try: () =>
+          Schema.decodeUnknownSync(AuthenticatedUserSchema)(updatedUser),
         catch: (error) =>
           new AuthError({
             message: "ユーザー情報の変換に失敗しました",
@@ -235,12 +237,15 @@ export const AuthServiceLive = Effect.gen(function* () {
         try: async () => {
           const { PrismaClient } = await import("@prisma/client");
           const prisma = new PrismaClient();
-          
+
           try {
             const userData = {
               auth0Id: session.user.sub,
               email: session.user.email,
-              name: session.user.name || session.user.nickname || session.user.email,
+              name:
+                session.user.name ||
+                session.user.nickname ||
+                session.user.email,
             };
 
             return await prisma.user.upsert({
@@ -265,7 +270,7 @@ export const AuthServiceLive = Effect.gen(function* () {
 
       // AuthenticatedUserSchemaに合わせて返す
       const userData = {
-        id: session.user.sub as UserId,
+        id: Schema.decodeUnknownSync(UserId)(session.user.sub),
         email: session.user.email,
         name: session.user.name || session.user.nickname || session.user.email,
         picture: session.user.picture,

@@ -15,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "MeetzUp - 日程調整をもっとシンプルに",
-  description: "友達や同僚との日程調整を簡単に。MeetzUpで最適な日時を見つけよう。",
+  description:
+    "友達や同僚との日程調整を簡単に。MeetzUpで最適な日時を見つけよう。",
 };
 
 export default function RootLayout({
@@ -28,9 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable satisfies string} ${geistMono.variable satisfies string} antialiased`}
       >
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

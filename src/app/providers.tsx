@@ -11,9 +11,7 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <AuthProvider>
-      <HeroUIProvider>
-        {children}
-      </HeroUIProvider>
+      <HeroUIProvider>{children}</HeroUIProvider>
     </AuthProvider>
   );
 }

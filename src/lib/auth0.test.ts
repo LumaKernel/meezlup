@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/unbound-method */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { NextResponse } from "next/server";
 
@@ -66,7 +66,7 @@ describe("Auth0 Callback Handler", () => {
 
       expect(onCallback).toBeDefined();
 
-      const result = await onCallback(null, mockContext, mockSession);
+      const _result = await onCallback(null, mockContext, mockSession);
 
       expect(mockPrismaUser.upsert).toHaveBeenCalledWith({
         where: { auth0Id: "auth0|test123" },
@@ -82,8 +82,12 @@ describe("Auth0 Callback Handler", () => {
         },
       });
 
-      expect(NextResponse.redirect).toHaveBeenCalledWith(
-        new URL("/dashboard", "http://localhost:5825")
+      const mockRedirect = vi.mocked(NextResponse.redirect);
+
+      expect(mockRedirect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          href: "http://localhost:5825/dashboard",
+        }),
       );
     });
 
@@ -94,16 +98,22 @@ describe("Auth0 Callback Handler", () => {
       const { auth0 } = await import("./auth0");
       const onCallback = (auth0 as any).options?.onCallback;
 
-      const result = await onCallback(mockError, mockContext, null);
+      const _result = await onCallback(mockError, mockContext, null);
 
-      expect(NextResponse.redirect).toHaveBeenCalledWith(
-        new URL("/error?error=Auth0%20error", "http://localhost:5825")
+      const mockRedirect = vi.mocked(NextResponse.redirect);
+
+      expect(mockRedirect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          href: "http://localhost:5825/error?error=Auth0%20error",
+        }),
       );
     });
 
     it("データベースエラー時もログインを継続し、エラーをログに出力する", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
       const mockSession = {
         user: {
           sub: "auth0|test123",
@@ -121,16 +131,20 @@ describe("Auth0 Callback Handler", () => {
       const { auth0 } = await import("./auth0");
       const onCallback = (auth0 as any).options?.onCallback;
 
-      const result = await onCallback(null, mockContext, mockSession);
+      const _result = await onCallback(null, mockContext, mockSession);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         "Database sync error:",
-        expect.any(Error)
+        expect.any(Error),
       );
 
       // エラーが発生してもログインは継続される
-      expect(NextResponse.redirect).toHaveBeenCalledWith(
-        new URL("/", "http://localhost:5825")
+      const mockRedirect = vi.mocked(NextResponse.redirect);
+
+      expect(mockRedirect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          href: "http://localhost:5825/",
+        }),
       );
 
       consoleSpy.mockRestore();
@@ -169,7 +183,7 @@ describe("Auth0 Callback Handler", () => {
           create: expect.objectContaining({
             name: "testuser",
           }),
-        })
+        }),
       );
     });
 
@@ -206,7 +220,7 @@ describe("Auth0 Callback Handler", () => {
           create: expect.objectContaining({
             name: "test@example.com",
           }),
-        })
+        }),
       );
     });
   });
