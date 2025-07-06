@@ -1,32 +1,26 @@
 import {
-  Button as HeroButton,
-  type ButtonProps as HeroButtonProps,
-} from "@heroui/react";
+  Button as MantineButton,
+  type ButtonProps as MantineButtonProps,
+  Loader,
+} from "@mantine/core";
 import { forwardRef } from "react";
-import { cn } from "@/lib/utils";
 
-export type ButtonProps = HeroButtonProps & {
+export type ButtonProps = MantineButtonProps & {
   loading?: boolean;
+  onClick?: () => void;
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ children, className, disabled, loading, ...props }, ref) => {
+  ({ children, disabled, loading, ...props }, ref) => {
     return (
-      <HeroButton
+      <MantineButton
         ref={ref}
-        className={cn(className)}
         disabled={disabled || loading}
+        leftSection={loading ? <Loader size="xs" /> : undefined}
         {...props}
       >
-        {loading ? (
-          <span className="flex items-center gap-2">
-            <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
-            読み込み中...
-          </span>
-        ) : (
-          children
-        )}
-      </HeroButton>
+        {loading ? "読み込み中..." : children}
+      </MantineButton>
     );
   },
 );

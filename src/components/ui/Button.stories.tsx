@@ -12,35 +12,42 @@ const meta = {
     variant: {
       control: "select",
       options: [
-        "solid",
-        "bordered",
+        "filled",
         "light",
-        "flat",
-        "faded",
-        "shadow",
-        "ghost",
+        "outline",
+        "transparent",
+        "subtle",
+        "default",
       ],
     },
     color: {
       control: "select",
       options: [
-        "default",
-        "primary",
-        "secondary",
-        "success",
-        "warning",
-        "danger",
+        "blue",
+        "cyan",
+        "dark",
+        "grape",
+        "gray",
+        "green",
+        "indigo",
+        "lime",
+        "orange",
+        "pink",
+        "red",
+        "teal",
+        "violet",
+        "yellow",
       ],
     },
     size: {
       control: "select",
-      options: ["sm", "md", "lg"],
+      options: ["xs", "sm", "md", "lg", "xl"],
     },
     radius: {
       control: "select",
-      options: ["none", "sm", "md", "lg", "full"],
+      options: ["xs", "sm", "md", "lg", "xl"],
     },
-    isDisabled: {
+    disabled: {
       control: "boolean",
     },
     loading: {
@@ -63,7 +70,7 @@ export const Default: Story = {
 export const Primary: Story = {
   args: {
     children: "プライマリー",
-    color: "primary",
+    color: "blue",
   },
 };
 
@@ -95,7 +102,7 @@ export const Loading: Story = {
 export const Disabled: Story = {
   args: {
     children: "無効なボタン",
-    isDisabled: true,
+    disabled: true,
   },
 };
 
@@ -103,12 +110,12 @@ export const Disabled: Story = {
 export const Colors: Story = {
   render: () => (
     <div className="flex flex-wrap gap-4">
-      <Button color="default">Default</Button>
-      <Button color="primary">Primary</Button>
-      <Button color="secondary">Secondary</Button>
-      <Button color="success">Success</Button>
-      <Button color="warning">Warning</Button>
-      <Button color="danger">Danger</Button>
+      <Button color="gray">Gray</Button>
+      <Button color="blue">Blue</Button>
+      <Button color="cyan">Cyan</Button>
+      <Button color="green">Green</Button>
+      <Button color="yellow">Yellow</Button>
+      <Button color="red">Red</Button>
     </div>
   ),
 };
@@ -117,13 +124,12 @@ export const Colors: Story = {
 export const Variants: Story = {
   render: () => (
     <div className="flex flex-wrap gap-4">
-      <Button variant="solid">Solid</Button>
-      <Button variant="bordered">Bordered</Button>
+      <Button variant="filled">Filled</Button>
+      <Button variant="outline">Outline</Button>
       <Button variant="light">Light</Button>
-      <Button variant="flat">Flat</Button>
-      <Button variant="faded">Faded</Button>
-      <Button variant="shadow">Shadow</Button>
-      <Button variant="ghost">Ghost</Button>
+      <Button variant="subtle">Subtle</Button>
+      <Button variant="transparent">Transparent</Button>
+      <Button variant="default">Default</Button>
     </div>
   ),
 };
@@ -132,11 +138,11 @@ export const Variants: Story = {
 export const Radius: Story = {
   render: () => (
     <div className="flex flex-wrap gap-4">
-      <Button radius="none">None</Button>
+      <Button radius="xs">XS</Button>
       <Button radius="sm">Small</Button>
       <Button radius="md">Medium</Button>
       <Button radius="lg">Large</Button>
-      <Button radius="full">Full</Button>
+      <Button radius="xl">XL</Button>
     </div>
   ),
 };

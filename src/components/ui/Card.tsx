@@ -1,32 +1,25 @@
 import {
-  Card as HeroCard,
-  CardBody,
-  CardFooter,
-  CardHeader,
-  type CardProps as HeroCardProps,
-} from "@heroui/react";
+  Card as MantineCard,
+  type CardProps as MantineCardProps,
+} from "@mantine/core";
 import { forwardRef, type ReactNode } from "react";
-import { cn } from "@/lib/utils";
 
-export type CardProps = HeroCardProps & {
+export type CardProps = MantineCardProps & {
   header?: ReactNode;
   footer?: ReactNode;
   children: ReactNode;
 };
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
-  ({ children, className, footer, header, ...props }, ref) => {
+  ({ children, footer, header, ...props }, ref) => {
     return (
-      <HeroCard ref={ref} className={cn("p-4", className)} {...props}>
-        {header && <CardHeader>{header}</CardHeader>}
-        <CardBody>{children}</CardBody>
-        {footer && <CardFooter>{footer}</CardFooter>}
-      </HeroCard>
+      <MantineCard ref={ref} padding="md" {...props}>
+        {header && <MantineCard.Section>{header}</MantineCard.Section>}
+        {children}
+        {footer && <MantineCard.Section>{footer}</MantineCard.Section>}
+      </MantineCard>
     );
   },
 );
 
 Card.displayName = "Card";
-
-// エクスポート
-export { CardBody, CardFooter, CardHeader };

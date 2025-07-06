@@ -1,18 +1,22 @@
 import type { Preview } from "@storybook/react";
 import React from "react";
-import { HeroUIProvider } from "@heroui/react";
+import { MantineProvider, createTheme } from "@mantine/core";
 import { I18nextProvider } from "react-i18next";
 import i18n from "../src/lib/i18n/client";
 import "../src/app/globals.css";
 
+const theme = createTheme({
+  fontFamily: "system-ui, sans-serif",
+});
+
 // グローバルデコレーター
 const withProviders = (Story: any) => (
   <I18nextProvider i18n={i18n}>
-    <HeroUIProvider>
-      <div className="min-h-screen bg-background text-foreground">
+    <MantineProvider theme={theme}>
+      <div className="min-h-screen">
         <Story />
       </div>
-    </HeroUIProvider>
+    </MantineProvider>
   </I18nextProvider>
 );
 

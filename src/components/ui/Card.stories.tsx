@@ -12,17 +12,18 @@ const meta = {
   argTypes: {
     shadow: {
       control: "select",
-      options: ["none", "sm", "md", "lg"],
+      options: ["xs", "sm", "md", "lg", "xl"],
     },
     radius: {
       control: "select",
-      options: ["none", "sm", "md", "lg"],
+      options: ["xs", "sm", "md", "lg", "xl"],
     },
-    isBlurred: {
+    withBorder: {
       control: "boolean",
     },
-    isFooterBlurred: {
-      control: "boolean",
+    padding: {
+      control: "select",
+      options: ["xs", "sm", "md", "lg", "xl"],
     },
   },
 } satisfies Meta<typeof Card>;
@@ -52,7 +53,7 @@ export const WithFooter: Story = {
     footer: (
       <div className="flex gap-2">
         <Button size="sm">キャンセル</Button>
-        <Button size="sm" color="primary">
+        <Button size="sm" color="blue">
           保存
         </Button>
       </div>
@@ -77,7 +78,7 @@ export const FullCard: Story = {
         <Button size="sm" variant="light">
           詳細を見る
         </Button>
-        <Button size="sm" color="primary">
+        <Button size="sm" color="blue">
           参加する
         </Button>
       </div>
@@ -92,8 +93,8 @@ export const Shadows: Story = {
   },
   render: () => (
     <div className="flex flex-wrap gap-4">
-      <Card shadow="none" className="w-48">
-        <p>影なし</p>
+      <Card shadow="xs" className="w-48">
+        <p>XS影</p>
       </Card>
       <Card shadow="sm" className="w-48">
         <p>小さい影</p>
@@ -108,10 +109,10 @@ export const Shadows: Story = {
   ),
 };
 
-// ブラー効果
-export const Blurred: Story = {
+// ボーダー付きカード
+export const WithBorder: Story = {
   args: {
-    isBlurred: true,
-    children: "ブラー効果が適用されたカード",
+    withBorder: true,
+    children: "ボーダーが適用されたカード",
   },
 };
