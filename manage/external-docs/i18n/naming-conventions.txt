@@ -1,0 +1,109 @@
+## i18n翻訳キーの命名規則
+
+### 基本ルール
+
+1. **ネームスペース構造**
+   - common: 共通のUI要素、ボタン、フォーム関連
+   - auth: 認証・ログイン関連
+   - profile: プロフィール・ユーザー設定関連
+   - events: イベント管理関連
+   - schedule: スケジュール・日程調整関連
+
+2. **キー命名パターン**
+   - キャメルケース（camelCase）を使用
+   - ネストした構造で論理的にグループ化
+   - 動詞 + 名詞の組み合わせ（例: submitForm, cancelAction）
+
+3. **階層構造の例**
+   ```
+   {
+     "ui": {
+       "button": {
+         "submit": "送信",
+         "cancel": "キャンセル",
+         "save": "保存"
+       },
+       "form": {
+         "required": "必須項目です",
+         "invalid": "入力値が正しくありません"
+       }
+     }
+   }
+   ```
+
+### 具体的な命名規則
+
+#### 1. UI要素
+- ボタン: `ui.button.{action}` (例: ui.button.submit, ui.button.cancel)
+- フォーム: `ui.form.{validation}` (例: ui.form.required, ui.form.invalid)
+- メッセージ: `ui.message.{type}` (例: ui.message.success, ui.message.error)
+
+#### 2. 認証系
+- アクション: `auth.{action}` (例: auth.login, auth.logout)
+- エラー: `auth.error.{errorType}` (例: auth.error.loginFailed)
+- プロフィール: `auth.profile.{field}` (例: auth.profile.welcome)
+
+#### 3. 機能別
+- イベント: `events.{context}.{element}` (例: events.create.title, events.list.empty)
+- スケジュール: `schedule.{status}` (例: schedule.available, schedule.unavailable)
+
+#### 4. 補間（interpolation）
+- 変数を含む翻訳: `{{variableName}}` を使用
+- 例: `"welcome": "{{name}}さん、ようこそ"`
+
+### 禁止事項
+
+1. 日本語キー名の使用禁止
+2. スペースを含むキー名の使用禁止
+3. 特殊文字（-（ハイフン）以外）の使用禁止
+4. 深すぎるネスト（5階層以上）の禁止
+
+### ファイル管理
+
+#### ディレクトリ構造
+```
+public/locales/
+├── ja/
+│   ├── common.json    # 共通UI要素
+│   ├── auth.json      # 認証関連
+│   ├── profile.json   # プロフィール関連
+│   ├── events.json    # イベント関連（必要に応じて追加）
+│   └── schedule.json  # スケジュール関連（必要に応じて追加）
+└── en/
+    ├── common.json
+    ├── auth.json
+    ├── profile.json
+    ├── events.json
+    └── schedule.json
+```
+
+#### ファイル分割の基準
+- 1ファイルあたり最大50-100キー
+- 論理的に関連する翻訳をグループ化
+- 機能単位での分割を推奨
+
+### 使用例
+
+#### React コンポーネントでの使用
+```tsx
+import { useTranslation } from 'react-i18next';
+
+function LoginButton() {
+  const { t } = useTranslation('auth');
+  
+  return (
+    <Button>
+      {t('login.button')}
+    </Button>
+  );
+}
+```
+
+#### 補間を使用した翻訳
+```tsx
+const { t } = useTranslation('auth');
+const userName = "田中太郎";
+
+return <p>{t('profile.welcome', { name: userName })}</p>;
+// 出力: "田中太郎さん、ようこそ"
+```

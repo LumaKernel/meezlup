@@ -11,10 +11,12 @@ import {
 import {
   CreateUserSchema,
   UpdateUserSchema,
+  UpdateUserLanguageSchema,
   Auth0UserSchema,
   UserSchema,
   type CreateUserInput,
   type UpdateUserInput,
+  type UpdateUserLanguageInput,
   type User,
   type Auth0User,
 } from "./schemas";
@@ -35,6 +37,9 @@ export interface UserServiceType {
   ) => Effect.Effect<User, NotFoundError | DatabaseError>;
   readonly update: (
     input: UpdateUserInput,
+  ) => Effect.Effect<User, ValidationError | NotFoundError | DatabaseError>;
+  readonly updateLanguage: (
+    input: UpdateUserLanguageInput,
   ) => Effect.Effect<User, ValidationError | NotFoundError | DatabaseError>;
   readonly createOrUpdateFromAuth0: (
     auth0User: Auth0User,
@@ -231,6 +236,43 @@ const make = Effect.gen(function* () {
       return transformUser(user);
     });
 
+  const updateLanguage = (input: UpdateUserLanguageInput) =>
+    Effect.gen(function* () {
+      // 入力検証
+      const validated = yield* Schema.decodeUnknown(UpdateUserLanguageSchema)(
+        input,
+      ).pipe(
+        Effect.mapError(
+          (error) =>
+            new ValidationError({
+              field: "input",
+              message: error.message,
+            }),
+        ),
+      );
+
+      // 既存ユーザーの確認
+      yield* findById(validated.id);
+
+      // 言語設定更新
+      const user = yield* Effect.tryPromise({
+        try: () =>
+          database.client.user.update({
+            where: { id: validated.id },
+            data: {
+              preferredLanguage: validated.preferredLanguage,
+            },
+          }),
+        catch: (error) =>
+          new DatabaseError({
+            message: "Failed to update user language",
+            cause: error,
+          }),
+      });
+
+      return transformUser(user);
+    });
+
   const createOrUpdateFromAuth0 = (auth0User: Auth0User) =>
     Effect.gen(function* () {
       // Auth0ユーザー情報の検証
@@ -304,6 +346,7 @@ const make = Effect.gen(function* () {
     findByAuth0Id,
     findByEmail,
     update,
+    updateLanguage,
     createOrUpdateFromAuth0,
   } satisfies UserServiceType;
 });

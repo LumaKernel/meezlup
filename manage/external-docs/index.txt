@@ -22,3 +22,9 @@
 - manage/external-docs/auth0/meetzup-setup-guide.txt
   - MeetzupプロジェクトのAuth0セットアップガイド
   - 管理画面での設定手順、環境変数設定、動作確認方法
+
+## i18n (国際化)
+- manage/external-docs/i18n/naming-conventions.txt
+  - next-i18next翻訳キーの命名規則とベストプラクティス
+  - ファイル構造、階層設計、React コンポーネントでの使用方法
+  - 補間（interpolation）の実装パターン

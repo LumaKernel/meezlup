@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { useAuth, useAuthActions } from "@/lib/auth/hooks";
+import { useTranslation } from "react-i18next";
 
 interface LoginButtonProps {
   readonly returnTo?: string;
@@ -15,11 +16,12 @@ interface LoginButtonProps {
 export function LoginButton({ className, returnTo }: LoginButtonProps) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { login, logout } = useAuthActions();
+  const { t } = useTranslation("auth");
 
   if (isLoading) {
     return (
       <Button disabled loading className={className}>
-        読み込み中...
+        {t("common:ui.button.loading")}
       </Button>
     );
   }
@@ -33,7 +35,7 @@ export function LoginButton({ className, returnTo }: LoginButtonProps) {
         variant="light"
         className={className}
       >
-        ログアウト
+        {t("logout.button")}
       </Button>
     );
   }
@@ -46,7 +48,7 @@ export function LoginButton({ className, returnTo }: LoginButtonProps) {
       color="blue"
       className={className}
     >
-      ログイン
+      {t("login.button")}
     </Button>
   );
 }

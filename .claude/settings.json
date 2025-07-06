@@ -17,7 +17,9 @@
       "Write(*.local)",
       "Read(*.local.*)",
       "Write(*.local.*)",
-      "Write(package.json)"
+      "Write(package.json)",
+      "Bash(npm run dev)",
+      "Bash(npm run storybook)"
     ]
   }
 }

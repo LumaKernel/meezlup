@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "Meetzup",
+    "description": "Meetup event management platform"
+  },
+  "ui": {
+    "button": {
+      "submit": "Submit",
+      "cancel": "Cancel",
+      "save": "Save",
+      "delete": "Delete",
+      "edit": "Edit",
+      "close": "Close",
+      "loading": "Loading..."
+    },
+    "form": {
+      "required": "This field is required",
+      "invalid": "Invalid input",
+      "success": "Success",
+      "error": "An error occurred"
+    }
+  },
+  "navigation": {
+    "home": "Home",
+    "events": "Events",
+    "profile": "Profile",
+    "settings": "Settings"
+  }
+}

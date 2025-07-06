@@ -1,0 +1,25 @@
+{
+  "title": "Profile",
+  "settings": {
+    "title": "Profile Settings",
+    "language": {
+      "title": "Language Settings",
+      "description": "Select your preferred language"
+    },
+    "account": {
+      "title": "Account Information",
+      "email": "Email Address",
+      "name": "Name",
+      "picture": "Profile Picture"
+    }
+  },
+  "actions": {
+    "updateLanguage": "Update Language",
+    "updateProfile": "Update Profile"
+  },
+  "messages": {
+    "languageUpdated": "Language setting updated",
+    "profileUpdated": "Profile updated",
+    "updateFailed": "Update failed"
+  }
+}

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
 import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
+import { dir } from "i18next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,11 +23,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  params,
 }: Readonly<{
   children: React.ReactNode;
+  params?: { locale?: string };
 }>) {
+  const locale = params?.locale || "ja";
+
   return (
-    <html lang="ja" {...mantineHtmlProps}>
+    <html lang={locale} dir={dir(locale)} {...mantineHtmlProps}>
       <head>
         <ColorSchemeScript />
       </head>

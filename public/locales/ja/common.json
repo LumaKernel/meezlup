@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "Meetzup",
+    "description": "ミートアップイベント管理プラットフォーム"
+  },
+  "ui": {
+    "button": {
+      "submit": "送信",
+      "cancel": "キャンセル",
+      "save": "保存",
+      "delete": "削除",
+      "edit": "編集",
+      "close": "閉じる",
+      "loading": "読み込み中..."
+    },
+    "form": {
+      "required": "必須項目です",
+      "invalid": "入力値が正しくありません",
+      "success": "成功しました",
+      "error": "エラーが発生しました"
+    }
+  },
+  "navigation": {
+    "home": "ホーム",
+    "events": "イベント",
+    "profile": "プロフィール",
+    "settings": "設定"
+  }
+}

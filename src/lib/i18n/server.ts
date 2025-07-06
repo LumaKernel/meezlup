@@ -1,12 +1,7 @@
-import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
-import { DEFAULT_LANGUAGE } from "./persistence";
+import type { SupportedLanguage } from "./persistence";
 
-// next-i18nextの設定と統合するため、JSONファイルからリソースを読み込む
-// ただし、クライアントサイドではNext.jsのi18nルーティングと連携する
-// 翻訳リソースをインライン定義（簡単な実装）
-const resources = {
+// サーバーサイドで使用する翻訳リソース
+export const serverTranslations = {
   ja: {
     common: {
       app: {
@@ -133,28 +128,32 @@ const resources = {
       },
     },
   },
-};
+} as const;
 
-i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    fallbackLng: DEFAULT_LANGUAGE,
-    lng: undefined, // LanguageDetectorに任せる
-    ns: ["common", "auth"],
-    defaultNS: "common",
-    interpolation: {
-      escapeValue: false, // ReactはXSS対策をデフォルトで行う
-    },
-    detection: {
-      order: ["path", "localStorage", "navigator"],
-      lookupFromPathIndex: 0,
-    },
-    supportedLngs: ["ja", "en"],
-    resources,
-  })
-  .catch((error: unknown) => {
-    console.error("Failed to initialize i18n:", error);
-  });
+type TranslationValue = string | Record<string, unknown>;
 
-export default i18n;
+// サーバーサイドで翻訳を取得するヘルパー関数
+export function getServerTranslation(
+  locale: SupportedLanguage,
+  namespace: string,
+  key: string,
+): string {
+  const keys = key.split(".");
+  const namespaceData =
+    serverTranslations[locale][
+      namespace as keyof (typeof serverTranslations)["ja"]
+    ];
+
+  let current: TranslationValue | undefined = namespaceData;
+
+  for (const k of keys) {
+    if (typeof current === "object" && k in current) {
+      current = current[k] as TranslationValue;
+    } else {
+      current = undefined;
+      break;
+    }
+  }
+
+  return typeof current === "string" ? current : key;
+}

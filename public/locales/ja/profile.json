@@ -1,0 +1,25 @@
+{
+  "title": "プロフィール",
+  "settings": {
+    "title": "プロフィール設定",
+    "language": {
+      "title": "言語設定",
+      "description": "表示言語を選択してください"
+    },
+    "account": {
+      "title": "アカウント情報",
+      "email": "メールアドレス",
+      "name": "名前",
+      "picture": "プロフィール画像"
+    }
+  },
+  "actions": {
+    "updateLanguage": "言語を更新",
+    "updateProfile": "プロフィールを更新"
+  },
+  "messages": {
+    "languageUpdated": "言語設定が更新されました",
+    "profileUpdated": "プロフィールが更新されました",
+    "updateFailed": "更新に失敗しました"
+  }
+}
