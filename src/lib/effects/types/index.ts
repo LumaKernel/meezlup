@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
+import { Temporal } from "temporal-polyfill";
 
 // スキーマのエラー型
 export type SchemaError = ParseError;
@@ -9,6 +10,17 @@ export const DateTimeString = Schema.String.pipe(
   Schema.pattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/),
   Schema.brand("DateTimeString"),
 );
+
+// Temporal.PlainDateの文字列表現
+export const PlainDateString = Schema.String.pipe(
+  Schema.pattern(/^\d{4}-\d{2}-\d{2}$/),
+  Schema.brand("PlainDateString"),
+);
+
+// Temporal型のスキーマ
+export const PlainDateSchema = Schema.instanceOf(Temporal.PlainDate);
+export const PlainDateTimeSchema = Schema.instanceOf(Temporal.PlainDateTime);
+export const ZonedDateTimeSchema = Schema.instanceOf(Temporal.ZonedDateTime);
 
 export const EmailString = Schema.String.pipe(
   Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/),

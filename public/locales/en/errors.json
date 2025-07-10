@@ -1,0 +1,42 @@
+{
+  "validation": {
+    "required": "{{field}} is required",
+    "minLength": "{{field}} must be at least {{min}} characters",
+    "maxLength": "{{field}} must be at most {{max}} characters",
+    "invalidDate": "Invalid date format",
+    "dateRange": "End date must be after start date",
+    "positive": "{{field}} must be at least 1",
+    "email": "Please enter a valid email address",
+    "url": "Please enter a valid URL"
+  },
+  "auth": {
+    "required": "Authentication required",
+    "invalidCredentials": "Invalid credentials",
+    "sessionExpired": "Session expired",
+    "unauthorized": "You don't have permission to perform this action"
+  },
+  "database": {
+    "createFailed": "Failed to create",
+    "updateFailed": "Failed to update",
+    "deleteFailed": "Failed to delete",
+    "notFound": "Data not found",
+    "connectionFailed": "Database connection failed"
+  },
+  "event": {
+    "createFailed": "Failed to create event",
+    "updateFailed": "Failed to update event",
+    "deleteFailed": "Failed to delete event",
+    "notFound": "Event not found",
+    "fetchFailed": "Failed to fetch events"
+  },
+  "schedule": {
+    "submitFailed": "Failed to submit availability",
+    "updateFailed": "Failed to update availability",
+    "fetchFailed": "Failed to fetch schedule information"
+  },
+  "general": {
+    "unknownError": "An unexpected error occurred",
+    "tryAgain": "Please try again",
+    "contactSupport": "If the problem persists, please contact support"
+  }
+}

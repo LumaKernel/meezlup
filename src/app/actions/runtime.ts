@@ -1,6 +1,7 @@
 "use server";
 
 import { type Effect, type Layer, ManagedRuntime, Exit, Cause } from "effect";
+import type { ParseError } from "effect/ParseResult";
 import { ServicesLive } from "@/lib/effects";
 import type { AppError } from "@/lib/effects";
 
@@ -11,7 +12,7 @@ let runtime: ManagedRuntime.ManagedRuntime<
 > | null = null;
 
 // ランタイムを取得（遅延初期化）
-export const getRuntime = () => {
+const getRuntime = () => {
   if (!runtime) {
     runtime = ManagedRuntime.make(ServicesLive);
   }
@@ -19,7 +20,7 @@ export const getRuntime = () => {
 };
 
 // Server ActionでEffectを実行するヘルパー
-export const runServerAction = <A, E extends AppError>(
+export const runServerAction = async <A, E extends AppError>(
   effect: Effect.Effect<A, E, Layer.Layer.Success<typeof ServicesLive>>,
 ): Promise<A> => {
   const rt = getRuntime();
@@ -32,8 +33,12 @@ export type ActionResponse<T> =
   | { readonly success: false; readonly error: string };
 
 // Server ActionでEffectを実行し、ActionResponseを返すヘルパー
-export const runServerActionSafe = async <A, E extends AppError>(
-  effect: Effect.Effect<A, E, Layer.Layer.Success<typeof ServicesLive>>,
+export const runServerActionSafe = async <A>(
+  effect: Effect.Effect<
+    A,
+    AppError | ParseError,
+    Layer.Layer.Success<typeof ServicesLive>
+  >,
 ): Promise<ActionResponse<A>> => {
   const rt = getRuntime();
   const exit = await rt.runPromiseExit(effect);
@@ -45,8 +50,16 @@ export const runServerActionSafe = async <A, E extends AppError>(
       let error = "Unknown error";
       if (failureArray.length > 0) {
         const firstError = failureArray[0];
-        if ("message" in firstError && typeof firstError.message === "string") {
-          error = firstError.message;
+        if ("_tag" in firstError) {
+          // ParseErrorの場合
+          if (firstError._tag === "ParseError") {
+            error = "入力データの形式が正しくありません";
+          } else if (
+            "message" in firstError &&
+            typeof firstError.message === "string"
+          ) {
+            error = firstError.message;
+          }
         }
       }
 

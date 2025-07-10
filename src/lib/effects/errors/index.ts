@@ -30,6 +30,17 @@ export class ConflictError extends Data.TaggedError("ConflictError")<{
   readonly message: string;
 }> {}
 
+export class AuthenticationError extends Data.TaggedError(
+  "AuthenticationError",
+)<{
+  readonly message: string;
+}> {}
+
+export class AuthError extends Data.TaggedError("AuthError")<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {}
+
 // エラーの型エイリアス
 export type AppError =
   | DatabaseError
@@ -37,4 +48,6 @@ export type AppError =
   | ValidationError
   | UnauthorizedError
   | ForbiddenError
-  | ConflictError;
+  | ConflictError
+  | AuthenticationError
+  | AuthError;

@@ -1,11 +1,11 @@
-import { Effect, Context, Schema, Option } from "effect";
+import { Effect, Context, Schema, Option, Layer } from "effect";
 import type { AuthenticatedUser, AnonymousUser, AuthState } from "./schemas";
 import {
   AuthenticatedUserSchema,
   AnonymousUserSchema,
   UserId,
 } from "./schemas";
-import { type DatabaseError } from "@/lib/effects/errors";
+import { type DatabaseError, AuthError } from "@/lib/effects/errors";
 import { auth0 } from "@/lib/auth0";
 // Auth0のセッション型を定義
 interface Session {
@@ -20,14 +20,6 @@ interface Session {
     [key: string]: unknown;
   };
 }
-
-/**
- * 認証エラー
- */
-export class AuthError extends Schema.TaggedError<AuthError>()("AuthError", {
-  message: Schema.String,
-  cause: Schema.optional(Schema.Unknown),
-}) {}
 
 /**
  * 認証サービスインターフェース
@@ -75,7 +67,7 @@ export const AuthService = Context.GenericTag<AuthService>("AuthService");
 /**
  * 認証サービスの実装
  */
-export const AuthServiceLive = Effect.sync(() => {
+const makeAuthService = (): AuthService => {
   const getCurrentAuthState = Effect.gen(function* () {
     try {
       // Auth0セッションを取得
@@ -139,9 +131,8 @@ export const AuthServiceLive = Effect.sync(() => {
   const getAuthenticatedUser = Effect.gen(function* () {
     const authState = yield* getCurrentAuthState;
     if (authState.isAuthenticated && "email" in authState.user) {
-      return Option.some(
-        Schema.decodeUnknownSync(AuthenticatedUserSchema)(authState.user),
-      );
+      // authState.userは既にデコード済みなので、そのまま返す
+      return Option.some(authState.user);
     }
     return Option.none();
   });
@@ -297,7 +288,12 @@ export const AuthServiceLive = Effect.sync(() => {
     updateUser,
     syncWithAuth0,
   };
-});
+};
+
+/**
+ * 認証サービスのレイヤー
+ */
+export const AuthServiceLive = Layer.sync(AuthService, makeAuthService);
 
 /**
  * セッションID生成

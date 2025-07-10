@@ -14,7 +14,7 @@ interface HomeProps {
 
 export default function Home({ params }: HomeProps) {
   const { locale } = use(params);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const { i18n, t } = useTranslation("common");
 
   // ロケールに基づいて言語を設定
@@ -30,6 +30,59 @@ export default function Home({ params }: HomeProps) {
         .catch(console.error);
     }
   }, [locale, i18n]);
+
+  // 認証後のリフレッシュ処理（デバッグ情報付き）
+  useEffect(() => {
+    // URLパラメータをチェック
+    const urlParams = new URLSearchParams(window.location.search);
+    console.log("[Home] Current URL:", window.location.href);
+    console.log("[Home] URL params:", urlParams.toString());
+    console.log("[Home] Has auth param:", urlParams.has("auth"));
+    console.log("[Home] Is authenticated:", isAuthenticated);
+    console.log("[Home] Is loading:", isLoading);
+    console.log("[Home] User:", user);
+
+    if (urlParams.has("auth") && !isLoading) {
+      console.log(
+        "[Home] Auth param detected, waiting for authentication state...",
+      );
+
+      // authパラメータがある場合は、認証状態の取得を待つ
+      if (!isAuthenticated) {
+        // まだ認証されていない場合は、少し待ってから再試行
+        const retryCount = parseInt(urlParams.get("retry") || "0");
+        if (retryCount < 3) {
+          console.log(
+            `[Home] Retry attempt ${(retryCount + 1) satisfies number}/3`,
+          );
+          setTimeout(() => {
+            urlParams.set("retry", String(retryCount + 1));
+            window.location.search = urlParams.toString();
+          }, 1000);
+        } else {
+          console.error("[Home] Failed to authenticate after 3 retries");
+          // リトライ上限に達したら、パラメータを削除
+          urlParams.delete("auth");
+          urlParams.delete("retry");
+          const queryString = urlParams.toString();
+          const newUrl = queryString
+            ? `${window.location.pathname satisfies string}?${queryString satisfies string}`
+            : window.location.pathname;
+          window.history.replaceState({}, "", newUrl);
+        }
+      } else {
+        // 認証成功したら、パラメータを削除
+        console.log("[Home] Authentication successful, cleaning URL");
+        urlParams.delete("auth");
+        urlParams.delete("retry");
+        const queryString = urlParams.toString();
+        const newUrl = queryString
+          ? `${window.location.pathname satisfies string}?${queryString satisfies string}`
+          : window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
+      }
+    }
+  }, [isAuthenticated, isLoading, user]);
 
   return (
     <div className="min-h-screen">

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent } from "@/test/utils";
 import { LoginButton } from "./LoginButton";
 import { useAuth, useAuthActions } from "@/lib/auth/hooks";
 
@@ -7,6 +7,20 @@ import { useAuth, useAuthActions } from "@/lib/auth/hooks";
 vi.mock("@/lib/auth/hooks", () => ({
   useAuth: vi.fn(),
   useAuthActions: vi.fn(),
+}));
+
+// i18nのモック
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        "common:ui.button.loading": "読み込み中...",
+        "login.button": "ログイン",
+        "logout.button": "ログアウト",
+      };
+      return translations[key] || key;
+    },
+  }),
 }));
 
 describe("LoginButton", () => {

@@ -53,6 +53,7 @@ model Event {
   creator                User?      @relation(fields: [creatorId], references: [id], onDelete: SetNull)
   creatorCanSeeEmails    Boolean    @default(false)
   participantsCanSeeEach Boolean    @default(false)
+  isLinkOnly             Boolean    @default(false) // リンクのみアクセス可能
 
   // Relations
   schedules Schedule[]

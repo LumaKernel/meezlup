@@ -1,0 +1,42 @@
+{
+  "validation": {
+    "required": "{{field}}は必須です",
+    "minLength": "{{field}}は{{min}}文字以上で入力してください",
+    "maxLength": "{{field}}は{{max}}文字以内で入力してください",
+    "invalidDate": "日付の形式が正しくありません",
+    "dateRange": "終了日は開始日以降にしてください",
+    "positive": "{{field}}は1以上で設定してください",
+    "email": "有効なメールアドレスを入力してください",
+    "url": "有効なURLを入力してください"
+  },
+  "auth": {
+    "required": "認証が必要です",
+    "invalidCredentials": "認証情報が無効です",
+    "sessionExpired": "セッションの有効期限が切れました",
+    "unauthorized": "この操作を実行する権限がありません"
+  },
+  "database": {
+    "createFailed": "作成に失敗しました",
+    "updateFailed": "更新に失敗しました",
+    "deleteFailed": "削除に失敗しました",
+    "notFound": "データが見つかりません",
+    "connectionFailed": "データベース接続に失敗しました"
+  },
+  "event": {
+    "createFailed": "イベントの作成に失敗しました",
+    "updateFailed": "イベントの更新に失敗しました",
+    "deleteFailed": "イベントの削除に失敗しました",
+    "notFound": "イベントが見つかりません",
+    "fetchFailed": "イベントの取得に失敗しました"
+  },
+  "schedule": {
+    "submitFailed": "参加可能時間の送信に失敗しました",
+    "updateFailed": "参加可能時間の更新に失敗しました",
+    "fetchFailed": "参加情報の取得に失敗しました"
+  },
+  "general": {
+    "unknownError": "予期しないエラーが発生しました",
+    "tryAgain": "もう一度お試しください",
+    "contactSupport": "問題が続く場合は、サポートにお問い合わせください"
+  }
+}

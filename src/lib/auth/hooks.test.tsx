@@ -14,7 +14,7 @@ describe("useAuth", () => {
   it("ローディング中の状態を返す", () => {
     (fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ user: null }),
+      json: async () => ({}),
     });
 
     const { result } = renderHook(() => useAuth());
@@ -29,8 +29,8 @@ describe("useAuth", () => {
 
   it("未認証状態を返す", async () => {
     (fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ user: null }),
+      ok: false,
+      status: 401,
     });
 
     const { result } = renderHook(() => useAuth());
@@ -59,7 +59,7 @@ describe("useAuth", () => {
 
     (fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ user: mockUser }),
+      json: async () => mockUser,
     });
 
     const { result } = renderHook(() => useAuth());
@@ -99,6 +99,57 @@ describe("useAuth", () => {
       error: expect.any(Error),
     });
   });
+
+  it("500エラーの場合はエラーをスローする", async () => {
+    (fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+    });
+
+    const { result } = renderHook(() => useAuth());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect(result.current.error?.message).toBe(
+      "Failed to fetch user profile: 500",
+    );
+  });
+
+  it("部分的なユーザー情報でも処理できる", async () => {
+    const mockUser = {
+      sub: "auth0|123456",
+      email: "test@example.com",
+      // name, picture, nickname, email_verified は省略
+    };
+
+    (fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockUser,
+    });
+
+    const { result } = renderHook(() => useAuth());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current).toEqual({
+      isAuthenticated: true,
+      isLoading: false,
+      user: {
+        id: "auth0|123456",
+        email: "test@example.com",
+        name: undefined,
+        picture: undefined,
+        nickname: undefined,
+        emailVerified: undefined,
+      },
+      error: undefined,
+    });
+  });
 });
 
 describe("useAuthActions", () => {
@@ -109,7 +160,10 @@ describe("useAuthActions", () => {
     // @ts-expect-error - location is read-only
     delete window.location;
     // @ts-expect-error - location is read-only
-    window.location = { href: "" };
+    window.location = {
+      href: "",
+      pathname: "/",
+    };
   });
 
   afterEach(() => {
@@ -121,7 +175,7 @@ describe("useAuthActions", () => {
     const { result } = renderHook(() => useAuthActions());
 
     result.current.login();
-    expect(window.location.href).toBe("/auth/login");
+    expect(window.location.href).toBe("/auth/login?returnTo=%2F");
 
     result.current.login("/dashboard");
     expect(window.location.href).toBe("/auth/login?returnTo=%2Fdashboard");
@@ -131,9 +185,35 @@ describe("useAuthActions", () => {
     const { result } = renderHook(() => useAuthActions());
 
     result.current.logout();
-    expect(window.location.href).toBe("/auth/logout");
-
-    result.current.logout("/");
     expect(window.location.href).toBe("/auth/logout?returnTo=%2F");
+
+    result.current.logout("/home");
+    expect(window.location.href).toBe("/auth/logout?returnTo=%2Fhome");
+  });
+
+  it("i18nプレフィックス付きURLでも正しく動作する", () => {
+    window.location.pathname = "/ja/dashboard";
+
+    const { result } = renderHook(() => useAuthActions());
+
+    result.current.login();
+    expect(window.location.href).toBe("/auth/login?returnTo=%2Fja%2Fdashboard");
+
+    result.current.logout();
+    expect(window.location.href).toBe(
+      "/auth/logout?returnTo=%2Fja%2Fdashboard",
+    );
+  });
+
+  it("カスタムreturnToが優先される", () => {
+    window.location.pathname = "/ja/dashboard";
+
+    const { result } = renderHook(() => useAuthActions());
+
+    result.current.login("/en/profile");
+    expect(window.location.href).toBe("/auth/login?returnTo=%2Fen%2Fprofile");
+
+    result.current.logout("/en");
+    expect(window.location.href).toBe("/auth/logout?returnTo=%2Fen");
   });
 });

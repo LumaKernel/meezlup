@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./providers";
+import { MantineSetup } from "./mantine-setup";
 import "./globals.css";
 import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
 import { dir } from "i18next";
@@ -33,12 +34,18 @@ export default function RootLayout({
   return (
     <html lang={locale} dir={dir(locale)} {...mantineHtmlProps}>
       <head>
-        <ColorSchemeScript />
+        <meta name="color-scheme" content="light" />
+        <ColorSchemeScript
+          defaultColorScheme="light"
+          forceColorScheme="light"
+        />
       </head>
       <body
         className={`${geistSans.variable satisfies string} ${geistMono.variable satisfies string} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <MantineSetup>
+          <Providers>{children}</Providers>
+        </MantineSetup>
       </body>
     </html>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Group } from "@mantine/core";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { forwardRef } from "react";
 import { storeLanguage, type SupportedLanguage } from "@/lib/i18n/persistence";
@@ -15,7 +15,11 @@ export const LanguageSwitcher = forwardRef<
   LanguageSwitcherProps
 >(({ className }, ref) => {
   const router = useRouter();
+  const params = useParams();
   const { i18n } = useTranslation();
+
+  // URLから現在のロケールを取得（ハイドレーションエラーを防ぐ）
+  const currentLocale = params.locale as SupportedLanguage;
 
   const handleLanguageChange = async (locale: SupportedLanguage) => {
     // ローカルストレージに言語設定を保存
@@ -45,7 +49,7 @@ export const LanguageSwitcher = forwardRef<
   return (
     <Group ref={ref} className={className} gap="xs">
       <Button
-        variant={i18n.language === "ja" ? "filled" : "outline"}
+        variant={currentLocale === "ja" ? "filled" : "outline"}
         size="compact-sm"
         onClick={() => {
           handleLanguageChange("ja").catch(console.error);
@@ -54,7 +58,7 @@ export const LanguageSwitcher = forwardRef<
         日本語
       </Button>
       <Button
-        variant={i18n.language === "en" ? "filled" : "outline"}
+        variant={currentLocale === "en" ? "filled" : "outline"}
         size="compact-sm"
         onClick={() => {
           handleLanguageChange("en").catch(console.error);

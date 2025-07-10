@@ -6,6 +6,18 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   console.log("[Middleware] Processing request:", pathname);
 
+  // ロケールプレフィックス付きの認証ルートをチェック
+  // 例: /ja/auth/login -> /auth/login にリダイレクト
+  const localeAuthMatch = pathname.match(/^\/([a-z]{2})\/auth(\/.*)?$/);
+  if (localeAuthMatch) {
+    const authPath = `/auth${(localeAuthMatch[2] || "") satisfies string}`;
+    const newUrl = new URL(authPath, request.url);
+    // クエリパラメータを保持
+    newUrl.search = request.nextUrl.search;
+    console.log("[Middleware] Redirecting from", pathname, "to", authPath);
+    return NextResponse.redirect(newUrl);
+  }
+
   // 静的ファイルとAPIルートをスキップ
   if (
     pathname.startsWith("/_next") ||
@@ -14,11 +26,33 @@ export async function middleware(request: NextRequest) {
     pathname.includes(".")
   ) {
     try {
+      console.log("[Middleware] Processing auth route:", pathname);
       const response = await auth0.middleware(request);
-      console.log("[Middleware] Auth0 response:", response.status);
+      console.log("[Middleware] Auth0 response status:", response.status);
+      console.log(
+        "[Middleware] Auth0 response headers:",
+        Object.fromEntries(response.headers.entries()),
+      );
+
+      // セッション状態を確認
+      if (pathname === "/auth/profile") {
+        try {
+          const session = await auth0.getSession(request);
+          console.log(
+            "[Middleware] Session for /auth/profile:",
+            session ? "exists" : "null",
+          );
+          if (session) {
+            console.log("[Middleware] Session user:", session.user.sub);
+          }
+        } catch (sessionError) {
+          console.error("[Middleware] Session check error:", sessionError);
+        }
+      }
+
       return response;
     } catch (error) {
-      console.error("[Middleware] Error:", error);
+      console.error("[Middleware] Auth0 middleware error:", error);
       throw error;
     }
   }

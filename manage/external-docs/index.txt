@@ -22,6 +22,9 @@
 - manage/external-docs/auth0/meetzup-setup-guide.txt
   - MeetzupプロジェクトのAuth0セットアップガイド
   - 管理画面での設定手順、環境変数設定、動作確認方法
+- manage/external-docs/auth0/nextjs-sdk-v4-api-reference.txt
+  - @auth0/nextjs-auth0 v4.7.0のAPIリファレンス
+  - Auth0Client初期化、ミドルウェア設定、認証ルート、App Router/Pages Router対応
 
 ## i18n (国際化)
 - manage/external-docs/i18n/naming-conventions.txt

@@ -1,10 +1,17 @@
 "use server";
 
-import { Effect } from "effect";
+import { Effect, Schema, Option } from "effect";
 import {
   ScheduleService,
+  AuthService,
+  EventService,
   type CreateScheduleInput,
   type UpdateScheduleInput,
+  NonEmptyString,
+  EventId,
+  UserId,
+  DateTimeString,
+  ValidationError,
 } from "@/lib/effects";
 import { runServerActionSafe } from "./runtime";
 
@@ -83,6 +90,119 @@ export const getAggregatedTimeSlots = async (eventId: string) => {
     const scheduleService = yield* ScheduleService;
     const aggregation = yield* scheduleService.aggregateTimeSlots(eventId);
     return aggregation;
+  });
+
+  return runServerActionSafe(effect);
+};
+
+// 参加可能時間の送信スキーマ
+const SubmitAvailabilitySchema = Schema.Struct({
+  eventId: Schema.String, // EventIdに変換する前の文字列
+  participantName: Schema.optional(Schema.String),
+  participantEmail: Schema.optional(Schema.String),
+  availableSlots: Schema.Array(
+    Schema.Struct({
+      date: Schema.String, // PlainDateの文字列表現 (YYYY-MM-DD)
+      time: Schema.String, // PlainTimeの文字列表現 (HH:MM)
+    }),
+  ),
+});
+
+// 参加可能時間を送信するServer Action
+export const submitAvailability = async (input: unknown) => {
+  const effect = Effect.gen(function* () {
+    // 入力をバリデーション
+    const validatedData = yield* Schema.decodeUnknown(SubmitAvailabilitySchema)(
+      input,
+    );
+
+    // イベント情報を取得
+    const eventService = yield* EventService;
+    const event = yield* eventService.findById(
+      Schema.decodeUnknownSync(EventId)(validatedData.eventId),
+    );
+
+    // ユーザー情報を取得
+    const authService = yield* AuthService;
+    const authState = yield* authService.getCurrentAuthState;
+
+    let userId: string;
+    let userName: string;
+
+    if (
+      authState.isAuthenticated &&
+      authState.user &&
+      "email" in authState.user
+    ) {
+      // 認証済みユーザー
+      userId = authState.user.id;
+      userName = authState.user.name || authState.user.email;
+    } else {
+      // 非認証ユーザー
+      if (!validatedData.participantName || !validatedData.participantEmail) {
+        return yield* Effect.fail(
+          new ValidationError({
+            field: "participantInfo",
+            message: "非認証ユーザーは名前とメールアドレスが必須です",
+          }),
+        );
+      }
+      // セッションIDをユーザーIDとして使用
+      userId = authState.sessionId;
+      userName = validatedData.participantName;
+    }
+
+    // スケジュールを作成または更新
+    const scheduleService = yield* ScheduleService;
+
+    // 既存のスケジュールを確認
+    const existingScheduleResult = yield* Effect.either(
+      scheduleService.findByEventAndUser(
+        Schema.decodeUnknownSync(EventId)(validatedData.eventId),
+        userId,
+      ),
+    );
+
+    const existingSchedule =
+      existingScheduleResult._tag === "Right"
+        ? Option.some(existingScheduleResult.right)
+        : Option.none();
+
+    // Availabilityのデータを構築
+    // PlainTimeから分単位の時刻に変換
+    const availabilities = validatedData.availableSlots.map((slot) => {
+      const [hours, minutes] = slot.time.split(":").map(Number);
+      const startTime = hours * 60 + minutes;
+      const endTime = startTime + event.timeSlotDuration; // イベントのスロット期間を使用
+      const dateStr = slot.date + "T00:00:00.000Z";
+      return {
+        date: Schema.decodeUnknownSync(DateTimeString)(dateStr),
+        startTime,
+        endTime,
+      };
+    });
+
+    if (Option.isSome(existingSchedule) && existingSchedule.value) {
+      // 既存のスケジュールを更新
+      const schedule = yield* scheduleService.update({
+        id: existingSchedule.value.id,
+        availabilities,
+      });
+      return { scheduleId: schedule.id };
+    } else {
+      // 新規スケジュールを作成
+      const createInput: CreateScheduleInput = {
+        eventId: Schema.decodeUnknownSync(EventId)(validatedData.eventId),
+        userId: authState.isAuthenticated
+          ? Schema.decodeUnknownSync(UserId)(userId)
+          : undefined,
+        displayName: Schema.decodeUnknownSync(NonEmptyString)(userName),
+        availabilities,
+      };
+
+      const schedule = yield* scheduleService.create(createInput);
+      return { scheduleId: schedule.id };
+    }
   });
 
   return runServerActionSafe(effect);

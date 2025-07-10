@@ -25,12 +25,16 @@ export const auth0 = new Auth0Client({
     }
 
     // ログイン成功後のリダイレクト
-    return NextResponse.redirect(
-      new URL(
-        context.returnTo || "/",
-        process.env.APP_BASE_URL || "http://localhost:5825",
-      ),
+    const redirectUrl = new URL(
+      context.returnTo || "/",
+      process.env.APP_BASE_URL || "http://localhost:5825",
     );
+
+    // 認証後のページリフレッシュを確実にするため、
+    // タイムスタンプをクエリパラメータに追加
+    redirectUrl.searchParams.set("auth", Date.now().toString());
+
+    return NextResponse.redirect(redirectUrl);
   },
 });
 

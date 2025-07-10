@@ -43,6 +43,18 @@ export const appErrorToResponse = (error: AppError): ErrorResponse => {
         error: "CONFLICT",
         message: error.message,
       };
+    case "AuthenticationError":
+      return {
+        error: "AUTHENTICATION_ERROR",
+        message: error.message,
+      };
+    case "AuthError":
+      return {
+        error: "AUTH_ERROR",
+        message: error.message,
+        details:
+          process.env.NODE_ENV === "development" ? error.cause : undefined,
+      };
   }
 };
 

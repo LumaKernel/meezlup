@@ -21,6 +21,7 @@
   - webならuseMutationを検討せよ。loadingのステートの明示的なハンドリングをせよ。
   - それでも難しければ `consumerPromise(Promise<T>)` のような関数をutil等として作成し、.catch+console.warnなどで処理せよ
 - 各種のライブラリについて、最新情報をContext7を利用して検索せよ。
+- バックグラウンドプロセスの起動（例：`npm run dev &`、`npm run storybook &`など）は必ずhuman-in-the-loopツールを使用してユーザーに確認を取ること。
 
 # Web
 

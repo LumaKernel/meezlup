@@ -33,6 +33,9 @@ export const CreateEventSchema = Schema.Struct({
   participantsCanSeeEach: Schema.optionalWith(Schema.Boolean, {
     default: () => false,
   }),
+  isLinkOnly: Schema.optionalWith(Schema.Boolean, {
+    default: () => false,
+  }),
 });
 
 // イベント更新のスキーマ
@@ -47,6 +50,7 @@ export const UpdateEventSchema = Schema.Struct({
   allowedEmails: Schema.optional(Schema.Array(EmailString)),
   creatorCanSeeEmails: Schema.optional(Schema.Boolean),
   participantsCanSeeEach: Schema.optional(Schema.Boolean),
+  isLinkOnly: Schema.optional(Schema.Boolean),
 });
 
 // イベント取得のスキーマ
@@ -64,6 +68,7 @@ export const EventSchema = Schema.Struct({
   creatorId: Schema.NullOr(UserId),
   creatorCanSeeEmails: Schema.Boolean,
   participantsCanSeeEach: Schema.Boolean,
+  isLinkOnly: Schema.Boolean,
   createdAt: DateTimeString,
   updatedAt: DateTimeString,
 });

@@ -1,0 +1,302 @@
+# Auth0 Next.js SDK v4 API リファレンス
+
+## 概要
+
+@auth0/nextjs-auth0 v4.7.0のAPIリファレンス。Next.js 14/15のApp RouterとPages Routerの両方をサポート。
+
+## インストール
+
+```bash
+npm i @auth0/nextjs-auth0
+```
+
+## 環境変数
+
+必須の環境変数:
+- `AUTH0_DOMAIN`: Auth0テナントのドメイン（例: example.us.auth0.com）
+- `AUTH0_CLIENT_ID`: Auth0アプリケーションのクライアントID  
+- `AUTH0_CLIENT_SECRET`: Auth0アプリケーションのクライアントシークレット
+- `AUTH0_SECRET`: セッション暗号化用の32バイトのhexエンコードされたシークレット
+- `APP_BASE_URL`: アプリケーションのベースURL（例: http://localhost:3000）
+
+オプションの環境変数:
+- `AUTH0_COOKIE_DOMAIN`: セッションCookieのドメイン
+- `AUTH0_COOKIE_PATH`: セッションCookieのパス
+- `AUTH0_COOKIE_TRANSIENT`: 一時的なCookieとして扱うか
+- `AUTH0_COOKIE_SECURE`: HTTPSでのみCookieを送信
+- `AUTH0_COOKIE_SAME_SITE`: SameSite属性
+- `NEXT_PUBLIC_BASE_PATH`: Next.jsのbasePathを使用する場合
+
+## Auth0Clientの初期化
+
+```typescript
+import { Auth0Client } from "@auth0/nextjs-auth0/server";
+
+export const auth0 = new Auth0Client({
+  // オプション設定
+  domain: "example.auth0.com",
+  clientId: "your-client-id",
+  clientSecret: "your-client-secret",
+  appBaseUrl: "http://localhost:3000",
+  secret: "your-32-byte-hex-secret",
+  
+  // セッション設定
+  session: {
+    rolling: true,
+    absoluteDuration: 86400, // 24時間
+    inactivityDuration: 7200, // 2時間
+    cookie: {
+      domain: ".example.com",
+      path: "/",
+      secure: true,
+      sameSite: "lax",
+      transient: false
+    }
+  },
+  
+  // 認証パラメータ
+  authorizationParameters: {
+    scope: "openid profile email",
+    audience: "https://api.example.com"
+  },
+  
+  // カスタムルート
+  routes: {
+    login: "/auth/login",
+    logout: "/auth/logout",
+    callback: "/auth/callback",
+    profile: "/auth/profile",
+    accessToken: "/auth/access-token",
+    backchannelLogout: "/auth/backchannel-logout"
+  },
+  
+  // コールバックフック
+  onCallback: async (error, context, session) => {
+    if (error) {
+      // エラーハンドリング
+      return NextResponse.redirect(new URL("/error", appBaseUrl));
+    }
+    // セッション保存前の処理
+    return NextResponse.redirect(new URL(context.returnTo || "/", appBaseUrl));
+  },
+  
+  // セッション保存前フック
+  beforeSessionSaved: async (session) => {
+    // セッションデータの変更
+    return session;
+  },
+  
+  // その他のオプション
+  enableAccessTokenEndpoint: true, // デフォルト: true
+  enableTelemetry: true, // デフォルト: true
+  httpTimeout: 5000, // デフォルト: 5000ms
+  pushedAuthorizationRequests: false,
+  allowInsecureRequests: false // 開発環境でのみ有効
+});
+```
+
+## ミドルウェアの設定
+
+```typescript
+// middleware.ts (プロジェクトルートまたはsrc/配下)
+import type { NextRequest } from "next/server";
+import { auth0 } from "./lib/auth0";
+
+export async function middleware(request: NextRequest) {
+  return await auth0.middleware(request);
+}
+
+export const config = {
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)"
+  ]
+};
+```
+
+## 自動的にマウントされるルート
+
+1. `/auth/login`: ログイン開始
+2. `/auth/logout`: ログアウト  
+3. `/auth/callback`: Auth0からのコールバック処理
+4. `/auth/profile`: ユーザープロファイル取得（JSON）
+5. `/auth/access-token`: アクセストークン取得（JSON）
+6. `/auth/backchannel-logout`: バックチャネルログアウト
+
+## App Router での使用
+
+### Server Componentsでのセッション取得
+
+```typescript
+import { auth0 } from "@/lib/auth0";
+
+export default async function HomePage() {
+  const session = await auth0.getSession();
+  
+  if (!session) {
+    return (
+      <div>
+        <a href="/auth/login">ログイン</a>
+        <a href="/auth/login?screen_hint=signup">サインアップ</a>
+      </div>
+    );
+  }
+  
+  return <div>ようこそ、{session.user.name}さん</div>;
+}
+```
+
+### Server Actionsでの使用
+
+```typescript
+"use server";
+
+import { auth0 } from "@/lib/auth0";
+
+export async function updateUserProfile(formData: FormData) {
+  const session = await auth0.getSession();
+  
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+  
+  // セッションの更新
+  await auth0.updateSession({
+    ...session,
+    user: {
+      ...session.user,
+      metadata: { updatedAt: new Date().toISOString() }
+    }
+  });
+}
+```
+
+### Route Handlersでの使用
+
+```typescript
+// app/api/user/route.ts
+import { NextResponse } from "next/server";
+import { auth0 } from "@/lib/auth0";
+
+export async function GET() {
+  const session = await auth0.getSession();
+  
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  
+  // アクセストークンの取得
+  const { token } = await auth0.getAccessToken();
+  
+  return NextResponse.json({ user: session.user, token });
+}
+```
+
+## Pages Router での使用
+
+### API Routesでの使用
+
+```typescript
+// pages/api/user.ts
+import { NextApiRequest, NextApiResponse } from "next";
+import { auth0 } from "@/lib/auth0";
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  const session = await auth0.getSession(req);
+  
+  if (!session) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  
+  res.json({ user: session.user });
+}
+```
+
+### getServerSidePropsでの使用
+
+```typescript
+import { GetServerSideProps } from "next";
+import { auth0 } from "@/lib/auth0";
+
+export const getServerSideProps: GetServerSideProps = async ({ req }) => {
+  const session = await auth0.getSession(req);
+  
+  if (!session) {
+    return {
+      redirect: {
+        destination: "/auth/login",
+        permanent: false
+      }
+    };
+  }
+  
+  return {
+    props: {
+      user: session.user
+    }
+  };
+};
+```
+
+## アクセストークンの取得
+
+```typescript
+// App Router
+const { token, expiresAt, scope } = await auth0.getAccessToken({
+  refresh: true // 必要に応じてリフレッシュ
+});
+
+// Pages Router
+const { token, expiresAt, scope } = await auth0.getAccessToken(
+  req,
+  res,
+  { refresh: true }
+);
+```
+
+## セッションの更新
+
+```typescript
+// App Router
+await auth0.updateSession({
+  user: {
+    ...session.user,
+    customData: "updated"
+  },
+  idToken: session.idToken,
+  accessToken: session.accessToken,
+  refreshToken: session.refreshToken,
+  expiresAt: session.expiresAt
+});
+
+// Pages Router
+await auth0.updateSession(req, res, updatedSession);
+```
+
+## カスタムログイン開始
+
+```typescript
+// より細かい制御が必要な場合
+const response = await auth0.startInteractiveLogin({
+  returnTo: "/dashboard",
+  loginHint: "user@example.com",
+  authorizationParameters: {
+    connection: "google-oauth2",
+    prompt: "consent"
+  }
+});
+```
+
+## 重要な注意事項
+
+1. **Server Componentsでのアクセストークン取得**: Server ComponentsはCookieを設定できないため、期限切れのアクセストークンがリフレッシュされても永続化されない。middlewareで事前に取得することを推奨。
+
+2. **<Link>コンポーネントの使用**: `/auth/*`ルートへのリンクは`<a>`タグを使用する必要がある。`<Link>`を使うとクライアントサイドルーティングが行われ、認証フローが正しく動作しない。
+
+3. **セキュリティ**: `enableAccessTokenEndpoint`はクライアントアプリがリソースサーバーと直接やり取りする必要がない場合はfalseに設定することを推奨。
+
+4. **ベースパス**: Next.jsのbasePathを使用する場合は、`NEXT_PUBLIC_BASE_PATH`環境変数も設定する必要がある。
+
+5. **必須パラメータ**: domain、clientId、appBaseUrl、secretは必須。clientSecretまたはclientAssertionSigningKeyのいずれかも必須。

@@ -135,12 +135,16 @@ const resources = {
   },
 };
 
+// SSRの場合はLanguageDetectorを使わない
+if (typeof window !== "undefined") {
+  i18n.use(LanguageDetector);
+}
+
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     fallbackLng: DEFAULT_LANGUAGE,
-    lng: undefined, // LanguageDetectorに任せる
+    lng: DEFAULT_LANGUAGE, // デフォルト言語を設定
     ns: ["common", "auth"],
     defaultNS: "common",
     interpolation: {
