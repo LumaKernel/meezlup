@@ -12,6 +12,7 @@ import {
   CopyButton,
   ActionIcon,
   Tooltip,
+  Box,
 } from "@mantine/core";
 import { IconLink, IconCalendar } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
@@ -43,7 +44,7 @@ export function EventDetail({ event, params }: EventDetailProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <Stack gap="xl">
       <Group justify="space-between" mb="xl">
         <div>
           <Title order={1} mb="xs">
@@ -100,12 +101,12 @@ export function EventDetail({ event, params }: EventDetailProps) {
           </Group>
 
           {event.deadline && (
-            <div className="mt-4">
+            <Box mt="md">
               <Text size="sm" c="dimmed">
                 {locale === "en" ? "Change Deadline" : "変更期限"}
               </Text>
               <Text fw={500}>{formatDate(event.deadline)}</Text>
-            </div>
+            </Box>
           )}
         </Paper>
 
@@ -168,6 +169,6 @@ export function EventDetail({ event, params }: EventDetailProps) {
           </Button>
         </Group>
       </Stack>
-    </div>
+    </Stack>
   );
 }

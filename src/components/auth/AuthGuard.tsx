@@ -3,6 +3,7 @@
 import { useAuth } from "@/lib/auth/hooks";
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
+import { Center, Loader, Text } from "@mantine/core";
 
 interface AuthGuardProps {
   readonly children: ReactNode;
@@ -32,12 +33,9 @@ export function AuthGuard({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div
-          data-testid="loading-spinner"
-          className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
-        ></div>
-      </div>
+      <Center mih="100vh">
+        <Loader size="lg" data-testid="loading-spinner" />
+      </Center>
     );
   }
 
@@ -45,9 +43,9 @@ export function AuthGuard({
     return fallback ? (
       <>{fallback}</>
     ) : (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-500">認証が必要です...</p>
-      </div>
+      <Center mih="100vh">
+        <Text c="dimmed">認証が必要です...</Text>
+      </Center>
     );
   }
 

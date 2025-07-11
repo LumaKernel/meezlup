@@ -45,7 +45,6 @@ export function LoginButton({ className, returnTo }: LoginButtonProps) {
       onClick={() => {
         login(returnTo);
       }}
-      color="blue"
       className={className}
     >
       {t("login.button")}

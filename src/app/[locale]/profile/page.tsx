@@ -5,6 +5,7 @@ import { UserProfile } from "@/components/auth/UserProfile";
 import { LoginButton } from "@/components/auth/LoginButton";
 import { use, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { Container, Title, Stack, Group } from "@mantine/core";
 
 interface ProfilePageProps {
   readonly params: Promise<{ locale: string }>;
@@ -26,17 +27,19 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   }, [locale, i18n]);
   return (
     <AuthGuard>
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <h1 className="text-3xl font-bold mb-8">{t("navigation.profile")}</h1>
+      <Container size="sm" py="lg">
+        <Title order={1} mb="xl">
+          {t("navigation.profile")}
+        </Title>
 
-        <div className="space-y-6">
+        <Stack gap="lg">
           <UserProfile />
 
-          <div className="flex justify-end">
+          <Group justify="flex-end">
             <LoginButton />
-          </div>
-        </div>
-      </div>
+          </Group>
+        </Stack>
+      </Container>
     </AuthGuard>
   );
 }

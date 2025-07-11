@@ -140,7 +140,7 @@ export function EventResult({ event, params }: EventResultProps) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <Stack gap="xl">
       <Group justify="space-between" mb="xl">
         <div>
           <Title order={1} mb="xs">
@@ -322,6 +322,6 @@ export function EventResult({ event, params }: EventResultProps) {
           </Link>
         </Group>
       </Stack>
-    </div>
+    </Stack>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { EventList } from "@/components/events/EventList";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { Container } from "@mantine/core";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -30,9 +31,9 @@ export default function EventsPage({ params }: Props) {
 function EventsPageContent({ params }: Props) {
   return (
     <AuthGuard>
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <Container size="xl" py="lg">
         <EventList params={params} />
-      </div>
+      </Container>
     </AuthGuard>
   );
 }

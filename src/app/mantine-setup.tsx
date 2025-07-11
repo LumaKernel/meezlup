@@ -9,15 +9,12 @@ interface MantineSetupProps {
 const theme = createTheme({
   fontFamily: "var(--font-geist-sans), sans-serif",
   fontFamilyMonospace: "var(--font-geist-mono), monospace",
+  primaryColor: "blue",
 });
 
 export function MantineSetup({ children }: MantineSetupProps) {
   return (
-    <MantineProvider
-      theme={theme}
-      defaultColorScheme="light"
-      forceColorScheme="light"
-    >
+    <MantineProvider theme={theme}>
       <ModalsProvider>{children}</ModalsProvider>
     </MantineProvider>
   );

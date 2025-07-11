@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { EventCreateForm } from "@/components/events/EventCreateForm";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { Container } from "@mantine/core";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -32,9 +33,9 @@ export default function CreateEventPage({ params }: Props) {
 function CreateEventPageContent({ params }: Props) {
   return (
     <AuthGuard>
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <Container size="md" py="lg">
         <EventCreateForm params={params} />
-      </div>
+      </Container>
     </AuthGuard>
   );
 }

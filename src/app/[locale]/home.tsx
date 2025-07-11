@@ -7,6 +7,16 @@ import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { use, useEffect } from "react";
+import {
+  Container,
+  Group,
+  Stack,
+  Title,
+  Text,
+  Box,
+  SimpleGrid,
+  Center,
+} from "@mantine/core";
 
 interface HomeProps {
   readonly params: Promise<{ locale: string }>;
@@ -85,109 +95,143 @@ export default function Home({ params }: HomeProps) {
   }, [isAuthenticated, isLoading, user]);
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">{t("app.title")}</h1>
-          <div className="flex items-center gap-4">
-            <LanguageSwitcher />
-            {isAuthenticated && (
-              <Link href={`/${locale satisfies string}/profile`}>
-                <Button variant="light" size="sm">
-                  {t("navigation.profile")}
-                </Button>
-              </Link>
-            )}
-            <LoginButton />
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          <h2 className="text-5xl font-bold">
-            {t("hero.title")}
-            <span className="text-primary">{t("hero.titleHighlight")}</span>
-            {t("hero.titleSuffix")}
-          </h2>
-
-          <p className="text-xl text-gray-600">
-            {t("hero.subtitle1")}
-            <br />
-            {t("hero.subtitle2")}
-          </p>
-
-          {isAuthenticated ? (
-            <div className="space-y-6">
-              <p className="text-lg">
-                {t("hero.welcome", { name: user?.name || user?.email })}
-              </p>
-              <div className="flex justify-center gap-4">
-                <Link href={`/${locale satisfies string}/events/new`}>
-                  <Button color="primary" size="lg">
-                    {t("hero.createNewEvent")}
+    <Box mih="100vh">
+      <Box
+        component="header"
+        style={{ borderBottom: "1px solid var(--mantine-color-gray-3)" }}
+      >
+        <Container size="xl" py="md">
+          <Group justify="space-between">
+            <Title order={2}>{t("app.title")}</Title>
+            <Group gap="md">
+              <LanguageSwitcher />
+              {isAuthenticated && (
+                <Link href={`/${locale satisfies string}/profile`}>
+                  <Button variant="light" size="sm">
+                    {t("navigation.profile")}
                   </Button>
                 </Link>
-                <Link href={`/${locale satisfies string}/events`}>
-                  <Button variant="bordered" size="lg">
-                    {t("hero.eventList")}
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <p className="text-lg text-gray-600">{t("hero.loginPrompt")}</p>
-              <LoginButton className="text-lg px-8 py-3" />
-            </div>
-          )}
-        </div>
+              )}
+              <LoginButton />
+            </Group>
+          </Group>
+        </Container>
+      </Box>
 
-        {/* 機能紹介 */}
-        <div className="mt-24 grid md:grid-cols-3 gap-8">
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-              <span className="text-2xl">📅</span>
-            </div>
-            <h3 className="text-xl font-semibold">
-              {t("features.easyCreation.title")}
-            </h3>
-            <p className="text-gray-600">
-              {t("features.easyCreation.description")}
-            </p>
-          </div>
+      <Box component="main">
+        <Container size="xl" py="xl">
+          <Container size="md">
+            <Stack gap="xl" align="center" ta="center">
+              <Title order={1} size={48}>
+                {t("hero.title")}
+                <Text span c="blue" inherit>
+                  {t("hero.titleHighlight")}
+                </Text>
+                {t("hero.titleSuffix")}
+              </Title>
 
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-              <span className="text-2xl">🤝</span>
-            </div>
-            <h3 className="text-xl font-semibold">
-              {t("features.realTimeAdjustment.title")}
-            </h3>
-            <p className="text-gray-600">
-              {t("features.realTimeAdjustment.description")}
-            </p>
-          </div>
+              <Text size="xl" c="dimmed">
+                {t("hero.subtitle1")}
+                <br />
+                {t("hero.subtitle2")}
+              </Text>
 
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-              <span className="text-2xl">🔒</span>
-            </div>
-            <h3 className="text-xl font-semibold">
-              {t("features.privacyFocused.title")}
-            </h3>
-            <p className="text-gray-600">
-              {t("features.privacyFocused.description")}
-            </p>
-          </div>
-        </div>
-      </main>
+              {isAuthenticated ? (
+                <Stack gap="lg">
+                  <Text size="lg">
+                    {t("hero.welcome", { name: user?.name || user?.email })}
+                  </Text>
+                  <Group justify="center" gap="md">
+                    <Link href={`/${locale satisfies string}/events/new`}>
+                      <Button size="lg">{t("hero.createNewEvent")}</Button>
+                    </Link>
+                    <Link href={`/${locale satisfies string}/events`}>
+                      <Button variant="outline" size="lg">
+                        {t("hero.eventList")}
+                      </Button>
+                    </Link>
+                  </Group>
+                </Stack>
+              ) : (
+                <Stack gap="lg">
+                  <Text size="lg" c="dimmed">
+                    {t("hero.loginPrompt")}
+                  </Text>
+                  <LoginButton />
+                </Stack>
+              )}
+            </Stack>
+          </Container>
 
-      <footer className="border-t mt-24">
-        <div className="container mx-auto px-4 py-8 text-center text-gray-600">
-          <p>{t("footer.copyright")}</p>
-        </div>
-      </footer>
-    </div>
+          {/* 機能紹介 */}
+          <SimpleGrid cols={{ base: 1, md: 3 }} spacing="xl" mt={100}>
+            <Stack gap="md" align="center" ta="center">
+              <Center
+                w={64}
+                h={64}
+                style={{
+                  backgroundColor: "var(--mantine-color-blue-1)",
+                  borderRadius: "50%",
+                }}
+              >
+                <Text size="xl">📅</Text>
+              </Center>
+              <Title order={3} size="h4">
+                {t("features.easyCreation.title")}
+              </Title>
+              <Text c="dimmed">{t("features.easyCreation.description")}</Text>
+            </Stack>
+
+            <Stack gap="md" align="center" ta="center">
+              <Center
+                w={64}
+                h={64}
+                style={{
+                  backgroundColor: "var(--mantine-color-blue-1)",
+                  borderRadius: "50%",
+                }}
+              >
+                <Text size="xl">🤝</Text>
+              </Center>
+              <Title order={3} size="h4">
+                {t("features.realTimeAdjustment.title")}
+              </Title>
+              <Text c="dimmed">
+                {t("features.realTimeAdjustment.description")}
+              </Text>
+            </Stack>
+
+            <Stack gap="md" align="center" ta="center">
+              <Center
+                w={64}
+                h={64}
+                style={{
+                  backgroundColor: "var(--mantine-color-blue-1)",
+                  borderRadius: "50%",
+                }}
+              >
+                <Text size="xl">🔒</Text>
+              </Center>
+              <Title order={3} size="h4">
+                {t("features.privacyFocused.title")}
+              </Title>
+              <Text c="dimmed">{t("features.privacyFocused.description")}</Text>
+            </Stack>
+          </SimpleGrid>
+        </Container>
+      </Box>
+
+      <Box
+        component="footer"
+        mt={100}
+        style={{ borderTop: "1px solid var(--mantine-color-gray-3)" }}
+      >
+        <Container size="xl" py="lg">
+          <Text ta="center" c="dimmed">
+            {t("footer.copyright")}
+          </Text>
+        </Container>
+      </Box>
+    </Box>
   );
 }
