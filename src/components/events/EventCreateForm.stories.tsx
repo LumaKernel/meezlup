@@ -55,17 +55,38 @@ export const FilledFormJapanese: Story = {
       "今月の週末に飲み会を開催します。\n参加可能な日時を教えてください！",
     );
 
+    // 日付範囲を選択（重要！）
+    const dateRangeInput = await canvas.findByLabelText("日付範囲");
+    await user.click(dateRangeInput);
+
+    // カレンダーから日付を選択
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+
+    // 今日の日付を選択
+    const todayButton = await canvas.findByRole("button", {
+      name: new RegExp(today.getDate().toString()),
+    });
+    await user.click(todayButton);
+
+    // 1週間後の日付を選択
+    const nextWeekButton = await canvas.findByRole("button", {
+      name: new RegExp(nextWeek.getDate().toString()),
+    });
+    await user.click(nextWeekButton);
+
     // 時間帯の幅を選択
     const durationSelect = await canvas.findByLabelText("時間帯の幅");
     await user.click(durationSelect);
     const thirtyMinOption = await canvas.findByText("30分");
     await user.click(thirtyMinOption);
 
-    // 公開設定を選択
-    const permissionSelect = await canvas.findByLabelText("公開設定");
+    // 権限設定を選択
+    const permissionSelect = await canvas.findByLabelText("権限設定");
     await user.click(permissionSelect);
-    const loginOnlyOption = await canvas.findByText("ログインユーザーのみ");
-    await user.click(loginOnlyOption);
+    const linkOnlyOption = await canvas.findByText("リンクのみ");
+    await user.click(linkOnlyOption);
   },
 };
 
@@ -96,8 +117,29 @@ export const FilledFormEnglish: Story = {
     const oneHourOption = await canvas.findByText("1 hour");
     await user.click(oneHourOption);
 
-    // 公開設定を選択
-    const permissionSelect = await canvas.findByLabelText("Privacy Settings");
+    // 日付範囲を選択
+    const dateRangeInput = await canvas.findByLabelText("Date Range");
+    await user.click(dateRangeInput);
+
+    // カレンダーから日付を選択
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+
+    // 今日の日付を選択
+    const todayButton = await canvas.findByRole("button", {
+      name: new RegExp(today.getDate().toString()),
+    });
+    await user.click(todayButton);
+
+    // 1週間後の日付を選択
+    const nextWeekButton = await canvas.findByRole("button", {
+      name: new RegExp(nextWeek.getDate().toString()),
+    });
+    await user.click(nextWeekButton);
+
+    // 権限設定を選択
+    const permissionSelect = await canvas.findByLabelText("Permission");
     await user.click(permissionSelect);
     const publicOption = await canvas.findByText("Public");
     await user.click(publicOption);

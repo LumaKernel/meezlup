@@ -3,7 +3,7 @@ import { DatabaseServiceLive } from "./database";
 import { EventServiceLive } from "./event";
 import { UserServiceLive } from "./user";
 import { ScheduleServiceLive } from "./schedule";
-import { AuthServiceLive } from "./auth";
+import { AuthServiceLiveFull } from "./auth";
 
 // すべてのサービスを含むレイヤー
 export const ServicesLive = Layer.mergeAll(
@@ -11,11 +11,15 @@ export const ServicesLive = Layer.mergeAll(
   EventServiceLive,
   UserServiceLive,
   ScheduleServiceLive,
-  AuthServiceLive,
+  AuthServiceLiveFull,
 );
 
 // 各サービスの再エクスポート
-export { AuthService, AuthServiceLive } from "./auth/service";
+export {
+  AuthService,
+  AuthServiceLive,
+  AuthServiceLiveFull,
+} from "./auth/service";
 export {
   AuthenticatedUserSchema,
   AnonymousUserSchema,

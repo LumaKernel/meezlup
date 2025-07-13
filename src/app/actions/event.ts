@@ -11,7 +11,6 @@ import {
   DateTimeString,
 } from "@/lib/effects";
 import { runServerActionSafe } from "./runtime";
-import { CreateEventRequest } from "@/lib/effects/services/event/create-event-schema";
 
 // イベント作成のServer Action
 export const createEvent = async (input: CreateEventInput) => {
@@ -71,9 +70,23 @@ export const getEventsByCreator = async (creatorId: string) => {
 // フォームからのイベント作成のServer Action
 export const createEventAction = async (formData: unknown) => {
   const effect = Effect.gen(function* () {
+    // クライアントからの文字列形式のデータをバリデーション
+    const ClientEventRequest = Schema.Struct({
+      name: Schema.String,
+      description: Schema.optional(Schema.String),
+      dateRange: Schema.Struct({
+        start: Schema.String,
+        end: Schema.String,
+      }),
+      timeSlotDuration: Schema.Literal(15, 30, 60),
+      changeDeadline: Schema.optional(Schema.String),
+      maxParticipants: Schema.optional(Schema.Number),
+      permission: Schema.Literal("public", "private", "link-only"),
+    });
+
     // フォームデータをバリデーション
     const validatedData =
-      yield* Schema.decodeUnknown(CreateEventRequest)(formData);
+      yield* Schema.decodeUnknown(ClientEventRequest)(formData);
 
     // 現在のユーザーを取得
     const authService = yield* AuthService;
@@ -89,6 +102,9 @@ export const createEventAction = async (formData: unknown) => {
     }
 
     const currentUser = authenticatedUserOption.value;
+
+    // デバッグ: ユーザー情報を出力
+    console.log("現在のユーザー:", currentUser);
 
     // イベント作成のためのデータを構築
     // PlainDateの文字列表現をISO DateTime文字列に変換

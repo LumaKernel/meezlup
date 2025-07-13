@@ -18,7 +18,7 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:prod": "npm run prisma:setup-env && prisma migrate deploy",
     "prisma:migrate": "node scripts/migrate.js",
-    "prisma:studio": "prisma studio",
+    "prisma:studio": "prisma studio --port 5835",
     "db:up": "docker-compose up -d postgres",
     "db:down": "docker-compose down",
     "db:migrate:test": "DATABASE_URL=\"postgresql://meetzup:meetzup_dev@localhost:5432/meetzup\" npm run prisma:migrate",
@@ -60,6 +60,7 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^3.2.0",
+    "@effect/vitest": "^0.23.12",
     "@eslint/compat": "^1.3.1",
     "@eslint/eslintrc": "^3",
     "@luma-dev/eslint-plugin-luma-ts": "^1.1.0",

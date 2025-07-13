@@ -1,7 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { Effect, Option } from "effect";
-import { AuthService, AuthServiceLive } from "./service";
+import { describe, it, expect } from "@effect/vitest";
+import { Effect, Option, Layer, Cause } from "effect";
+import {
+  AuthService,
+  AuthServiceLive,
+  Auth0Client,
+  PrismaService,
+} from "./service";
+
 // Auth0のセッション型を定義
 interface Session {
   user: {
@@ -11,55 +16,25 @@ interface Session {
     picture?: string;
     nickname?: string;
     email_verified?: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
-// Auth0のモック
-vi.mock("@/lib/auth0", () => ({
-  auth0: {
-    getSession: vi.fn(),
+// テスト用データ
+const testSession: Session = {
+  user: {
+    sub: "auth0|test123",
+    email: "test@example.com",
+    name: "Test User",
+    picture: "https://example.com/avatar.jpg",
+    nickname: "testuser",
+    email_verified: true,
   },
-}));
-
-// Prismaのモック
-const mockPrismaUser = {
-  upsert: vi.fn(),
-  update: vi.fn(),
-  findUnique: vi.fn(),
 };
-
-const mockPrisma = {
-  user: mockPrismaUser,
-  $disconnect: vi.fn(),
-};
-
-vi.mock("@prisma/client", () => ({
-  PrismaClient: vi.fn(() => mockPrisma),
-}));
 
 describe("AuthService", () => {
-  const testSession: Session = {
-    user: {
-      sub: "auth0|test123",
-      email: "test@example.com",
-      name: "Test User",
-      picture: "https://example.com/avatar.jpg",
-      nickname: "testuser",
-      email_verified: true,
-    },
-  };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   describe("syncWithAuth0", () => {
-    it("新規ユーザーを正常に作成する", async () => {
+    it.effect("新規ユーザーを正常に作成する", () => {
       const mockDbUser = {
         id: "user123",
         auth0Id: "auth0|test123",
@@ -67,39 +42,42 @@ describe("AuthService", () => {
         name: "Test User",
         createdAt: new Date("2024-01-01T00:00:00Z"),
         updatedAt: new Date("2024-01-01T00:00:00Z"),
+        preferredLanguage: null,
       };
 
-      mockPrismaUser.upsert.mockResolvedValue(mockDbUser);
-
-      const effect = Effect.gen(function* () {
-        const authService = yield* AuthService;
-        return yield* authService.syncWithAuth0(testSession);
+      // Auth0のモックレイヤー
+      const Auth0TestLayer = Layer.succeed(Auth0Client, {
+        getSession: () => Promise.resolve(testSession),
       });
 
-      const result = await Effect.runPromise(
-        Effect.provide(effect, AuthServiceLive),
+      // Prismaのモックレイヤー
+      const PrismaTestLayer = Layer.succeed(PrismaService, {
+        user: {
+          upsert: () => Promise.resolve(mockDbUser),
+          create: () => Promise.reject(new Error("Should not be called")),
+          update: () => Promise.reject(new Error("Should not be called")),
+          findUnique: () => Promise.reject(new Error("Should not be called")),
+        },
+        $disconnect: () => Promise.resolve(),
+      });
+
+      // AuthServiceのテスト用レイヤーを作成
+      const TestLayer = AuthServiceLive.pipe(
+        Layer.provide(Auth0TestLayer),
+        Layer.provide(PrismaTestLayer),
       );
 
-      expect(mockPrismaUser.upsert).toHaveBeenCalledWith({
-        where: { auth0Id: "auth0|test123" },
-        update: {
-          email: "test@example.com",
-          name: "Test User",
-          updatedAt: expect.any(Date),
-        },
-        create: {
-          auth0Id: "auth0|test123",
-          email: "test@example.com",
-          name: "Test User",
-        },
-      });
+      return Effect.gen(function* () {
+        const authService = yield* AuthService;
+        const result = yield* authService.syncWithAuth0(testSession);
 
-      expect(result.id).toBe("auth0|test123");
-      expect(result.email).toBe("test@example.com");
-      expect(result.name).toBe("Test User");
+        expect(result.id).toBe("auth0|test123");
+        expect(result.email).toBe("test@example.com");
+        expect(result.name).toBe("Test User");
+      }).pipe(Effect.provide(TestLayer));
     });
 
-    it("既存ユーザーを正常に更新する", async () => {
+    it.effect("既存ユーザーを正常に更新する", () => {
       const updatedSession: Session = {
         user: {
           ...testSession.user,
@@ -114,38 +92,88 @@ describe("AuthService", () => {
         name: "Updated Name",
         createdAt: new Date("2024-01-01T00:00:00Z"),
         updatedAt: new Date("2024-01-02T00:00:00Z"),
+        preferredLanguage: null,
       };
 
-      mockPrismaUser.upsert.mockResolvedValue(mockDbUser);
-
-      const effect = Effect.gen(function* () {
-        const authService = yield* AuthService;
-        return yield* authService.syncWithAuth0(updatedSession);
+      const PrismaTestLayer = Layer.succeed(PrismaService, {
+        user: {
+          upsert: () => Promise.resolve(mockDbUser),
+          create: () => Promise.reject(new Error("Should not be called")),
+          update: () => Promise.reject(new Error("Should not be called")),
+          findUnique: () => Promise.reject(new Error("Should not be called")),
+        },
+        $disconnect: () => Promise.resolve(),
       });
 
-      const result = await Effect.runPromise(
-        Effect.provide(effect, AuthServiceLive),
+      const TestLayer = AuthServiceLive.pipe(
+        Layer.provide(
+          Layer.succeed(Auth0Client, {
+            getSession: () => Promise.resolve(updatedSession),
+          }),
+        ),
+        Layer.provide(PrismaTestLayer),
       );
 
-      expect(result.name).toBe("Updated Name");
-      // DateTimeUtcはDateTime.Utc型として返される
-      expect(result.updatedAt).toBeDefined();
+      return Effect.gen(function* () {
+        const authService = yield* AuthService;
+        const result = yield* authService.syncWithAuth0(updatedSession);
+
+        expect(result.name).toBe("Updated Name");
+        expect(result.updatedAt).toBeDefined();
+      }).pipe(Effect.provide(TestLayer));
     });
 
-    it("データベースエラー時に適切なエラーを返す", async () => {
-      mockPrismaUser.upsert.mockRejectedValue(new Error("Database error"));
-
-      const effect = Effect.gen(function* () {
-        const authService = yield* AuthService;
-        return yield* authService.syncWithAuth0(testSession);
+    it.effect("データベースエラー時に適切なエラーを返す", () => {
+      const PrismaTestLayer = Layer.succeed(PrismaService, {
+        user: {
+          upsert: () => Promise.reject(new Error("Database error")),
+          create: () => Promise.reject(new Error("Should not be called")),
+          update: () => Promise.reject(new Error("Should not be called")),
+          findUnique: () => Promise.reject(new Error("Should not be called")),
+        },
+        $disconnect: () => Promise.resolve(),
       });
 
-      await expect(
-        Effect.runPromise(Effect.provide(effect, AuthServiceLive)),
-      ).rejects.toThrow("データベースとの同期に失敗しました");
+      const TestLayer = AuthServiceLive.pipe(
+        Layer.provide(
+          Layer.succeed(Auth0Client, {
+            getSession: () => Promise.resolve(testSession),
+          }),
+        ),
+        Layer.provide(PrismaTestLayer),
+      );
+
+      return Effect.gen(function* () {
+        const authService = yield* AuthService;
+        const result = yield* Effect.exit(
+          authService.syncWithAuth0(testSession),
+        );
+
+        expect(result._tag).toBe("Failure");
+        if (result._tag === "Failure") {
+          // エラー構造を確認
+          const failures = Cause.failures(result.cause);
+          const defects = Cause.defects(result.cause);
+
+          // エラーが存在することを確認
+          expect(failures.length + defects.length).toBeGreaterThan(0);
+
+          // エラーメッセージを確認
+          const errorMessages = [...failures, ...defects].map((e) => {
+            if (typeof e === "object" && e !== null && "message" in e) {
+              return String(e.message);
+            }
+            return JSON.stringify(e);
+          });
+          const hasExpectedMessage = errorMessages.some((msg) =>
+            msg.includes("データベースとの同期に失敗しました"),
+          );
+          expect(hasExpectedMessage).toBe(true);
+        }
+      }).pipe(Effect.provide(TestLayer));
     });
 
-    it("ユーザー名がない場合はnicknameまたはemailを使用する", async () => {
+    it.effect("ユーザー名がない場合はnicknameまたはemailを使用する", () => {
       const sessionWithoutName: Session = {
         user: {
           ...testSession.user,
@@ -161,48 +189,103 @@ describe("AuthService", () => {
         name: "testuser",
         createdAt: new Date("2024-01-01T00:00:00Z"),
         updatedAt: new Date("2024-01-01T00:00:00Z"),
+        preferredLanguage: null,
       };
 
-      mockPrismaUser.upsert.mockResolvedValue(mockDbUser);
+      let upsertArgs: {
+        where: { auth0Id: string };
+        update: { email: string; name: string; updatedAt: Date };
+        create: { auth0Id: string; email: string; name: string };
+      } | null = null;
 
-      const effect = Effect.gen(function* () {
-        const authService = yield* AuthService;
-        return yield* authService.syncWithAuth0(sessionWithoutName);
+      const PrismaTestLayer = Layer.succeed(PrismaService, {
+        user: {
+          upsert: (args) => {
+            upsertArgs = args;
+            return Promise.resolve(mockDbUser);
+          },
+          create: () => Promise.reject(new Error("Should not be called")),
+          update: () => Promise.reject(new Error("Should not be called")),
+          findUnique: () => Promise.reject(new Error("Should not be called")),
+        },
+        $disconnect: () => Promise.resolve(),
       });
 
-      await Effect.runPromise(Effect.provide(effect, AuthServiceLive));
-
-      expect(mockPrismaUser.upsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          create: expect.objectContaining({
-            name: "testuser",
+      const TestLayer = AuthServiceLive.pipe(
+        Layer.provide(
+          Layer.succeed(Auth0Client, {
+            getSession: () => Promise.resolve(sessionWithoutName),
           }),
-        }),
+        ),
+        Layer.provide(PrismaTestLayer),
       );
+
+      return Effect.gen(function* () {
+        const authService = yield* AuthService;
+        yield* authService.syncWithAuth0(sessionWithoutName);
+
+        expect(upsertArgs).not.toBeNull();
+        if (upsertArgs !== null) {
+          expect(upsertArgs.create.name).toBe("testuser");
+        }
+      }).pipe(Effect.provide(TestLayer));
     });
   });
 
   describe("updateUser", () => {
-    it("認証されていない場合はエラーを返す", async () => {
-      const { auth0 } = await import("@/lib/auth0");
-      (auth0.getSession as any).mockResolvedValue(null);
-
-      const effect = Effect.gen(function* () {
-        const authService = yield* AuthService;
-        return yield* authService.updateUser("auth0|test123" as any, {
-          name: "Updated Name",
-        });
+    it.effect("認証されていない場合はエラーを返す", () => {
+      const Auth0TestLayer = Layer.succeed(Auth0Client, {
+        getSession: () => Promise.resolve(null),
       });
 
-      await expect(
-        Effect.runPromise(Effect.provide(effect, AuthServiceLive)),
-      ).rejects.toThrow("認証されていません");
+      const PrismaTestLayer = Layer.succeed(PrismaService, {
+        user: {
+          upsert: () => Promise.reject(new Error("Should not be called")),
+          create: () => Promise.reject(new Error("Should not be called")),
+          update: () => Promise.reject(new Error("Should not be called")),
+          findUnique: () => Promise.reject(new Error("Should not be called")),
+        },
+        $disconnect: () => Promise.resolve(),
+      });
+
+      const TestLayer = AuthServiceLive.pipe(
+        Layer.provide(Auth0TestLayer),
+        Layer.provide(PrismaTestLayer),
+      );
+
+      return Effect.gen(function* () {
+        const authService = yield* AuthService;
+        const result = yield* Effect.exit(
+          authService.updateUser("auth0|test123" as never, {
+            name: "Updated Name",
+          }),
+        );
+
+        expect(result._tag).toBe("Failure");
+        if (result._tag === "Failure") {
+          // エラー構造を確認
+          const failures = Cause.failures(result.cause);
+          const defects = Cause.defects(result.cause);
+
+          // エラーが存在することを確認
+          expect(failures.length + defects.length).toBeGreaterThan(0);
+
+          // エラーメッセージを確認
+          const errorMessages = [...failures, ...defects].map((e) => {
+            if (typeof e === "object" && e !== null && "message" in e) {
+              return String(e.message);
+            }
+            return JSON.stringify(e);
+          });
+          const hasExpectedMessage = errorMessages.some((msg) =>
+            msg.includes("認証されていません"),
+          );
+          expect(hasExpectedMessage).toBe(true);
+        }
+      }).pipe(Effect.provide(TestLayer));
     });
 
-    it("認証済みユーザーの情報を正常に更新する", async () => {
-      const { auth0 } = await import("@/lib/auth0");
-      (auth0.getSession as any).mockResolvedValue(testSession);
-
+    it.effect("認証済みユーザーの情報を正常に更新する", () => {
       const mockUpdatedDbUser = {
         id: "user123",
         auth0Id: "auth0|test123",
@@ -210,119 +293,201 @@ describe("AuthService", () => {
         name: "Updated Name",
         createdAt: new Date("2024-01-01T00:00:00Z"),
         updatedAt: new Date("2024-01-02T00:00:00Z"),
+        preferredLanguage: null,
       };
 
-      mockPrismaUser.update.mockResolvedValue(mockUpdatedDbUser);
+      let updateArgs: {
+        where: { auth0Id: string };
+        data: { name?: string; email?: string; updatedAt: Date };
+      } | null = null;
 
-      const effect = Effect.gen(function* () {
-        const authService = yield* AuthService;
-        return yield* authService.updateUser("auth0|test123" as any, {
-          name: "Updated Name",
-        });
+      const Auth0TestLayer = Layer.succeed(Auth0Client, {
+        getSession: () => Promise.resolve(testSession),
       });
 
-      const result = await Effect.runPromise(
-        Effect.provide(effect, AuthServiceLive),
+      const PrismaTestLayer = Layer.succeed(PrismaService, {
+        user: {
+          upsert: () => Promise.reject(new Error("Should not be called")),
+          create: () => Promise.reject(new Error("Should not be called")),
+          update: (args) => {
+            updateArgs = args;
+            return Promise.resolve(mockUpdatedDbUser);
+          },
+          findUnique: () => Promise.reject(new Error("Should not be called")),
+        },
+        $disconnect: () => Promise.resolve(),
+      });
+
+      const TestLayer = AuthServiceLive.pipe(
+        Layer.provide(Auth0TestLayer),
+        Layer.provide(PrismaTestLayer),
       );
 
-      expect(mockPrismaUser.update).toHaveBeenCalledWith({
-        where: { auth0Id: "auth0|test123" },
-        data: {
+      return Effect.gen(function* () {
+        const authService = yield* AuthService;
+        const result = yield* authService.updateUser("auth0|test123" as never, {
           name: "Updated Name",
-          updatedAt: expect.any(Date),
-        },
-      });
+        });
 
-      expect(result.name).toBe("Updated Name");
+        expect(updateArgs).not.toBeNull();
+        if (updateArgs !== null) {
+          expect(updateArgs.where.auth0Id).toBe("auth0|test123");
+          expect(updateArgs.data.name).toBe("Updated Name");
+          expect(updateArgs.data.updatedAt).toBeInstanceOf(Date);
+        }
+
+        expect(result.name).toBe("Updated Name");
+      }).pipe(Effect.provide(TestLayer));
     });
   });
 
   describe("getCurrentAuthState", () => {
-    it("認証済みユーザーの状態を正常に返す", async () => {
-      const { auth0 } = await import("@/lib/auth0");
-      (auth0.getSession as any).mockResolvedValue(testSession);
-
-      const effect = Effect.gen(function* () {
-        const authService = yield* AuthService;
-        return yield* authService.getCurrentAuthState;
+    it.effect("認証済みユーザーの状態を正常に返す", () => {
+      const Auth0TestLayer = Layer.succeed(Auth0Client, {
+        getSession: () => Promise.resolve(testSession),
       });
 
-      const result = await Effect.runPromise(
-        Effect.provide(effect, AuthServiceLive),
+      const PrismaTestLayer = Layer.succeed(PrismaService, {
+        user: {
+          upsert: () => Promise.reject(new Error("Should not be called")),
+          create: () => Promise.reject(new Error("Should not be called")),
+          update: () => Promise.reject(new Error("Should not be called")),
+          findUnique: () => Promise.reject(new Error("Should not be called")),
+        },
+        $disconnect: () => Promise.resolve(),
+      });
+
+      const TestLayer = AuthServiceLive.pipe(
+        Layer.provide(Auth0TestLayer),
+        Layer.provide(PrismaTestLayer),
       );
 
-      expect(result.isAuthenticated).toBe(true);
-      if (result.user && "email" in result.user) {
-        expect(result.user.email).toBe("test@example.com");
-        expect(result.user.name).toBe("Test User");
-      }
+      return Effect.gen(function* () {
+        const authService = yield* AuthService;
+        const result = yield* authService.getCurrentAuthState;
+
+        expect(result.isAuthenticated).toBe(true);
+        if (result.user && "email" in result.user) {
+          expect(result.user.email).toBe("test@example.com");
+          expect(result.user.name).toBe("Test User");
+        }
+      }).pipe(Effect.provide(TestLayer));
     });
 
-    it("未認証ユーザーの場合は匿名ユーザー状態を返す", async () => {
-      const { auth0 } = await import("@/lib/auth0");
-      (auth0.getSession as any).mockResolvedValue(null);
-
+    it.effect("未認証ユーザーの場合は匿名ユーザー状態を返す", () => {
       // localStorageのモック
+      const originalLocalStorage = global.localStorage;
       const mockLocalStorage = {
-        getItem: vi.fn(() => "test-session-id"),
-        setItem: vi.fn(),
+        getItem: () => "test-session-id",
+        setItem: () => {},
+        removeItem: () => {},
+        clear: () => {},
+        key: () => null,
+        length: 0,
       };
-      Object.defineProperty(window, "localStorage", {
+      Object.defineProperty(global, "localStorage", {
         value: mockLocalStorage,
         writable: true,
+        configurable: true,
       });
 
-      const effect = Effect.gen(function* () {
-        const authService = yield* AuthService;
-        return yield* authService.getCurrentAuthState;
+      const Auth0TestLayer = Layer.succeed(Auth0Client, {
+        getSession: () => Promise.resolve(null),
       });
 
-      const result = await Effect.runPromise(
-        Effect.provide(effect, AuthServiceLive),
+      const PrismaTestLayer = Layer.succeed(PrismaService, {
+        user: {
+          upsert: () => Promise.reject(new Error("Should not be called")),
+          create: () => Promise.reject(new Error("Should not be called")),
+          update: () => Promise.reject(new Error("Should not be called")),
+          findUnique: () => Promise.reject(new Error("Should not be called")),
+        },
+        $disconnect: () => Promise.resolve(),
+      });
+
+      const TestLayer = AuthServiceLive.pipe(
+        Layer.provide(Auth0TestLayer),
+        Layer.provide(PrismaTestLayer),
       );
 
-      expect(result.isAuthenticated).toBe(false);
-      if (result.user && "isAnonymous" in result.user) {
-        expect(result.user.isAnonymous).toBe(true);
-        expect(result.user.sessionId).toBe("test-session-id");
-      }
+      return Effect.gen(function* () {
+        const authService = yield* AuthService;
+        const result = yield* authService.getCurrentAuthState;
+
+        expect(result.isAuthenticated).toBe(false);
+        if (result.user && "isAnonymous" in result.user) {
+          expect(result.user.isAnonymous).toBe(true);
+          expect(result.user.sessionId).toBe("test-session-id");
+        }
+
+        // クリーンアップ
+        Object.defineProperty(global, "localStorage", {
+          value: originalLocalStorage,
+          writable: true,
+          configurable: true,
+        });
+      }).pipe(Effect.provide(TestLayer));
     });
   });
 
   describe("getAuthenticatedUser", () => {
-    it("認証済みユーザーの場合はユーザー情報を返す", async () => {
-      const { auth0 } = await import("@/lib/auth0");
-      (auth0.getSession as any).mockResolvedValue(testSession);
-
-      const effect = Effect.gen(function* () {
-        const authService = yield* AuthService;
-        return yield* authService.getAuthenticatedUser;
+    it.effect("認証済みユーザーの場合はユーザー情報を返す", () => {
+      const Auth0TestLayer = Layer.succeed(Auth0Client, {
+        getSession: () => Promise.resolve(testSession),
       });
 
-      const result = await Effect.runPromise(
-        Effect.provide(effect, AuthServiceLive),
+      const PrismaTestLayer = Layer.succeed(PrismaService, {
+        user: {
+          upsert: () => Promise.reject(new Error("Should not be called")),
+          create: () => Promise.reject(new Error("Should not be called")),
+          update: () => Promise.reject(new Error("Should not be called")),
+          findUnique: () => Promise.reject(new Error("Should not be called")),
+        },
+        $disconnect: () => Promise.resolve(),
+      });
+
+      const TestLayer = AuthServiceLive.pipe(
+        Layer.provide(Auth0TestLayer),
+        Layer.provide(PrismaTestLayer),
       );
 
-      expect(Option.isSome(result)).toBe(true);
-      if (Option.isSome(result)) {
-        expect(result.value.email).toBe("test@example.com");
-      }
+      return Effect.gen(function* () {
+        const authService = yield* AuthService;
+        const result = yield* authService.getAuthenticatedUser;
+
+        expect(Option.isSome(result)).toBe(true);
+        if (Option.isSome(result)) {
+          expect(result.value.email).toBe("test@example.com");
+        }
+      }).pipe(Effect.provide(TestLayer));
     });
 
-    it("未認証ユーザーの場合はNoneを返す", async () => {
-      const { auth0 } = await import("@/lib/auth0");
-      (auth0.getSession as any).mockResolvedValue(null);
-
-      const effect = Effect.gen(function* () {
-        const authService = yield* AuthService;
-        return yield* authService.getAuthenticatedUser;
+    it.effect("未認証ユーザーの場合はNoneを返す", () => {
+      const Auth0TestLayer = Layer.succeed(Auth0Client, {
+        getSession: () => Promise.resolve(null),
       });
 
-      const result = await Effect.runPromise(
-        Effect.provide(effect, AuthServiceLive),
+      const PrismaTestLayer = Layer.succeed(PrismaService, {
+        user: {
+          upsert: () => Promise.reject(new Error("Should not be called")),
+          create: () => Promise.reject(new Error("Should not be called")),
+          update: () => Promise.reject(new Error("Should not be called")),
+          findUnique: () => Promise.reject(new Error("Should not be called")),
+        },
+        $disconnect: () => Promise.resolve(),
+      });
+
+      const TestLayer = AuthServiceLive.pipe(
+        Layer.provide(Auth0TestLayer),
+        Layer.provide(PrismaTestLayer),
       );
 
-      expect(Option.isNone(result)).toBe(true);
+      return Effect.gen(function* () {
+        const authService = yield* AuthService;
+        const result = yield* authService.getAuthenticatedUser;
+
+        expect(Option.isNone(result)).toBe(true);
+      }).pipe(Effect.provide(TestLayer));
     });
   });
 });

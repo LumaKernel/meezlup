@@ -6,15 +6,22 @@ import { ServicesLive } from "@/lib/effects";
 import type { AppError } from "@/lib/effects";
 
 // Server Actions用のランタイムを作成
-let runtime: ManagedRuntime.ManagedRuntime<
-  Layer.Layer.Success<typeof ServicesLive>,
-  never
-> | null = null;
+let runtime:
+  | ManagedRuntime.ManagedRuntime<
+      Layer.Layer.Success<typeof ServicesLive>,
+      never
+    >
+  | undefined;
 
 // ランタイムを取得（遅延初期化）
 const getRuntime = () => {
   if (!runtime) {
-    runtime = ManagedRuntime.make(ServicesLive);
+    runtime = ManagedRuntime.make(
+      ServicesLive,
+    ) as ManagedRuntime.ManagedRuntime<
+      Layer.Layer.Success<typeof ServicesLive>,
+      never
+    >;
   }
   return runtime;
 };

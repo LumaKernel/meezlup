@@ -40,6 +40,7 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
     description: "",
     timeSlotDuration: 30,
     permission: "link-only",
+    dateRange: undefined,
   });
 
   // フィールドごとのエラー状態
@@ -133,7 +134,19 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
 
     startTransition(async () => {
       try {
-        const result = await createEventAction(formData);
+        // Temporal.PlainDateを文字列に変換
+        const submitData = {
+          ...formData,
+          dateRange: formData.dateRange
+            ? {
+                start: formData.dateRange.start.toString(),
+                end: formData.dateRange.end.toString(),
+              }
+            : undefined,
+          changeDeadline: formData.changeDeadline?.toString(),
+        };
+
+        const result = await createEventAction(submitData);
 
         if ("error" in result) {
           setError(result.error);
@@ -232,24 +245,14 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
                   : undefined
               }
               onChange={(value) => {
-                if (Array.isArray(value)) {
-                  const startDate = value[0];
-                  const endDate = value[1];
-                  // null チェックとDate型チェック
-                  if (
-                    startDate &&
-                    endDate &&
-                    typeof startDate === "object" &&
-                    typeof endDate === "object" &&
-                    "toISOString" in startDate &&
-                    "toISOString" in endDate
-                  ) {
+                if (Array.isArray(value) && value[0] && value[1]) {
+                  try {
                     const dateRange = {
                       start: Temporal.PlainDate.from(
-                        (startDate as Date).toISOString().split("T")[0],
+                        new Date(value[0]).toISOString().split("T")[0],
                       ),
                       end: Temporal.PlainDate.from(
-                        (endDate as Date).toISOString().split("T")[0],
+                        new Date(value[1]).toISOString().split("T")[0],
                       ),
                     };
                     setFormData({
@@ -257,6 +260,8 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
                       dateRange,
                     });
                     validateField("dateRange", dateRange);
+                  } catch (error) {
+                    console.error("Error parsing date:", error);
                   }
                 }
               }}
