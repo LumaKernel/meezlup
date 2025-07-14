@@ -1,4 +1,5 @@
 import type { StorybookConfig } from "@storybook/nextjs";
+import path from "path";
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
@@ -28,6 +29,16 @@ const config: StorybookConfig = {
   },
   core: {
     disableTelemetry: true,
+  },
+  webpackFinal: async (config) => {
+    // useAuthフックをモックに置き換え
+    if (config.resolve) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "@/lib/auth/hooks": path.resolve(__dirname, "./mocks/auth-hooks.ts"),
+      };
+    }
+    return config;
   },
 };
 export default config;

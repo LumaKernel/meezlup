@@ -1,0 +1,83 @@
+# Vremel - JavaScript Date Utility Library for Temporal API
+
+最終更新: 2025-01-14
+
+## 概要
+
+Vremelは、Temporal API用のJavaScript日付ユーティリティライブラリ。date-fnsに着想を得て作られており、Temporal APIをより使いやすくするためのヘルパー関数を提供する。
+
+## 主な特徴
+
+1. **Pure Functions**: すべての関数が純粋関数として実装されている
+2. **Tree-shaking対応**: デフォルトでtree-shakingをサポート
+3. **TypeScript完全対応**: すべてのTemporal型に対する厳密な型定義
+4. **ESMのみ**: ECMAScript Modulesのみをサポート（CommonJSは非対応）
+5. **すべてのTemporal型をサポート**: Instant, ZonedDateTime, PlainDate等、すべてのTemporal型に対応
+6. **タイムゾーンとカレンダーの厳密な処理**: タイムゾーンとカレンダーを厳密に扱う
+
+## インストール
+
+```bash
+# npm経由
+npm install vremel
+
+# JSR (Deno)経由
+deno add @fabon/vremel
+```
+
+## 必要な依存関係
+
+Temporal APIのポリフィルが必要:
+- `temporal-polyfill` または
+- `@js-temporal/polyfill`
+
+## 基本的な使用例
+
+```typescript
+import { Temporal } from "temporal-polyfill";
+import { isAfter, compareDesc } from "vremel";
+import { isEqual } from "vremel/duration"; // Temporal.Duration用のユーティリティ
+
+// 日付の比較
+isAfter(
+  Temporal.PlainDate.from("2024-01-01"),
+  Temporal.PlainDate.from("2024-02-01"),
+); // false
+
+// 日付のソート
+[
+  Temporal.PlainDate.from("2024-01-01"),
+  Temporal.PlainDate.from("2024-02-01"),
+  Temporal.PlainDate.from("2023-11-30"),
+]
+.sort(compareDesc)
+.map((d) => d.toString());
+// [ '2024-02-01', '2024-01-01', '2023-11-30' ]
+
+// Duration の比較
+isEqual(
+  Temporal.Duration.from({ hours: 3 }),
+  Temporal.Duration.from({ hours: 3 }),
+); // true
+```
+
+## プロジェクトでの活用可能性
+
+Meetzupプロジェクトでの日付/時刻処理において、以下の点で有用:
+
+1. **イベントの日時管理**: イベントの開始・終了時刻の比較、ソート、期間計算
+2. **タイムゾーン対応**: 参加者の異なるタイムゾーンを考慮したスケジュール管理
+3. **型安全性**: TypeScriptの厳密な型定義により、日付関連のバグを防げる
+4. **モダンなAPI**: 将来的にTemporal APIが標準化された際の移行がスムーズ
+
+## 注意点
+
+- Temporal APIはまだStage 3の提案段階（正式な標準ではない）
+- ポリフィルが必要
+- CommonJSはサポートされていない（ESMのみ）
+
+## リソース
+
+- JSR Package: https://jsr.io/@fabon/vremel
+- GitHub: https://github.com/fabon-f/vremel（fabon-fのプロフィールページに表示）
+- 作者のブログ記事: https://dev.to/fabon/publish-pure-esm-npm-package-written-in-typescript-to-jsr-4ih2

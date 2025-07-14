@@ -13,7 +13,7 @@
   - 参照するときはgrepやrgを利用し、周辺の情報を部分的に参照せよ。
 - 特定の作業中に、ルールに則っていないものが見付かれば、同時にリファクタリングを適切に行う
 - タスクを依頼されたときは、まずその内容を分析し、そのままの順番でやるのではなく、適切に再構成してTODOリストを作成して進める
-- npm run typecheck / npm run lint-fix で必ず最後に確認する
+- npm run typecheck / npm run lint-fix / npm run test / npm run storbook-test で必ず最後に確認する
 - eslint ignoreをなるべく利用しない。どうしても必要ならかならず `/* eslint-ignore-next-line @foo/bar -- ... */` のように必ず理由をコメントで書くこと。
   - なるべくファイル単位のignoreを利用し、かつそのファイルを小さく分離してignoreする領域を小さくすること。
   - ignoreやanyを利用する対象は必ず `_unsafe_/` というのが間に入るようなディレクトリ配下に入れること。

@@ -3,14 +3,7 @@ import React, { useEffect } from "react";
 import { MantineProvider, createTheme } from "@mantine/core";
 import { I18nextProvider } from "react-i18next";
 import i18n from "../src/lib/i18n/client";
-import "../src/app/globals.css";
-import {
-  createMockUseAuth,
-  createMockUseAuthActions,
-  defaultMockAuthData,
-  mockLogin,
-  mockLogout,
-} from "./mocks/auth";
+import "@mantine/core/styles.css";
 
 const theme = createTheme({
   fontFamily: "system-ui, sans-serif",
@@ -18,11 +11,15 @@ const theme = createTheme({
 
 // グローバルデコレーター
 const withProviders = (Story: any, context: any) => {
-  // モック関数をリセット
+  // auth parametersをグローバルコンテキストに設定
   useEffect(() => {
-    mockLogin.mockClear();
-    mockLogout.mockClear();
-  }, []);
+    const authParams = context.parameters?.auth;
+    (globalThis as any).__STORYBOOK_AUTH__ = authParams || {
+      isAuthenticated: false,
+      isLoading: false,
+      user: null,
+    };
+  }, [context.parameters?.auth]);
 
   // ロケール設定
   useEffect(() => {
@@ -53,6 +50,11 @@ const preview: Preview = {
     },
     nextjs: {
       appDirectory: true,
+    },
+    auth: {
+      isAuthenticated: false,
+      isLoading: false,
+      user: null,
     },
     backgrounds: {
       default: "light",

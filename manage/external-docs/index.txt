@@ -2,6 +2,15 @@
 
 このファイルは、プロジェクトで参照すべき外部ドキュメントの一覧を管理する。
 
+## Vremel
+- manage/external-docs/vremel/overview.txt
+  - Temporal API用のJavaScript日付ユーティリティライブラリの概要
+  - 基本的な使用例と特徴
+- manage/external-docs/vremel/formatting-guide.txt
+  - Temporal型のフォーマッティング方法
+  - toLocaleString()とIntl.DateTimeFormatの使用方法
+  - ロケールサポートとカスタムフォーマッターの実装例
+
 ## Next.js Server Actions
 - manage/external-docs/nextjs-server-actions/best-practices-2024.txt
   - Next.js 14以降のServer Actionsベストプラクティス

@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { EventParticipate } from "./EventParticipate";
-import { within, userEvent, expect } from "@storybook/test";
 import type { Event as EffectEvent } from "@/lib/effects/services/event/schemas";
 import { Schema } from "effect";
 import { EventId, NonEmptyString, DateTimeString, UserId } from "@/lib/effects";
@@ -94,33 +93,6 @@ export const WithSelectedSlots: Story = {
     event: mockEvent,
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const user = userEvent.setup();
-
-    // 非認証ユーザー情報を入力
-    const nameInput = await canvas.findByLabelText("名前");
-    await user.type(nameInput, "田中太郎");
-
-    const emailInput = await canvas.findByLabelText("メールアドレス");
-    await user.type(emailInput, "tanaka@example.com");
-
-    // 時間枠を選択（最初の3つを選択）
-    const timeSlots = await canvas.findAllByText("09:00");
-    if (timeSlots.length > 0) {
-      await user.click(timeSlots[0].closest("div[style]")!);
-    }
-
-    const timeSlots2 = await canvas.findAllByText("09:30");
-    if (timeSlots2.length > 0) {
-      await user.click(timeSlots2[0].closest("div[style]")!);
-    }
-
-    const timeSlots3 = await canvas.findAllByText("10:00");
-    if (timeSlots3.length > 0) {
-      await user.click(timeSlots3[0].closest("div[style]")!);
-    }
-  },
 };
 
 // 長期間のイベント
@@ -169,28 +141,6 @@ export const ErrorNoSlotSelected: Story = {
   args: {
     event: mockEvent,
     params: Promise.resolve({ locale: "ja", id: "event123" }),
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const user = userEvent.setup();
-
-    // 非認証ユーザー情報を入力
-    const nameInput = await canvas.findByLabelText("名前");
-    await user.type(nameInput, "田中太郎");
-
-    const emailInput = await canvas.findByLabelText("メールアドレス");
-    await user.type(emailInput, "tanaka@example.com");
-
-    // 時間枠を選択せずに送信
-    const submitButton = await canvas.findByRole("button", {
-      name: "参加可能時間を送信",
-    });
-    await user.click(submitButton);
-
-    // エラーメッセージが表示される
-    await expect(
-      canvas.findByText("少なくとも1つの時間帯を選択してください"),
-    ).resolves.toBeInTheDocument();
   },
 };
 

@@ -17,9 +17,11 @@ import {
   Tooltip,
   Button,
 } from "@mantine/core";
-import { IconCalendar, IconUsers, IconClock } from "@tabler/icons-react";
-import { Temporal } from "temporal-polyfill";
+import { IconUsers, IconClock } from "@tabler/icons-react";
 import Link from "next/link";
+import { DateDisplay } from "@/components/ui/DateDisplay";
+import { EventResultDateSection } from "./EventResultDateSection";
+import { Temporal } from "temporal-polyfill";
 import type { Event as EffectEvent } from "@/lib/effects/services/event/schemas";
 import { getAggregatedTimeSlots } from "@/app/actions/schedule";
 
@@ -181,20 +183,34 @@ export function EventResult({ event, params }: EventResultProps) {
 
           <Stack gap="xl">
             {Object.entries(slotsByDate).map(([dateStr, slots]) => {
-              const date = Temporal.PlainDate.from(dateStr);
+              // 日付文字列からZonedDateTimeへ変換
+              let zonedDateTime;
+              try {
+                // ISO 8601形式の完全な日時文字列の場合
+                if (dateStr.includes("T")) {
+                  const instant = Temporal.Instant.from(dateStr);
+                  zonedDateTime = instant.toZonedDateTimeISO("UTC");
+                } else {
+                  // 日付のみの場合
+                  const plainDate = Temporal.PlainDate.from(dateStr);
+                  const plainDateTime = plainDate.toPlainDateTime({
+                    hour: 0,
+                    minute: 0,
+                  });
+                  zonedDateTime = plainDateTime.toZonedDateTime("UTC");
+                }
+              } catch (error) {
+                console.error("日付のパースに失敗しました:", dateStr, error);
+                // エラーの場合はスキップ
+                return null;
+              }
+
               return (
-                <div key={dateStr}>
-                  <Title order={4} mb="md">
-                    <Group gap="xs">
-                      <IconCalendar size={20} />
-                      {date.toLocaleString(locale, {
-                        weekday: "long",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </Group>
-                  </Title>
+                <EventResultDateSection
+                  key={dateStr}
+                  zonedDateTime={zonedDateTime}
+                  locale={locale}
+                >
                   <Grid>
                     {slots.map((slot) => {
                       const hours = Math.floor(slot.startTime / 60);
@@ -258,7 +274,7 @@ export function EventResult({ event, params }: EventResultProps) {
                       );
                     })}
                   </Grid>
-                </div>
+                </EventResultDateSection>
               );
             })}
           </Stack>
@@ -273,7 +289,6 @@ export function EventResult({ event, params }: EventResultProps) {
               .sort((a, b) => b.participantCount - a.participantCount)
               .slice(0, 5)
               .map((slot) => {
-                const date = Temporal.PlainDate.from(slot.date.split("T")[0]);
                 const hours = Math.floor(slot.startTime / 60);
                 const minutes = slot.startTime % 60;
                 const timeStr = `${hours.toString().padStart(2, "0") satisfies string}:${minutes.toString().padStart(2, "0") satisfies string}`;
@@ -285,13 +300,27 @@ export function EventResult({ event, params }: EventResultProps) {
                     withBorder
                   >
                     <Group justify="space-between" mb="xs">
-                      <Text fw={500}>
-                        {date.toLocaleString(locale, {
-                          month: "short",
-                          day: "numeric",
-                        })}{" "}
-                        {timeStr}
-                      </Text>
+                      <Group gap="xs">
+                        <DateDisplay
+                          zonedDateTime={(() => {
+                            const plainDate = Temporal.PlainDate.from(
+                              slot.date,
+                            );
+                            const plainDateTime = plainDate.toPlainDateTime({
+                              hour: 0,
+                              minute: 0,
+                            });
+                            return plainDateTime.toZonedDateTime("UTC");
+                          })()}
+                          locale={locale}
+                          formatOptions={{
+                            month: "short",
+                            day: "numeric",
+                          }}
+                          dateOnly
+                        />
+                        <Text fw={500}>{timeStr}</Text>
+                      </Group>
                       <Badge>
                         {slot.participantCount}/{totalParticipants}
                       </Badge>

@@ -1,0 +1,43 @@
+# 日付パースエラー修正 - 懸念事項
+
+## 完了した内容
+1. EventResult.tsxの日付パースエラーを修正
+   - `Temporal.PlainDate.from()`への直接的な日時文字列渡しを修正
+   - `Temporal.Instant.from()`を使用してから`toZonedDateTime()`に変更
+2. DateDisplayコンポーネントを作成
+   - Temporal.ZonedDateTimeを受け取り、ローカライズされた日付を表示
+   - 日付のみ/日時表示の切り替え機能
+   - Storybookとテストを追加
+3. temporal-utils.tsを作成
+   - parseToZonedDateTime: 文字列からZonedDateTimeへの変換
+   - 日付のみの文字列（YYYY-MM-DD）にも対応
+4. EventResultDateSectionコンポーネントを作成
+   - 文字列→Temporal変換を行うコンテナコンポーネント
+   - EventResultで使用する日付セクションを抽象化
+5. EventResultコンポーネントをリファクタリング
+   - DateDisplayとEventResultDateSectionを使用するように変更
+
+## 懸念事項
+
+### 1. 他のコンポーネントでのsplit("T")[0]の使用
+- EventParticipate、EventDetail、EventList、EventCreateFormなどで同じパターンが使用されている
+- これらも同様にDateDisplayコンポーネントまたはtemporal-utilsに置き換えるべき
+
+### 2. タイムゾーンの扱い
+- 現在はUTCで統一しているが、ユーザーのローカルタイムゾーンを考慮する必要があるかもしれない
+- 特にイベント作成時と表示時でタイムゾーンの一貫性を保つ必要がある
+
+### 3. エラーハンドリングの改善
+- DateDisplayコンポーネントでエラーメッセージを表示しているが、より詳細なエラー情報を提供できる
+- Sentryなどのエラー監視ツールへの統合を検討
+
+### 4. パフォーマンス
+- 大量の日付を表示する場合（例：カレンダービュー）のパフォーマンス最適化が必要
+- React.memoやuseMemoの活用を検討
+
+## TODO
+- [ ] 他のコンポーネントでのsplit("T")[0]パターンをDateDisplayに置き換え
+- [ ] タイムゾーン処理の統一化
+- [ ] 日付フォーマットのカスタマイズオプションの追加
+- [ ] より詳細なエラーハンドリング
+- [ ] パフォーマンス最適化

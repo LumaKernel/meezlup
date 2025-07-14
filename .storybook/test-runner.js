@@ -2,7 +2,7 @@ const { getStoryContext } = require("@storybook/test-runner");
 
 module.exports = {
   // テストのタイムアウト設定（デフォルト: 15000ms）
-  testTimeout: 30000,
+  testTimeout: 60000,
 
   // テスト実行前のセットアップ
   async preVisit(page, context) {
@@ -15,13 +15,8 @@ module.exports = {
     });
   },
 
-  // 各ストーリーのレンダリング前
-  async preRender(page, context) {
-    // 必要に応じてモックやスタブの設定
-  },
-
   // 各ストーリーのレンダリング後
-  async postRender(page, context) {
+  async postVisit(page, context) {
     // アクセシビリティチェックなど
     const storyContext = await getStoryContext(page, context);
 

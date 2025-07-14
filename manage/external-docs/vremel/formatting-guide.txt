@@ -1,0 +1,164 @@
+# Vremel Formatting Guide
+
+最終更新: 2025-01-14
+
+## 重要な発見
+
+VremelはTemporal API用のユーティリティライブラリだが、**専用のフォーマッティング関数は提供していない**。代わりに、Temporal APIの標準的なフォーマッティング機能を使用する必要がある。
+
+## Temporal APIでの日付/時刻フォーマッティング
+
+### 1. toLocaleString()メソッド
+
+Temporal型（ZonedDateTime、PlainDate等）は、標準的な`toLocaleString()`メソッドを提供:
+
+```typescript
+import { Temporal } from "temporal-polyfill";
+
+// PlainDate
+const date = Temporal.PlainDate.from("2024-01-15");
+date.toLocaleString("ja-JP"); // "2024/1/15"
+date.toLocaleString("en-US"); // "1/15/2024"
+
+// ZonedDateTime
+const zdt = Temporal.ZonedDateTime.from({
+  year: 2024,
+  month: 1,
+  day: 15,
+  hour: 14,
+  minute: 30,
+  timeZone: "Asia/Tokyo"
+});
+
+// ロケールとオプション指定
+zdt.toLocaleString("ja-JP", {
+  dateStyle: "full",
+  timeStyle: "medium"
+}); // "2024年1月15日月曜日 14:30:00"
+
+// カスタムフォーマット
+zdt.toLocaleString("en-US", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: true
+}); // "01/15/2024, 02:30 PM"
+```
+
+### 2. Intl.DateTimeFormatとの統合
+
+パフォーマンスが重要な場合は、`Intl.DateTimeFormat`を使用:
+
+```typescript
+const formatter = new Intl.DateTimeFormat("ja-JP", {
+  dateStyle: "full",
+  timeStyle: "short"
+});
+
+const zdt = Temporal.ZonedDateTime.from("2024-01-15T14:30[Asia/Tokyo]");
+formatter.format(zdt); // "2024年1月15日月曜日 14:30"
+```
+
+### 3. フォーマットオプション
+
+利用可能なオプション:
+
+```typescript
+interface DateTimeFormatOptions {
+  // 日付スタイル
+  dateStyle?: "full" | "long" | "medium" | "short";
+  
+  // 時刻スタイル
+  timeStyle?: "full" | "long" | "medium" | "short";
+  
+  // 個別コンポーネント
+  weekday?: "long" | "short" | "narrow";
+  era?: "long" | "short" | "narrow";
+  year?: "numeric" | "2-digit";
+  month?: "numeric" | "2-digit" | "long" | "short" | "narrow";
+  day?: "numeric" | "2-digit";
+  hour?: "numeric" | "2-digit";
+  minute?: "numeric" | "2-digit";
+  second?: "numeric" | "2-digit";
+  fractionalSecondDigits?: 0 | 1 | 2 | 3;
+  
+  // その他
+  timeZoneName?: "long" | "short" | "shortOffset" | "longOffset" | "shortGeneric" | "longGeneric";
+  hour12?: boolean;
+  calendar?: string; // 例: "japanese", "chinese", "islamic"
+  numberingSystem?: string; // 例: "arab", "hans", "latn"
+}
+```
+
+## Vremelと組み合わせた使用例
+
+Vremelの比較・操作関数と標準フォーマッティングを組み合わせる:
+
+```typescript
+import { Temporal } from "temporal-polyfill";
+import { isAfter, addDays, startOfMonth } from "vremel";
+
+// イベントの日付を処理
+const eventDate = Temporal.PlainDate.from("2024-02-15");
+const today = Temporal.Now.plainDateISO();
+
+if (isAfter(eventDate, today)) {
+  console.log(`イベントは${eventDate.toLocaleString("ja-JP")}に開催されます`);
+}
+
+// 月初からの日数を計算
+const monthStart = startOfMonth(eventDate);
+const formattedRange = `${monthStart.toLocaleString("ja-JP")}から${eventDate.toLocaleString("ja-JP")}まで`;
+```
+
+## Meetzupプロジェクトでの推奨実装
+
+```typescript
+// src/lib/temporal/format.ts
+import { Temporal } from "temporal-polyfill";
+
+// 日本語フォーマッター
+export const jpDateFormatter = new Intl.DateTimeFormat("ja-JP", {
+  dateStyle: "long"
+});
+
+export const jpDateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
+  dateStyle: "long",
+  timeStyle: "short"
+});
+
+// 汎用フォーマット関数
+export const formatEventDate = (
+  date: Temporal.PlainDate | Temporal.ZonedDateTime,
+  locale: string = "ja-JP"
+): string => {
+  if (date instanceof Temporal.PlainDate) {
+    return date.toLocaleString(locale, { dateStyle: "long" });
+  }
+  return date.toLocaleString(locale, { 
+    dateStyle: "long", 
+    timeStyle: "short" 
+  });
+};
+
+// タイムゾーン付きフォーマット
+export const formatWithTimeZone = (
+  zdt: Temporal.ZonedDateTime,
+  locale: string = "ja-JP"
+): string => {
+  return zdt.toLocaleString(locale, {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZoneName: "short"
+  });
+};
+```
+
+## まとめ
+
+- Vremelは日付の**操作・比較**に特化したライブラリ
+- フォーマッティングはTemporal APIの標準メソッド（`toLocaleString()`）を使用
+- ロケールサポートは`Intl.DateTimeFormat`経由で完全対応
+- カスタムフォーマッターを作成して再利用することを推奨
