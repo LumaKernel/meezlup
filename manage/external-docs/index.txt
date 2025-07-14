@@ -31,3 +31,10 @@
   - next-i18next翻訳キーの命名規則とベストプラクティス
   - ファイル構造、階層設計、React コンポーネントでの使用方法
   - 補間（interpolation）の実装パターン
+
+## styled-jsx
+- manage/external-docs/styled-jsx/nextjs14-app-router-guide.txt
+  - styled-jsx v5.1.0以上のNext.js 14/15 App Router対応ガイド
+  - Style Registry設定、layout.tsxでのグローバルスタイル実装
+  - CSS変数とフォント統合、ハイドレーションエラー対策
+  - Client Componentsでの使用方法とベストプラクティス

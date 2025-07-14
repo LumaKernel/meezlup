@@ -4,16 +4,19 @@ import { Providers } from "./providers";
 import { MantineSetup } from "./mantine-setup";
 import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
 import { dir } from "i18next";
+import { FontStyles } from "./font-styles";
 import "./mantine-styles.css";
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
+  variable: "--font-geist-sans",
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
+  variable: "--font-geist-mono",
 });
 
 export const metadata: Metadata = {
@@ -32,13 +35,17 @@ export default function RootLayout({
   const locale = params?.locale || "ja";
 
   return (
-    <html lang={locale} dir={dir(locale)} {...mantineHtmlProps}>
+    <html
+      lang={locale}
+      dir={dir(locale)}
+      className={`${geistSans.variable satisfies string} ${geistMono.variable satisfies string}`}
+      {...mantineHtmlProps}
+    >
       <head>
         <ColorSchemeScript />
       </head>
-      <body
-        className={`${geistSans.variable satisfies string} ${geistMono.variable satisfies string} antialiased`}
-      >
+      <body className="antialiased">
+        <FontStyles />
         <MantineSetup>
           <Providers>{children}</Providers>
         </MantineSetup>

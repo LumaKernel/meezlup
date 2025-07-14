@@ -1,0 +1,162 @@
+.gridContainer {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  max-height: 600px;
+  user-select: none;
+}
+
+.headerRow {
+  display: flex;
+  position: sticky;
+  top: 0;
+  background-color: var(--mantine-color-body);
+  z-index: 1;
+  border-bottom: 2px solid var(--mantine-color-gray-3);
+}
+
+.timeHeader {
+  width: 60px;
+  min-width: 60px;
+  padding: 8px;
+  font-weight: 600;
+  text-align: center;
+  border-right: 1px solid var(--mantine-color-gray-3);
+}
+
+.dateHeader {
+  flex: 1;
+  min-width: 50px;
+  padding: 8px 4px;
+  text-align: center;
+  border-right: 1px solid var(--mantine-color-gray-3);
+}
+
+.dateHeader.sunday {
+  background-color: var(--mantine-color-red-0);
+}
+
+.dateHeader.monday {
+  border-left: 3px solid var(--mantine-color-gray-5);
+}
+
+.gridBody {
+  display: flex;
+  flex-direction: column;
+}
+
+.timeRow {
+  display: flex;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.timeRow:nth-child(4n) {
+  border-bottom: 1px solid var(--mantine-color-gray-4);
+}
+
+.timeLabel {
+  width: 60px;
+  min-width: 60px;
+  padding: 4px;
+  font-size: 12px;
+  text-align: center;
+  border-right: 1px solid var(--mantine-color-gray-3);
+  background-color: var(--mantine-color-gray-0);
+}
+
+.cell {
+  flex: 1;
+  min-width: 50px;
+  height: 20px;
+  border-right: 1px solid var(--mantine-color-gray-2);
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.cell:hover {
+  background-color: var(--mantine-color-gray-1);
+}
+
+.cell.selected {
+  background-color: var(--mantine-color-blue-5);
+}
+
+.cell.selected:hover {
+  background-color: var(--mantine-color-blue-6);
+}
+
+.cell.sundayCell {
+  background-color: var(--mantine-color-red-0);
+}
+
+.cell.sundayCell:hover {
+  background-color: var(--mantine-color-red-1);
+}
+
+.cell.sundayCell.selected {
+  background-color: var(--mantine-color-blue-5);
+}
+
+.cell.mondayCell {
+  border-left: 3px solid var(--mantine-color-gray-5);
+}
+
+/* ダークモード対応 */
+[data-mantine-color-scheme="dark"] {
+  .headerRow {
+    background-color: var(--mantine-color-dark-7);
+  }
+
+  .dateHeader.sunday {
+    background-color: var(--mantine-color-dark-6);
+  }
+
+  .timeLabel {
+    background-color: var(--mantine-color-dark-6);
+  }
+
+  .cell:hover {
+    background-color: var(--mantine-color-dark-5);
+  }
+
+  .cell.selected {
+    background-color: var(--mantine-color-blue-8);
+  }
+
+  .cell.selected:hover {
+    background-color: var(--mantine-color-blue-7);
+  }
+
+  .cell.sundayCell {
+    background-color: var(--mantine-color-dark-6);
+  }
+
+  .cell.sundayCell:hover {
+    background-color: var(--mantine-color-dark-5);
+  }
+}
+
+/* タッチデバイス対応 */
+@media (hover: none) {
+  .cell:hover {
+    background-color: transparent;
+  }
+
+  .cell.selected:hover {
+    background-color: var(--mantine-color-blue-5);
+  }
+
+  .cell.sundayCell:hover {
+    background-color: var(--mantine-color-red-0);
+  }
+}
+
+/* アクセシビリティ */
+.cell:focus {
+  outline: 2px solid var(--mantine-color-blue-5);
+  outline-offset: -2px;
+}
+
+.cell:focus:not(:focus-visible) {
+  outline: none;
+}

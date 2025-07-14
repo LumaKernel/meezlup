@@ -1,0 +1,161 @@
+.gridContainer {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  max-height: 600px;
+  user-select: none;
+}
+
+.headerRow {
+  display: flex;
+  position: sticky;
+  top: 0;
+  background-color: var(--mantine-color-body);
+  z-index: 1;
+  border-bottom: 2px solid var(--mantine-color-gray-3);
+}
+
+.timeHeader {
+  width: 60px;
+  min-width: 60px;
+  padding: 8px;
+  font-weight: 600;
+  text-align: center;
+  border-right: 1px solid var(--mantine-color-gray-3);
+}
+
+.dateHeader {
+  flex: 1;
+  min-width: 50px;
+  padding: 8px 4px;
+  text-align: center;
+  border-right: 1px solid var(--mantine-color-gray-3);
+}
+
+.dateHeader.sunday {
+  background-color: var(--mantine-color-red-0);
+}
+
+.dateHeader.monday {
+  border-left: 3px solid var(--mantine-color-gray-5);
+}
+
+.gridBody {
+  display: flex;
+  flex-direction: column;
+}
+
+.timeRow {
+  display: flex;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.timeRow:nth-child(4n) {
+  border-bottom: 1px solid var(--mantine-color-gray-4);
+}
+
+.timeLabel {
+  width: 60px;
+  min-width: 60px;
+  padding: 4px;
+  font-size: 12px;
+  text-align: center;
+  border-right: 1px solid var(--mantine-color-gray-3);
+  background-color: var(--mantine-color-gray-0);
+}
+
+.cell {
+  flex: 1;
+  min-width: 50px;
+  height: 20px;
+  border-right: 1px solid var(--mantine-color-gray-2);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cell:hover {
+  transform: scale(1.05);
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cell.focused {
+  outline: 2px solid var(--mantine-color-blue-5);
+  outline-offset: -2px;
+  z-index: 2;
+}
+
+.cell.sundayCell {
+  background-color: var(--mantine-color-red-0);
+}
+
+.cell.mondayCell {
+  border-left: 3px solid var(--mantine-color-gray-5);
+}
+
+.cellCount {
+  color: white;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ダークモード対応 */
+[data-mantine-color-scheme="dark"] {
+  .headerRow {
+    background-color: var(--mantine-color-dark-7);
+  }
+
+  .dateHeader.sunday {
+    background-color: var(--mantine-color-dark-6);
+  }
+
+  .timeLabel {
+    background-color: var(--mantine-color-dark-6);
+  }
+
+  .cell:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .cell.sundayCell {
+    background-color: var(--mantine-color-dark-6);
+  }
+}
+
+/* タッチデバイス対応 */
+@media (hover: none) {
+  .cell:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* アクセシビリティ */
+.cell:focus {
+  outline: 2px solid var(--mantine-color-blue-5);
+  outline-offset: -2px;
+}
+
+.cell:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* エクスポートボタンのアニメーション */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.exportButtons {
+  animation: slideIn 0.2s ease-out;
+}

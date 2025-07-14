@@ -1,0 +1,25 @@
+Fix error. You may need to componentize the part, make storybook test and you can ensure and protect from regression.
+
+
+Error: Cannot parse: 2025-07-14T00:00:00.000Z
+src/components/events/EventResult.tsx (184:47) @ [project]/src/components/events/EventResult.tsx [app-client] (ecmascript)/EventResult/<.children<.children<.children<.children<
+ 182 |           <Stack gap="xl">
+  183 |             {Object.entries(slotsByDate).map(([dateStr, slots]) => {
+> 184 |               const date = Temporal.PlainDate.from(dateStr);
+      |                                               ^
+  185 |               return (
+  186 |                 <div key={dateStr}>
+  187 |                   <Title order={4} mb="md">
+
+Call Stack 6
+Show 3 ignore-listed frame(s)
+[project]/src/components/events/EventResult.tsx [app-client] (ecmascript)/EventResult/<.children<.children<.children<.children<
+src/components/events/EventResult.tsx (184:47)
+EventResult
+src/components/events/EventResult.tsx (183:42)
+EventResultPage
+src/app/[locale]/events/[id]/result/page.tsx (43:10)
+
+
+
+

@@ -8,33 +8,34 @@ import {
   Paper,
   Stack,
   Group,
-  Button,
   TextInput,
   Alert,
   Badge,
-  Checkbox,
-  Grid,
-  Card,
   Loader,
   Center,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconCalendar, IconClock } from "@tabler/icons-react";
+import { IconCalendar } from "@tabler/icons-react";
 import { Temporal } from "temporal-polyfill";
 import type { Event as EffectEvent } from "@/lib/effects/services/event/schemas";
 import { useAuth } from "@/lib/auth/hooks";
-import { submitAvailability } from "@/app/actions/schedule";
+import {
+  submitAvailability,
+  getAggregatedTimeSlots,
+} from "@/app/actions/schedule";
+import { ScheduleInputLayout } from "@/components/schedule/ScheduleInputLayout";
 
 interface EventParticipateProps {
   readonly event: EffectEvent;
   readonly params: Promise<{ locale: string; id: string }>;
 }
 
-type TimeSlot = {
-  date: Temporal.PlainDate;
-  time: Temporal.PlainTime;
-  selected: boolean;
-};
+interface Participant {
+  readonly id: string;
+  readonly name: string;
+  readonly email?: string;
+  availableSlots: ReadonlySet<string>;
+}
 
 export function EventParticipate({ event, params }: EventParticipateProps) {
   const { locale } = use(params);
@@ -44,7 +45,10 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
   const [error, setError] = useState<string | null>(null);
   const [participantName, setParticipantName] = useState("");
   const [participantEmail, setParticipantEmail] = useState("");
-  const [timeSlots, setTimeSlots] = useState<Array<TimeSlot>>([]);
+  const [selectedSlots, setSelectedSlots] = useState<ReadonlySet<string>>(
+    new Set(),
+  );
+  const [participants, setParticipants] = useState<Array<Participant>>([]);
   const [loading, setLoading] = useState(true);
 
   // 認証状態に基づいてフォームを初期化
@@ -55,61 +59,61 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
     }
   }, [user]);
 
-  // イベントの日付範囲から時間枠を生成
+  // 既存の参加者データを取得
   useEffect(() => {
-    const generateTimeSlots = () => {
-      const slots: Array<TimeSlot> = [];
-      const startDate = Temporal.PlainDate.from(
-        event.dateRangeStart.split("T")[0],
-      );
-      const endDate = Temporal.PlainDate.from(event.dateRangeEnd.split("T")[0]);
-
-      // 各日付に対して時間枠を生成
-      let currentDate = startDate;
-      while (Temporal.PlainDate.compare(currentDate, endDate) <= 0) {
-        // 9:00から18:00まで、指定された時間幅で区切る
-        const startTime = Temporal.PlainTime.from("09:00");
-        const endTime = Temporal.PlainTime.from("18:00");
-        let currentTime = startTime;
-
-        while (Temporal.PlainTime.compare(currentTime, endTime) < 0) {
-          slots.push({
-            date: currentDate,
-            time: currentTime,
-            selected: false,
+    const fetchParticipants = async () => {
+      try {
+        const result = await getAggregatedTimeSlots(event.id);
+        if (result.success) {
+          // 参加者データを変換
+          const participantMap = new Map<string, Participant>();
+          result.data.forEach((slot) => {
+            slot.participants.forEach((p) => {
+              if (!participantMap.has(p.scheduleId)) {
+                participantMap.set(p.scheduleId, {
+                  id: p.scheduleId,
+                  name: p.displayName,
+                  availableSlots: new Set<string>(),
+                });
+              }
+              const participant = participantMap.get(p.scheduleId)!;
+              const date = slot.date.split("T")[0];
+              const hours = Math.floor(slot.startTime / 60);
+              const minutes = slot.startTime % 60;
+              const time = `${hours.toString().padStart(2, "0") satisfies string}:${minutes.toString().padStart(2, "0") satisfies string}:00`;
+              // ReadonlySetを新しいSetに変換してから追加
+              const newSlots = new Set(participant.availableSlots);
+              newSlots.add(`${date satisfies string}_${time satisfies string}`);
+              participant.availableSlots = newSlots;
+            });
           });
-
-          // 次の時間枠へ
-          currentTime = currentTime.add({
-            minutes: event.timeSlotDuration,
-          });
+          setParticipants(Array.from(participantMap.values()));
         }
-
-        currentDate = currentDate.add({ days: 1 });
+      } catch (err) {
+        console.error("参加者データ取得エラー:", err);
+      } finally {
+        setLoading(false);
       }
-
-      setTimeSlots(slots);
-      setLoading(false);
     };
 
-    generateTimeSlots();
-  }, [event]);
+    fetchParticipants().catch((err: unknown) => {
+      console.error("非同期エラー:", err);
+    });
+  }, [event.id]);
 
-  const handleTimeSlotToggle = (index: number) => {
-    setTimeSlots((prev) =>
-      prev.map((slot, i) =>
-        i === index ? { ...slot, selected: !slot.selected } : slot,
-      ),
-    );
-  };
+  const dateRangeStart = Temporal.PlainDate.from(
+    event.dateRangeStart.split("T")[0],
+  );
+  const dateRangeEnd = Temporal.PlainDate.from(
+    event.dateRangeEnd.split("T")[0],
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     // 選択された時間枠を取得
-    const selectedSlots = timeSlots.filter((slot) => slot.selected);
-    if (selectedSlots.length === 0) {
+    if (selectedSlots.size === 0) {
       setError(
         locale === "en"
           ? "Please select at least one time slot"
@@ -130,14 +134,20 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
 
     startTransition(async () => {
       try {
+        // スロットIDから日付と時間を抽出
+        const availableSlots = Array.from(selectedSlots).map((slotId) => {
+          const [date, time] = slotId.split("_");
+          return {
+            date,
+            time: time.substring(0, 5), // HH:MM形式に変換
+          };
+        });
+
         const result = await submitAvailability({
           eventId: event.id,
           participantName: user ? undefined : participantName,
           participantEmail: user ? undefined : participantEmail,
-          availableSlots: selectedSlots.map((slot) => ({
-            date: slot.date.toString(),
-            time: slot.time.toString(),
-          })),
+          availableSlots,
         });
 
         if (!result.success) {
@@ -181,15 +191,12 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
     );
   }
 
-  // 日付ごとにグループ化
-  const slotsByDate = timeSlots.reduce<
-    Record<string, Array<{ slot: TimeSlot; index: number }>>
-  >((acc, slot, index) => {
-    const dateStr = slot.date.toString();
-    acc[dateStr] = acc[dateStr] ?? [];
-    acc[dateStr].push({ slot, index });
-    return acc;
-  }, {});
+  const handleSave = () => {
+    const form = document.getElementById("participate-form");
+    if (form instanceof HTMLFormElement) {
+      form.requestSubmit();
+    }
+  };
 
   return (
     <Stack gap="xl">
@@ -232,16 +239,16 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
         </Paper>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <Stack gap="lg">
-          {error && (
-            <Alert color="red" title={locale === "en" ? "Error" : "エラー"}>
-              {error}
-            </Alert>
-          )}
+      <Stack gap="lg">
+        {error && (
+          <Alert color="red" title={locale === "en" ? "Error" : "エラー"}>
+            {error}
+          </Alert>
+        )}
 
-          {!user && (
-            <Paper shadow="sm" p="lg" withBorder>
+        {!user && (
+          <form id="participate-form" onSubmit={handleSubmit}>
+            <Paper shadow="sm" p="lg" withBorder mb="lg">
               <Title order={3} mb="md">
                 {locale === "en" ? "Your Information" : "参加者情報"}
               </Title>
@@ -273,96 +280,23 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
                 />
               </Stack>
             </Paper>
-          )}
+          </form>
+        )}
+        {user && <form id="participate-form" onSubmit={handleSubmit} />}
 
-          <Paper shadow="sm" p="lg" withBorder>
-            <Title order={3} mb="md">
-              {locale === "en"
-                ? "Select Available Time Slots"
-                : "参加可能な時間帯を選択"}
-            </Title>
-            <Text size="sm" c="dimmed" mb="lg">
-              {locale === "en"
-                ? "Check all the time slots when you are available"
-                : "参加可能な時間帯をすべてチェックしてください"}
-            </Text>
-
-            <Stack gap="xl">
-              {Object.entries(slotsByDate).map(([dateStr, slots]) => {
-                const date = Temporal.PlainDate.from(dateStr);
-                return (
-                  <div key={dateStr}>
-                    <Title order={4} mb="md">
-                      <Group gap="xs">
-                        <IconCalendar size={20} />
-                        {date.toLocaleString(locale, {
-                          weekday: "long",
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </Group>
-                    </Title>
-                    <Grid>
-                      {slots.map(({ index, slot }) => (
-                        <Grid.Col span={{ base: 6, sm: 4, md: 3 }} key={index}>
-                          <Card
-                            padding="sm"
-                            withBorder
-                            style={{
-                              cursor: "pointer",
-                              backgroundColor: slot.selected
-                                ? "var(--mantine-color-blue-0)"
-                                : undefined,
-                              borderColor: slot.selected
-                                ? "var(--mantine-color-blue-6)"
-                                : undefined,
-                            }}
-                            onClick={() => {
-                              handleTimeSlotToggle(index);
-                            }}
-                          >
-                            <Group gap="xs">
-                              <Checkbox
-                                checked={slot.selected}
-                                onChange={() => {
-                                  handleTimeSlotToggle(index);
-                                }}
-                                size="sm"
-                              />
-                              <Group gap="xs">
-                                <IconClock size={16} />
-                                <Text size="sm">
-                                  {slot.time.toString().substring(0, 5)}
-                                </Text>
-                              </Group>
-                            </Group>
-                          </Card>
-                        </Grid.Col>
-                      ))}
-                    </Grid>
-                  </div>
-                );
-              })}
-            </Stack>
-          </Paper>
-
-          <Group justify="flex-end">
-            <Button
-              variant="subtle"
-              onClick={() => {
-                router.back();
-              }}
-              disabled={isPending}
-            >
-              {locale === "en" ? "Cancel" : "キャンセル"}
-            </Button>
-            <Button type="submit" loading={isPending}>
-              {locale === "en" ? "Submit Availability" : "参加可能時間を送信"}
-            </Button>
-          </Group>
-        </Stack>
-      </form>
+        <ScheduleInputLayout
+          dateRangeStart={dateRangeStart}
+          dateRangeEnd={dateRangeEnd}
+          timeSlotDuration={event.timeSlotDuration}
+          currentUserSlots={selectedSlots}
+          participants={participants}
+          onSlotsChange={setSelectedSlots}
+          onSave={handleSave}
+          isSaving={isPending}
+          locale={locale}
+          showEmails={event.creatorCanSeeEmails}
+        />
+      </Stack>
     </Stack>
   );
 }

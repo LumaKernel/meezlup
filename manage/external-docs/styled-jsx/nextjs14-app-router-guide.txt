@@ -1,0 +1,314 @@
+# styled-jsx with Next.js 14/15 App Router ガイド
+
+## 概要
+styled-jsxは、Next.jsに標準で組み込まれているCSS-in-JSソリューション。App Routerで使用する場合、v5.1.0以上が必要で、Client Componentsでのみ動作する。
+
+## セットアップ
+
+### 1. Style Registry Component作成
+styled-jsxをApp Routerで使用するには、まずスタイルレジストリを作成する必要がある：
+
+```tsx
+// app/registry.tsx
+'use client'
+
+import React, { useState } from 'react'
+import { useServerInsertedHTML } from 'next/navigation'
+import { StyleRegistry, createStyleRegistry } from 'styled-jsx'
+
+export default function StyledJsxRegistry({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  // 遅延初期化で一度だけスタイルシートを作成
+  const [jsxStyleRegistry] = useState(() => createStyleRegistry())
+
+  useServerInsertedHTML(() => {
+    const styles = jsxStyleRegistry.styles()
+    jsxStyleRegistry.flush()
+    return <>{styles}</>
+  })
+
+  return <StyleRegistry registry={jsxStyleRegistry}>{children}</StyleRegistry>
+}
+```
+
+### 2. Root Layoutでの統合
+ルートレイアウトでアプリケーションをレジストリでラップ：
+
+```tsx
+// app/layout.tsx
+import StyledJsxRegistry from './registry'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html>
+      <body>
+        <StyledJsxRegistry>{children}</StyledJsxRegistry>
+      </body>
+    </html>
+  )
+}
+```
+
+## layout.tsxでのグローバルスタイル実装
+
+### CSS変数とフォントの統合
+
+```tsx
+// app/layout.tsx
+import StyledJsxRegistry from './registry'
+import { Inter, Roboto } from 'next/font/google'
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
+
+const roboto = Roboto({
+  weight: ['400', '700'],
+  subsets: ['latin'],
+  variable: '--font-roboto',
+})
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="ja" className={`${inter.variable} ${roboto.variable}`}>
+      <body>
+        <style jsx global>{`
+          :root {
+            /* フォント変数 */
+            --font-heading: var(--font-inter);
+            --font-body: var(--font-roboto);
+            
+            /* カラー変数 */
+            --color-primary: #0070f3;
+            --color-primary-dark: #0051cc;
+            --color-text: #333333;
+            --color-background: #ffffff;
+            --color-error: #e00;
+          }
+
+          * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+          }
+
+          html,
+          body {
+            font-family: var(--font-body);
+            color: var(--color-text);
+            background-color: var(--color-background);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+          }
+
+          h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            line-height: 1.2;
+          }
+
+          a {
+            color: var(--color-primary);
+            text-decoration: none;
+            transition: color 0.2s ease;
+          }
+
+          a:hover {
+            color: var(--color-primary-dark);
+          }
+        `}</style>
+        <StyledJsxRegistry>{children}</StyledJsxRegistry>
+      </body>
+    </html>
+  )
+}
+```
+
+## ハイドレーションエラーの回避
+
+### 1. 主な原因と対策
+
+**原因:**
+- サーバーとクライアントで異なるHTMLが生成される
+- `typeof window !== 'undefined'`などの条件分岐
+- `Date()`などの時間依存のAPI使用
+- ブラウザ専用APIの使用
+
+**対策:**
+
+#### useEffectを使用
+```tsx
+'use client'
+
+import { useState, useEffect } from 'react'
+
+export function ClientOnlyComponent() {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return null // またはローディング状態
+  }
+
+  return (
+    <div>
+      {/* クライアントのみのコンテンツ */}
+      <style jsx>{`
+        div {
+          /* スタイル */
+        }
+      `}</style>
+    </div>
+  )
+}
+```
+
+#### suppressHydrationWarning使用（最終手段）
+```tsx
+<time datetime="2024-01-01" suppressHydrationWarning>
+  {new Date().toLocaleDateString()}
+</time>
+```
+
+### 2. 動的スタイルのベストプラクティス
+
+#### 静的と動的スタイルの分離
+```tsx
+'use client'
+
+export function Button({ variant }: { variant: 'primary' | 'secondary' }) {
+  return (
+    <>
+      <button className={variant}>
+        Click me
+      </button>
+      
+      {/* 静的スタイル */}
+      <style jsx>{`
+        button {
+          padding: 12px 24px;
+          border: none;
+          border-radius: 4px;
+          font-size: 16px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        button.primary {
+          background: var(--color-primary);
+          color: white;
+        }
+
+        button.secondary {
+          background: transparent;
+          color: var(--color-primary);
+          border: 2px solid var(--color-primary);
+        }
+      `}</style>
+      
+      {/* 動的スタイル（プロップスに依存） */}
+      <style jsx>{`
+        button {
+          opacity: ${variant === 'primary' ? 1 : 0.9};
+        }
+      `}</style>
+    </>
+  )
+}
+```
+
+## 推奨事項とベストプラクティス
+
+### 1. コンポーネント構造
+- styled-jsxを使用するコンポーネントは必ず`'use client'`ディレクティブを付ける
+- サーバーコンポーネントでスタイリングが必要な場合は、CSS ModulesやTailwind CSSを検討
+
+### 2. パフォーマンス最適化
+- 静的スタイルと動的スタイルを分離
+- グローバルスタイルはlayout.tsxに集約
+- 頻繁に変更されるスタイルは別の`<style jsx>`タグに分離
+
+### 3. テーマ管理
+```tsx
+// theme.ts
+export const theme = {
+  colors: {
+    primary: '#0070f3',
+    secondary: '#ff4081',
+    // ...
+  },
+  fonts: {
+    heading: 'Inter, sans-serif',
+    body: 'Roboto, sans-serif',
+  },
+  // ...
+} as const
+
+// layout.tsxで使用
+import { theme } from './theme'
+
+// スタイル内で
+<style jsx global>{`
+  :root {
+    --color-primary: ${theme.colors.primary};
+    --font-heading: ${theme.fonts.heading};
+  }
+`}</style>
+```
+
+### 4. 外部スタイルファイル
+```tsx
+// styles.ts
+import css from 'styled-jsx/css'
+
+export const buttonStyles = css`
+  button {
+    /* スタイル定義 */
+  }
+`
+
+// component.tsx
+import { buttonStyles } from './styles'
+
+export function Button() {
+  return (
+    <>
+      <button>Click</button>
+      <style jsx>{buttonStyles}</style>
+    </>
+  )
+}
+```
+
+## 注意事項
+
+1. **styled-jsxはClient Componentsでのみ動作** - Server Componentsでは使用不可
+2. **v5.1.0以上が必要** - App Router対応のため
+3. **レジストリコンポーネントは必須** - SSRでのスタイル注入のため
+4. **グローバルスタイルは慎重に使用** - スコープリークを避ける
+5. **動的インポート時の注意** - `{ ssr: false }`オプションでハイドレーションエラーを回避可能
+
+## まとめ
+
+styled-jsxはNext.js App Routerでも使用可能だが、いくつかの制約がある：
+- Client Componentsでのみ動作
+- レジストリコンポーネントによるセットアップが必要
+- ハイドレーションエラーに注意が必要
+
+より現代的な選択肢として、CSS ModulesやTailwind CSSも検討することを推奨。特にServer Componentsを多用する場合は、これらの代替手段がより適している場合がある。
