@@ -48,6 +48,7 @@
 .timeRow {
   display: flex;
   border-bottom: 1px solid var(--mantine-color-gray-2);
+  min-height: 30px;
 }
 
 .timeRow:nth-child(4n) {
@@ -62,15 +63,20 @@
   text-align: center;
   border-right: 1px solid var(--mantine-color-gray-3);
   background-color: var(--mantine-color-gray-0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cell {
   flex: 1;
   min-width: 50px;
-  height: 20px;
+  min-height: 100%;
   border-right: 1px solid var(--mantine-color-gray-2);
   cursor: pointer;
   transition: background-color 0.1s;
+  display: flex;
+  align-items: stretch;
 }
 
 .cell:hover {

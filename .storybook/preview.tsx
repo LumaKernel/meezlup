@@ -9,17 +9,61 @@ const theme = createTheme({
   fontFamily: "system-ui, sans-serif",
 });
 
+// windowインターフェースを拡張
+declare global {
+  interface Window {
+    _originalFetch?: typeof fetch;
+  }
+}
+
+// APIモックセットアップ
+const setupApiMocks = () => {
+  // グローバルfetchをモック（一度だけ設定）
+  if (typeof window !== "undefined" && !window._originalFetch) {
+    window._originalFetch = window.fetch;
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input.toString();
+      
+      // /auth/profile エンドポイントをモック
+      if (url.includes("/auth/profile")) {
+        // 現在のauth parametersを取得
+        const authParams = (globalThis as any).__STORYBOOK_AUTH__;
+        
+        if (authParams?.isAuthenticated && authParams?.user) {
+          return new Response(JSON.stringify({
+            sub: authParams.user.id,
+            email: authParams.user.email,
+            name: authParams.user.name,
+            picture: authParams.user.picture,
+            nickname: authParams.user.nickname,
+            email_verified: authParams.user.emailVerified,
+          }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        } else {
+          return new Response("Unauthorized", { status: 401 });
+        }
+      }
+      
+      // その他のリクエストは元のfetchに委譲
+      return window._originalFetch!(input, init);
+    };
+  }
+};
+
+// APIモックを一度だけ設定
+setupApiMocks();
+
 // グローバルデコレーター
 const withProviders = (Story: any, context: any) => {
-  // auth parametersをグローバルコンテキストに設定
-  useEffect(() => {
-    const authParams = context.parameters?.auth;
-    (globalThis as any).__STORYBOOK_AUTH__ = authParams || {
-      isAuthenticated: false,
-      isLoading: false,
-      user: null,
-    };
-  }, [context.parameters?.auth]);
+  // auth parametersをグローバルコンテキストに設定（同期的に設定）
+  const authParams = context.parameters?.auth;
+  (globalThis as any).__STORYBOOK_AUTH__ = authParams || {
+    isAuthenticated: false,
+    isLoading: false,
+    user: null,
+  };
 
   // ロケール設定
   useEffect(() => {

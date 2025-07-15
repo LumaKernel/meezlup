@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { UserProfile } from "./UserProfile";
 import { I18nProvider } from "@/components/I18nProvider";
+import { expect, within, waitFor } from "@storybook/test";
 
 const meta = {
   title: "Components/Auth/UserProfile",
@@ -38,6 +39,19 @@ export const CompleteProfile: Story = {
         emailVerified: true,
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 認証済みの場合、ユーザー情報が表示されることを確認
+    await waitFor(async () => {
+      const userEmail = canvas.getByText("user@example.com");
+      await expect(userEmail).toBeInTheDocument();
+    }, { timeout: 5000 });
+    
+    // 名前も表示されることを確認
+    const userName = canvas.getByText("山田太郎");
+    await expect(userName).toBeInTheDocument();
   },
 };
 
@@ -90,6 +104,15 @@ export const NotAuthenticated: Story = {
       isLoading: false,
       user: null,
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 未認証の場合、「ログインしていません」と表示されることを確認
+    await waitFor(async () => {
+      const notAuthText = canvas.getByText("ログインしていません");
+      await expect(notAuthText).toBeInTheDocument();
+    }, { timeout: 5000 });
   },
 };
 

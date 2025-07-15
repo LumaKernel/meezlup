@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
+import { fn, expect, within, waitFor } from "@storybook/test";
 import { LoginButton } from "./LoginButton";
 import { I18nProvider } from "@/components/I18nProvider";
 
@@ -41,6 +41,15 @@ export const NotAuthenticated: Story = {
       logout: mockLogout,
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // ログインボタンが表示されることを確認
+    await waitFor(async () => {
+      const loginButton = canvas.getByRole("button", { name: "ログイン" });
+      await expect(loginButton).toBeInTheDocument();
+    }, { timeout: 5000 });
+  },
 };
 
 // 認証済み状態
@@ -58,6 +67,15 @@ export const Authenticated: Story = {
       login: mockLogin,
       logout: mockLogout,
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // ログアウトボタンが表示されることを確認
+    await waitFor(async () => {
+      const logoutButton = canvas.getByRole("button", { name: "ログアウト" });
+      await expect(logoutButton).toBeInTheDocument();
+    }, { timeout: 5000 });
   },
 };
 

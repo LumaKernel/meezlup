@@ -16,8 +16,8 @@ const meta = {
     },
   },
   decorators: [
-    (Story, context) => (
-      <I18nProvider locale={context.args.locale || "ja"}>
+    (Story) => (
+      <I18nProvider locale="ja">
         <Story />
       </I18nProvider>
     ),
@@ -29,22 +29,34 @@ type Story = StoryObj<typeof meta>;
 
 // 基本的な表示（日本語）
 export const JapaneseSelected: Story = {
-  args: {
-    locale: "ja",
+  parameters: {
+    nextjs: {
+      navigation: {
+        params: { locale: "ja" },
+      },
+    },
   },
 };
 
 // 英語が選択されている状態
 export const EnglishSelected: Story = {
-  args: {
-    locale: "en",
+  parameters: {
+    nextjs: {
+      navigation: {
+        params: { locale: "en" },
+      },
+    },
   },
 };
 
 // カスタムスタイル
 export const CustomStyle: Story = {
-  args: {
-    locale: "ja",
+  parameters: {
+    nextjs: {
+      navigation: {
+        params: { locale: "ja" },
+      },
+    },
   },
   decorators: [
     (Story) => (

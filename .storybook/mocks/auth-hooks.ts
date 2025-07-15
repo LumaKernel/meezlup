@@ -26,6 +26,17 @@ export function useAuth(): UseAuthResult {
  * Storybook用のモックuseAuthActionsフック
  */
 export function useAuthActions(): UseAuthActionsResult {
+  // Storybookのグローバルコンテキストから関数を取得
+  const authData = (globalThis as any).__STORYBOOK_AUTH__;
+  
+  if (authData?.login && authData?.logout) {
+    return {
+      login: authData.login,
+      logout: authData.logout,
+    };
+  }
+  
+  // デフォルトの実装
   return {
     login: (returnTo?: string) => {
       console.log("[Mock] Login called with returnTo:", returnTo);
