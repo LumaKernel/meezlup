@@ -26,6 +26,7 @@ export function ScheduleGrid({
   const [dragMode, setDragMode] = useState<"select" | "deselect" | null>(null);
   const [dragSelection, setDragSelection] = useState<Set<string>>(new Set());
   const gridRef = useRef<HTMLDivElement>(null);
+  const mouseDownRef = useRef<{ slotId: string; isSelected: boolean } | null>(null);
 
   // 日付の配列を生成
   const dates: Array<Temporal.PlainDate> = [];
@@ -64,22 +65,27 @@ export function ScheduleGrid({
     [selectedSlots, onSlotsChange],
   );
 
-  // ドラッグ開始
+  // マウスダウン（ドラッグ準備）
   const handleMouseDown = useCallback(
     (e: React.MouseEvent, slotId: string) => {
       e.preventDefault();
-      setIsDragging(true);
       const isSelected = selectedSlots.has(slotId);
-      setDragMode(isSelected ? "deselect" : "select");
-      setDragSelection(new Set([slotId]));
+      mouseDownRef.current = { slotId, isSelected };
+      // ドラッグはまだ開始しない
     },
     [selectedSlots],
   );
 
-  // ドラッグ中
+  // マウスエンター（ドラッグ中の処理）
   const handleMouseEnter = useCallback(
     (slotId: string) => {
-      if (isDragging) {
+      // マウスダウン中にセルに入った場合、ドラッグを開始
+      if (mouseDownRef.current && !isDragging) {
+        setIsDragging(true);
+        const { isSelected } = mouseDownRef.current;
+        setDragMode(isSelected ? "deselect" : "select");
+        setDragSelection(new Set([mouseDownRef.current.slotId, slotId]));
+      } else if (isDragging) {
         setDragSelection((prev) => {
           const newSelection = new Set(prev);
           newSelection.add(slotId);
@@ -90,9 +96,10 @@ export function ScheduleGrid({
     [isDragging],
   );
 
-  // ドラッグ終了
+  // マウスアップ（ドラッグ終了またはクリック）
   const handleMouseUp = useCallback(() => {
     if (isDragging && dragMode) {
+      // ドラッグ操作の完了
       const newSelection = new Set(selectedSlots);
       dragSelection.forEach((slotId) => {
         if (dragMode === "select") {
@@ -102,19 +109,40 @@ export function ScheduleGrid({
         }
       });
       onSlotsChange(newSelection);
+    } else if (mouseDownRef.current && !isDragging) {
+      // ドラッグせずにマウスアップした場合はクリックとして処理
+      const { slotId } = mouseDownRef.current;
+      handleCellClick(slotId);
     }
+    
+    // リセット
     setIsDragging(false);
     setDragMode(null);
     setDragSelection(new Set());
-  }, [isDragging, dragMode, dragSelection, selectedSlots, onSlotsChange]);
+    mouseDownRef.current = null;
+  }, [isDragging, dragMode, dragSelection, selectedSlots, onSlotsChange, handleCellClick]);
 
-  // マウスアップイベントをdocumentに追加
+  // グローバルマウスイベントを管理
   useEffect(() => {
-    document.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      document.removeEventListener("mouseup", handleMouseUp);
+    const handleGlobalMouseUp = () => {
+      handleMouseUp();
     };
-  }, [handleMouseUp]);
+    
+    const handleGlobalMouseLeave = () => {
+      // マウスがドキュメントを離れた場合もリセット
+      if (mouseDownRef.current && !isDragging) {
+        mouseDownRef.current = null;
+      }
+    };
+    
+    document.addEventListener("mouseup", handleGlobalMouseUp);
+    document.addEventListener("mouseleave", handleGlobalMouseLeave);
+    
+    return () => {
+      document.removeEventListener("mouseup", handleGlobalMouseUp);
+      document.removeEventListener("mouseleave", handleGlobalMouseLeave);
+    };
+  }, [handleMouseUp, isDragging]);
 
   // セルの選択状態を取得
   const isCellSelected = (slotId: string) => {
@@ -185,8 +213,9 @@ export function ScheduleGrid({
                     onMouseEnter={() => {
                       handleMouseEnter(slotId);
                     }}
-                    onClick={() => {
-                      if (!isDragging) {
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
                         handleCellClick(slotId);
                       }
                     }}
