@@ -183,22 +183,11 @@ export function EventResult({ event, params }: EventResultProps) {
 
           <Stack gap="xl">
             {Object.entries(slotsByDate).map(([dateStr, slots]) => {
-              // 日付文字列からZonedDateTimeへ変換
+              // dateStrはDateTimeString型で、ISO 8601 UTC形式 (YYYY-MM-DDTHH:mm:ss[.sss]Z)
               let zonedDateTime;
               try {
-                // ISO 8601形式の完全な日時文字列の場合
-                if (dateStr.includes("T")) {
-                  const instant = Temporal.Instant.from(dateStr);
-                  zonedDateTime = instant.toZonedDateTimeISO("UTC");
-                } else {
-                  // 日付のみの場合
-                  const plainDate = Temporal.PlainDate.from(dateStr);
-                  const plainDateTime = plainDate.toPlainDateTime({
-                    hour: 0,
-                    minute: 0,
-                  });
-                  zonedDateTime = plainDateTime.toZonedDateTime("UTC");
-                }
+                const instant = Temporal.Instant.from(dateStr);
+                zonedDateTime = instant.toZonedDateTimeISO("UTC");
               } catch (error) {
                 console.error("日付のパースに失敗しました:", dateStr, error);
                 // エラーの場合はスキップ
@@ -303,14 +292,10 @@ export function EventResult({ event, params }: EventResultProps) {
                       <Group gap="xs">
                         <DateDisplay
                           zonedDateTime={(() => {
-                            const plainDate = Temporal.PlainDate.from(
-                              slot.date,
-                            );
-                            const plainDateTime = plainDate.toPlainDateTime({
-                              hour: 0,
-                              minute: 0,
-                            });
-                            return plainDateTime.toZonedDateTime("UTC");
+                            // slot.dateはDateTimeString型で、ISO 8601 UTC形式 (YYYY-MM-DDTHH:mm:ss[.sss]Z)
+                            // 例: "2025-07-14T00:00:00.000Z" または "2025-07-14T00:00:00Z"
+                            const instant = Temporal.Instant.from(slot.date);
+                            return instant.toZonedDateTimeISO("UTC");
                           })()}
                           locale={locale}
                           formatOptions={{

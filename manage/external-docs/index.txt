@@ -24,6 +24,10 @@
   - API Routes、Layer、Dependency Injectionの実装方法
   - @effect/rpcによるtRPCの置き換え手法
   - Schema検証、ストリーミング、ベストプラクティス
+- manage/external-docs/effect-ts/datetime-string-schema.txt
+  - DateTimeString型の仕様とパース方法
+  - ISO 8601 UTC形式の正確な定義
+  - Temporal.Instant.from()を使用した適切なパース実装
 
 ## Auth0
 - manage/external-docs/auth0/setup.txt

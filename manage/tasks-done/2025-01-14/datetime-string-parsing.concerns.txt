@@ -1,0 +1,38 @@
+# DateTimeString型に基づく日付パース修正
+
+## 完了した内容
+1. EventResult.tsxの日付パース処理を修正
+   - `includes("T")`による形式判定を削除
+   - DateTimeString型の仕様に基づいた適切な実装に変更
+   - ISO 8601 UTC形式（YYYY-MM-DDTHH:mm:ss[.sss]Z）のみを受け入れる
+
+2. DateTimeString型の仕様を調査・文書化
+   - /src/lib/effects/types/index.tsで定義されている正規表現パターンを確認
+   - manage/external-docs/effect-ts/datetime-string-schema.txtに文書化
+   - APIから返される全ての日時データがこの形式であることを確認
+
+3. 一貫性のある日付パース実装
+   - 全て`Temporal.Instant.from()`を使用してパース
+   - ZonedDateTimeへの変換は`instant.toZonedDateTimeISO("UTC")`を使用
+
+## 懸念事項
+1. エラーハンドリング
+   - 現在は不正な日付形式の場合にconsole.errorでログ出力のみ
+   - ユーザーへのエラー表示が不十分な可能性
+
+2. タイムゾーン対応
+   - 現在は全てUTCで処理
+   - ユーザーのローカルタイムゾーンへの変換が必要な場合がある
+
+3. .trashedディレクトリのファイル
+   - /src/lib/auth/__mocks__.trashed/hooks.tsにESLintエラーが残存
+   - 削除または適切な処理が必要
+
+4. PlainDateString型の扱い
+   - 一部のAPIではYYYY-MM-DD形式も使用している可能性
+   - 今回はDateTimeString型のみ対応
+
+## 推奨事項
+- エラー境界（Error Boundary）の実装を検討
+- ユーザーのタイムゾーン設定を保存・適用する機能の追加
+- 日付フォーマットユーティリティの統一化

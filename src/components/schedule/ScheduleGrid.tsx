@@ -71,7 +71,9 @@ export function ScheduleGrid({
       e.preventDefault();
       const isSelected = selectedSlots.has(slotId);
       mouseDownRef.current = { slotId, isSelected };
-      // ドラッグはまだ開始しない
+      // 即座に視覚的フィードバックを提供
+      setDragMode(isSelected ? "deselect" : "select");
+      setDragSelection(new Set([slotId]));
     },
     [selectedSlots],
   );
@@ -82,9 +84,12 @@ export function ScheduleGrid({
       // マウスダウン中にセルに入った場合、ドラッグを開始
       if (mouseDownRef.current && !isDragging) {
         setIsDragging(true);
-        const { isSelected } = mouseDownRef.current;
-        setDragMode(isSelected ? "deselect" : "select");
-        setDragSelection(new Set([mouseDownRef.current.slotId, slotId]));
+        // すでにドラッグモードは設定済みなので、新しいセルを追加
+        setDragSelection((prev) => {
+          const newSelection = new Set(prev);
+          newSelection.add(slotId);
+          return newSelection;
+        });
       } else if (isDragging) {
         setDragSelection((prev) => {
           const newSelection = new Set(prev);
@@ -132,6 +137,8 @@ export function ScheduleGrid({
       // マウスがドキュメントを離れた場合もリセット
       if (mouseDownRef.current && !isDragging) {
         mouseDownRef.current = null;
+        setDragMode(null);
+        setDragSelection(new Set());
       }
     };
     
@@ -146,7 +153,8 @@ export function ScheduleGrid({
 
   // セルの選択状態を取得
   const isCellSelected = (slotId: string) => {
-    if (isDragging && dragSelection.has(slotId)) {
+    // ドラッグ選択中のセルの表示
+    if (dragSelection.has(slotId) && dragMode) {
       return dragMode === "select";
     }
     return selectedSlots.has(slotId);

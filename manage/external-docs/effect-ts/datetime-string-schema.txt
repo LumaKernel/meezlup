@@ -1,0 +1,39 @@
+# DateTimeString Schema in Meetzup
+
+## 定義
+`DateTimeString` は `/src/lib/effects/types/index.ts` で定義されているブランド型：
+
+```typescript
+export const DateTimeString = Schema.String.pipe(
+  Schema.pattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/),
+  Schema.brand("DateTimeString"),
+);
+```
+
+## フォーマット仕様
+ISO 8601 UTC形式の日時文字列：
+- パターン: `YYYY-MM-DDTHH:mm:ss[.sss]Z`
+- 例:
+  - `2025-07-14T00:00:00Z` 
+  - `2025-07-14T00:00:00.000Z`
+- 必ずUTC（末尾にZ）
+- ミリ秒は任意
+
+## パース方法
+必ず `Temporal.Instant.from()` を使用する：
+
+```typescript
+const instant = Temporal.Instant.from(dateTimeString);
+const zonedDateTime = instant.toZonedDateTimeISO("UTC");
+```
+
+## 使用箇所
+- `TimeSlotAggregationSchema.date` - スケジュール集計結果の日時
+- `ScheduleSchema.createdAt/updatedAt` - 作成/更新日時
+- `EventSchema.createdAt/updatedAt` - イベントの作成/更新日時
+- `EventSchema.dateRangeStart/dateRangeEnd` - イベントの開始/終了日時
+
+## 注意事項
+- `includes("T")` などの文字列チェックで形式を判定しない
+- PlainDate形式（YYYY-MM-DD）とは異なる型として扱う
+- データベースから返される日時は常にこの形式
