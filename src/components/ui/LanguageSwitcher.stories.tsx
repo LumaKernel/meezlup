@@ -60,7 +60,9 @@ export const CustomStyle: Story = {
   },
   decorators: [
     (Story) => (
-      <div style={{ background: "#f0f0f0", padding: "20px", borderRadius: "8px" }}>
+      <div
+        style={{ background: "#f0f0f0", padding: "20px", borderRadius: "8px" }}
+      >
         <Story />
       </div>
     ),

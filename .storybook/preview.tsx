@@ -23,29 +23,32 @@ const setupApiMocks = () => {
     window._originalFetch = window.fetch;
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
-      
+
       // /auth/profile エンドポイントをモック
       if (url.includes("/auth/profile")) {
         // 現在のauth parametersを取得
         const authParams = (globalThis as any).__STORYBOOK_AUTH__;
-        
+
         if (authParams?.isAuthenticated && authParams?.user) {
-          return new Response(JSON.stringify({
-            sub: authParams.user.id,
-            email: authParams.user.email,
-            name: authParams.user.name,
-            picture: authParams.user.picture,
-            nickname: authParams.user.nickname,
-            email_verified: authParams.user.emailVerified,
-          }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({
+              sub: authParams.user.id,
+              email: authParams.user.email,
+              name: authParams.user.name,
+              picture: authParams.user.picture,
+              nickname: authParams.user.nickname,
+              email_verified: authParams.user.emailVerified,
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         } else {
           return new Response("Unauthorized", { status: 401 });
         }
       }
-      
+
       // その他のリクエストは元のfetchに委譲
       return window._originalFetch!(input, init);
     };

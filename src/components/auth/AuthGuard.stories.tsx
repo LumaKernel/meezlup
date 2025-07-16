@@ -64,14 +64,19 @@ export const Authenticated: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // 認証済みの場合、保護されたコンテンツが表示されることを確認
-    await waitFor(async () => {
-      const protectedHeading = canvas.getByText("保護されたコンテンツ");
-      await expect(protectedHeading).toBeInTheDocument();
-    }, { timeout: 5000 });
-    
-    const protectedText = canvas.getByText("認証されたユーザーのみアクセス可能です");
+    await waitFor(
+      async () => {
+        const protectedHeading = canvas.getByText("保護されたコンテンツ");
+        await expect(protectedHeading).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
+
+    const protectedText = canvas.getByText(
+      "認証されたユーザーのみアクセス可能です",
+    );
     await expect(protectedText).toBeInTheDocument();
   },
 };
@@ -90,13 +95,16 @@ export const Unauthenticated: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // 未認証の場合、認証プロンプトが表示されることを確認
-    await waitFor(async () => {
-      const loginPrompt = canvas.getByText("認証が必要です...");
-      await expect(loginPrompt).toBeInTheDocument();
-    }, { timeout: 5000 });
-    
+    await waitFor(
+      async () => {
+        const loginPrompt = canvas.getByText("認証が必要です...");
+        await expect(loginPrompt).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
+
     // 保護されたコンテンツは表示されないことを確認
     const protectedContent = canvas.queryByText("保護されたコンテンツ");
     await expect(protectedContent).not.toBeInTheDocument();

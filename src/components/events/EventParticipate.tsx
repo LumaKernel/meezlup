@@ -67,8 +67,11 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
         if (result.success) {
           // 参加者データを変換
           const participantMap = new Map<string, Participant>();
+          const currentUserSlots = new Set<string>();
+
           result.data.forEach((slot) => {
             slot.participants.forEach((p) => {
+              // 既存のparticipantMap処理
               if (!participantMap.has(p.scheduleId)) {
                 participantMap.set(p.scheduleId, {
                   id: p.scheduleId,
@@ -77,17 +80,36 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
                 });
               }
               const participant = participantMap.get(p.scheduleId)!;
-              const date = slot.date.split("T")[0];
+
+              // DateTimeString型から日付部分を適切に抽出
+              const instant = Temporal.Instant.from(slot.date);
+              const zonedDateTime = instant.toZonedDateTimeISO("UTC");
+              const plainDate = zonedDateTime.toPlainDate();
+              const dateStr = plainDate.toString();
+
               const hours = Math.floor(slot.startTime / 60);
               const minutes = slot.startTime % 60;
               const time = `${hours.toString().padStart(2, "0") satisfies string}:${minutes.toString().padStart(2, "0") satisfies string}:00`;
+              const slotId = `${dateStr satisfies string}_${time satisfies string}`;
+
               // ReadonlySetを新しいSetに変換してから追加
               const newSlots = new Set(participant.availableSlots);
-              newSlots.add(`${date satisfies string}_${time satisfies string}`);
+              newSlots.add(slotId);
               participant.availableSlots = newSlots;
+
+              // 現在のユーザーのスケジュールをチェック
+              if (user && p.userId === user.id) {
+                currentUserSlots.add(slotId);
+              }
             });
           });
+
           setParticipants(Array.from(participantMap.values()));
+
+          // 現在のユーザーの既存スケジュールを設定
+          if (currentUserSlots.size > 0) {
+            setSelectedSlots(currentUserSlots);
+          }
         }
       } catch (err) {
         console.error("参加者データ取得エラー:", err);
@@ -99,14 +121,16 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
     fetchParticipants().catch((err: unknown) => {
       console.error("非同期エラー:", err);
     });
-  }, [event.id]);
+  }, [event.id, user]);
 
-  const dateRangeStart = Temporal.PlainDate.from(
-    event.dateRangeStart.split("T")[0],
-  );
-  const dateRangeEnd = Temporal.PlainDate.from(
-    event.dateRangeEnd.split("T")[0],
-  );
+  // DateTimeString型から日付を抽出
+  const startInstant = Temporal.Instant.from(event.dateRangeStart);
+  const startZonedDateTime = startInstant.toZonedDateTimeISO("UTC");
+  const dateRangeStart = startZonedDateTime.toPlainDate();
+
+  const endInstant = Temporal.Instant.from(event.dateRangeEnd);
+  const endZonedDateTime = endInstant.toZonedDateTimeISO("UTC");
+  const dateRangeEnd = endZonedDateTime.toPlainDate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

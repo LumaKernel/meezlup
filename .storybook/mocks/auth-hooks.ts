@@ -9,7 +9,7 @@ import type { UseAuthResult, UseAuthActionsResult } from "@/lib/auth/hooks";
 export function useAuth(): UseAuthResult {
   // Storybookのグローバルコンテキストを確認
   const authData = (globalThis as any).__STORYBOOK_AUTH__;
-  
+
   if (authData) {
     return authData;
   }
@@ -28,14 +28,14 @@ export function useAuth(): UseAuthResult {
 export function useAuthActions(): UseAuthActionsResult {
   // Storybookのグローバルコンテキストから関数を取得
   const authData = (globalThis as any).__STORYBOOK_AUTH__;
-  
+
   if (authData?.login && authData?.logout) {
     return {
       login: authData.login,
       logout: authData.logout,
     };
   }
-  
+
   // デフォルトの実装
   return {
     login: (returnTo?: string) => {

@@ -26,7 +26,9 @@ export function ScheduleGrid({
   const [dragMode, setDragMode] = useState<"select" | "deselect" | null>(null);
   const [dragSelection, setDragSelection] = useState<Set<string>>(new Set());
   const gridRef = useRef<HTMLDivElement>(null);
-  const mouseDownRef = useRef<{ slotId: string; isSelected: boolean } | null>(null);
+  const mouseDownRef = useRef<{ slotId: string; isSelected: boolean } | null>(
+    null,
+  );
 
   // 日付の配列を生成
   const dates: Array<Temporal.PlainDate> = [];
@@ -119,20 +121,27 @@ export function ScheduleGrid({
       const { slotId } = mouseDownRef.current;
       handleCellClick(slotId);
     }
-    
+
     // リセット
     setIsDragging(false);
     setDragMode(null);
     setDragSelection(new Set());
     mouseDownRef.current = null;
-  }, [isDragging, dragMode, dragSelection, selectedSlots, onSlotsChange, handleCellClick]);
+  }, [
+    isDragging,
+    dragMode,
+    dragSelection,
+    selectedSlots,
+    onSlotsChange,
+    handleCellClick,
+  ]);
 
   // グローバルマウスイベントを管理
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       handleMouseUp();
     };
-    
+
     const handleGlobalMouseLeave = () => {
       // マウスがドキュメントを離れた場合もリセット
       if (mouseDownRef.current && !isDragging) {
@@ -141,10 +150,10 @@ export function ScheduleGrid({
         setDragSelection(new Set());
       }
     };
-    
+
     document.addEventListener("mouseup", handleGlobalMouseUp);
     document.addEventListener("mouseleave", handleGlobalMouseLeave);
-    
+
     return () => {
       document.removeEventListener("mouseup", handleGlobalMouseUp);
       document.removeEventListener("mouseleave", handleGlobalMouseLeave);

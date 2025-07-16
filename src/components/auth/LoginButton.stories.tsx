@@ -43,12 +43,15 @@ export const NotAuthenticated: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // ログインボタンが表示されることを確認
-    await waitFor(async () => {
-      const loginButton = canvas.getByRole("button", { name: "ログイン" });
-      await expect(loginButton).toBeInTheDocument();
-    }, { timeout: 5000 });
+    await waitFor(
+      async () => {
+        const loginButton = canvas.getByRole("button", { name: "ログイン" });
+        await expect(loginButton).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   },
 };
 
@@ -70,12 +73,15 @@ export const Authenticated: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // ログアウトボタンが表示されることを確認
-    await waitFor(async () => {
-      const logoutButton = canvas.getByRole("button", { name: "ログアウト" });
-      await expect(logoutButton).toBeInTheDocument();
-    }, { timeout: 5000 });
+    await waitFor(
+      async () => {
+        const logoutButton = canvas.getByRole("button", { name: "ログアウト" });
+        await expect(logoutButton).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   },
 };
 

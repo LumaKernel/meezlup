@@ -22,7 +22,10 @@ interface MockAuthProviderProps {
  * Storybook用のモックAuthProvider
  * parametersで指定されたauthDataを使用してAuthContextを提供する
  */
-export function MockAuthProvider({ children, authData }: MockAuthProviderProps) {
+export function MockAuthProvider({
+  children,
+  authData,
+}: MockAuthProviderProps) {
   const mockAuth = authData || {
     isAuthenticated: false,
     isLoading: false,
