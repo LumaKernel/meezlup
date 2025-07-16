@@ -1,0 +1,21 @@
+{
+  "aggregate": {
+    "availableTimes": "参加可能時間",
+    "participants": "人",
+    "time": "時間",
+    "available": "人参加可能",
+    "noParticipants": "参加者なし",
+    "participantsAvailable": "人参加可能",
+    "peopleAvailable": "人参加可能",
+    "more": "その他"
+  },
+  "weekdays": {
+    "sun": "日",
+    "mon": "月",
+    "tue": "火",
+    "wed": "水",
+    "thu": "木",
+    "fri": "金",
+    "sat": "土"
+  }
+}

@@ -16,6 +16,7 @@ import {
 } from "@mantine/core";
 import { IconPlus, IconCalendar } from "@tabler/icons-react";
 import { Temporal } from "temporal-polyfill";
+import { useTranslation } from "react-i18next";
 import { getEventsByCreator } from "@/app/actions/event";
 import { useAuth } from "@/lib/auth/hooks";
 import type { Event } from "@/lib/effects/services/event/schemas";
@@ -26,6 +27,7 @@ interface EventListProps {
 
 export function EventList({ params }: EventListProps) {
   const { locale } = use(params);
+  const { t } = useTranslation("event");
   const { user } = useAuth();
   const [events, setEvents] = useState<Array<Event>>([]);
   const [loading, setLoading] = useState(true);
@@ -47,11 +49,7 @@ export function EventList({ params }: EventListProps) {
         }
       } catch (err) {
         console.error("イベント取得エラー:", err);
-        setError(
-          locale === "en"
-            ? "Failed to fetch events"
-            : "イベントの取得に失敗しました",
-        );
+        setError(t("list.failedToFetch"));
       } finally {
         setLoading(false);
       }
@@ -60,7 +58,7 @@ export function EventList({ params }: EventListProps) {
     fetchEvents().catch((err: unknown) => {
       console.error("非同期エラー:", err);
     });
-  }, [user?.id]);
+  }, [user?.id, locale]);
 
   if (loading) {
     return (
@@ -72,7 +70,7 @@ export function EventList({ params }: EventListProps) {
 
   if (error) {
     return (
-      <Alert color="red" title="エラー">
+      <Alert color="red" title={t("list.error")}>
         {error}
       </Alert>
     );
@@ -82,11 +80,11 @@ export function EventList({ params }: EventListProps) {
     <div>
       <Group justify="space-between" mb="xl">
         <Title order={1}>
-          {locale === "en" ? "My Events" : "マイイベント"}
+          {t("list.myEvents")}
         </Title>
         <Link href={`/${locale satisfies string}/events/new`}>
           <Button leftSection={<IconPlus size={18} />}>
-            {locale === "en" ? "Create Event" : "イベントを作成"}
+            {t("list.createEvent")}
           </Button>
         </Link>
       </Group>
@@ -96,13 +94,11 @@ export function EventList({ params }: EventListProps) {
           <Stack align="center" gap="md">
             <IconCalendar size={48} color="gray" />
             <Text size="lg" c="dimmed">
-              {locale === "en"
-                ? "No events yet. Create your first event!"
-                : "まだイベントがありません。最初のイベントを作成しましょう！"}
+              {t("list.noEvents")}
             </Text>
             <Link href={`/${locale satisfies string}/events/new`}>
               <Button variant="light">
-                {locale === "en" ? "Create Event" : "イベントを作成"}
+                {t("list.createEvent")}
               </Button>
             </Link>
           </Stack>
@@ -122,16 +118,10 @@ export function EventList({ params }: EventListProps) {
                   </Text>
                   <Badge>
                     {event.isLinkOnly
-                      ? locale === "en"
-                        ? "Link Only"
-                        : "リンクのみ"
+                      ? t("list.linkOnly")
                       : event.participantRestrictionType === "none"
-                        ? locale === "en"
-                          ? "Public"
-                          : "公開"
-                        : locale === "en"
-                          ? "Private"
-                          : "非公開"}
+                        ? t("list.public")
+                        : t("list.private")}
                   </Badge>
                 </Group>
                 {event.description && (
@@ -141,13 +131,13 @@ export function EventList({ params }: EventListProps) {
                 )}
                 <Group gap="xs">
                   <Text size="sm">
-                    {locale === "en" ? "Start:" : "開始:"}{" "}
+                    {t("list.start")}{" "}
                     {Temporal.PlainDate.from(
                       event.dateRangeStart.split("T")[0],
                     ).toLocaleString(locale)}
                   </Text>
                   <Text size="sm">
-                    {locale === "en" ? "End:" : "終了:"}{" "}
+                    {t("list.end")}{" "}
                     {Temporal.PlainDate.from(
                       event.dateRangeEnd.split("T")[0],
                     ).toLocaleString(locale)}

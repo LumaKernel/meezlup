@@ -17,6 +17,7 @@ import {
 import { notifications } from "@mantine/notifications";
 import { IconCalendar } from "@tabler/icons-react";
 import { Temporal } from "temporal-polyfill";
+import { useTranslation } from "react-i18next";
 import type { Event as EffectEvent } from "@/lib/effects/services/event/schemas";
 import { useAuth } from "@/lib/auth/hooks";
 import {
@@ -41,6 +42,7 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
   const { locale } = use(params);
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useTranslation("schedule");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [participantName, setParticipantName] = useState("");
@@ -138,21 +140,13 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
 
     // 選択された時間枠を取得
     if (selectedSlots.size === 0) {
-      setError(
-        locale === "en"
-          ? "Please select at least one time slot"
-          : "少なくとも1つの時間帯を選択してください",
-      );
+      setError(t("participate.selectTimeSlot"));
       return;
     }
 
     // 非認証ユーザーの場合、名前とメールアドレスが必須
     if (!user && (!participantName || !participantEmail)) {
-      setError(
-        locale === "en"
-          ? "Please enter your name and email"
-          : "名前とメールアドレスを入力してください",
-      );
+      setError(t("participate.enterNameAndEmail"));
       return;
     }
 
@@ -177,17 +171,14 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
         if (!result.success) {
           setError(result.error);
           notifications.show({
-            title: locale === "en" ? "Error" : "エラー",
+            title: t("participate.error"),
             message: result.error,
             color: "red",
           });
         } else {
           notifications.show({
-            title: locale === "en" ? "Success" : "成功",
-            message:
-              locale === "en"
-                ? "Your availability has been submitted"
-                : "参加可能時間を送信しました",
+            title: t("participate.success"),
+            message: t("participate.submitted"),
             color: "green",
           });
 
@@ -198,11 +189,7 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
         }
       } catch (err) {
         console.error("参加登録エラー:", err);
-        setError(
-          locale === "en"
-            ? "An unexpected error occurred"
-            : "予期しないエラーが発生しました",
-        );
+        setError(t("participate.unexpectedError"));
       }
     });
   };
@@ -232,28 +219,18 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
           <Group gap="xs">
             <IconCalendar size={20} />
             <Text size="sm" c="dimmed">
-              {Temporal.PlainDate.from(
-                event.dateRangeStart.split("T")[0],
-              ).toLocaleString(locale)}{" "}
+              {startInstant.toZonedDateTimeISO("UTC").toPlainDate().toLocaleString(locale)}{" "}
               -{" "}
-              {Temporal.PlainDate.from(
-                event.dateRangeEnd.split("T")[0],
-              ).toLocaleString(locale)}
+              {endInstant.toZonedDateTimeISO("UTC").toPlainDate().toLocaleString(locale)}
             </Text>
           </Group>
         </div>
         <Badge size="lg">
           {event.timeSlotDuration === 15
-            ? locale === "en"
-              ? "15 min slots"
-              : "15分単位"
+            ? t("participate.minSlots")
             : event.timeSlotDuration === 30
-              ? locale === "en"
-                ? "30 min slots"
-                : "30分単位"
-              : locale === "en"
-                ? "1 hour slots"
-                : "1時間単位"}
+              ? t("participate.halfHourSlots")
+              : t("participate.hourSlots")}
         </Badge>
       </Group>
 
@@ -265,7 +242,7 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
 
       <Stack gap="lg">
         {error && (
-          <Alert color="red" title={locale === "en" ? "Error" : "エラー"}>
+          <Alert color="red" title={t("participate.error")}>
             {error}
           </Alert>
         )}
@@ -274,14 +251,12 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
           <form id="participate-form" onSubmit={handleSubmit}>
             <Paper shadow="sm" p="lg" withBorder mb="lg">
               <Title order={3} mb="md">
-                {locale === "en" ? "Your Information" : "参加者情報"}
+                {t("participate.yourInformation")}
               </Title>
               <Stack gap="md">
                 <TextInput
-                  label={locale === "en" ? "Name" : "名前"}
-                  placeholder={
-                    locale === "en" ? "Enter your name" : "名前を入力"
-                  }
+                  label={t("participate.name")}
+                  placeholder={t("participate.namePlaceholder")}
                   required
                   value={participantName}
                   onChange={(e) => {
@@ -289,12 +264,8 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
                   }}
                 />
                 <TextInput
-                  label={locale === "en" ? "Email" : "メールアドレス"}
-                  placeholder={
-                    locale === "en"
-                      ? "Enter your email"
-                      : "メールアドレスを入力"
-                  }
+                  label={t("participate.email")}
+                  placeholder={t("participate.emailPlaceholder")}
                   type="email"
                   required
                   value={participantEmail}

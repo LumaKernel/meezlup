@@ -67,7 +67,7 @@ export const causeToErrorResponse = (
   if (failureArray.length > 0) {
     // Chunkの最初の要素を取得
     const firstFailure = failureArray[0];
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- 配列の要素が存在しない可能性がある
+     
     if (firstFailure) {
       return appErrorToResponse(firstFailure);
     }

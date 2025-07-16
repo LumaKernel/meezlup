@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Box, Text, Paper } from "@mantine/core";
 import { Temporal } from "temporal-polyfill";
+import { useTranslation } from "react-i18next";
 import classes from "./ScheduleGrid.module.css";
 
 interface ScheduleGridProps {
@@ -22,6 +23,7 @@ export function ScheduleGrid({
   selectedSlots,
   timeSlotDuration,
 }: ScheduleGridProps) {
+  const { t } = useTranslation("schedule");
   const [isDragging, setIsDragging] = useState(false);
   const [dragMode, setDragMode] = useState<"select" | "deselect" | null>(null);
   const [dragSelection, setDragSelection] = useState<Set<string>>(new Set());
@@ -171,11 +173,9 @@ export function ScheduleGrid({
 
   // 曜日を取得
   const getDayOfWeek = (date: Temporal.PlainDate) => {
-    const days =
-      locale === "ja"
-        ? ["日", "月", "火", "水", "木", "金", "土"]
-        : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    return days[date.dayOfWeek % 7];
+    // dayOfWeekは1-7 (月-日)なので、0-6に変換
+    const dayIndex = date.dayOfWeek % 7;
+    return t(`grid.weekdays.${dayIndex.toString() satisfies string}`);
   };
 
   return (
@@ -184,7 +184,7 @@ export function ScheduleGrid({
         {/* ヘッダー行 */}
         <Box className={classes.headerRow}>
           <Box className={classes.timeHeader}>
-            {locale === "ja" ? "時間" : "Time"}
+            {t("grid.time")}
           </Box>
           {dates.map((date) => (
             <Box
@@ -241,12 +241,8 @@ export function ScheduleGrid({
                     tabIndex={0}
                     aria-label={`${date.toString() satisfies string} ${time.toString() satisfies string} - ${
                       (isSelected
-                        ? locale === "ja"
-                          ? "選択済み"
-                          : "Selected"
-                        : locale === "ja"
-                          ? "未選択"
-                          : "Not selected") satisfies string
+                        ? t("grid.selected")
+                        : t("grid.notSelected")) satisfies string
                     }`}
                   />
                 );

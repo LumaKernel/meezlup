@@ -13,6 +13,7 @@ import {
 } from "@mantine/core";
 import { IconDownload, IconUsers } from "@tabler/icons-react";
 import { Temporal } from "temporal-polyfill";
+import { useTranslation } from "react-i18next";
 import classes from "./ScheduleAggregateGrid.module.css";
 
 interface Participant {
@@ -49,6 +50,7 @@ export function ScheduleAggregateGrid({
   showEmails,
   timeSlotDuration,
 }: ScheduleAggregateGridProps) {
+  const { t } = useTranslation("schedule");
   const [focusedSlot, setFocusedSlot] = useState<string | null>(null);
   const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
 
@@ -186,11 +188,8 @@ export function ScheduleAggregateGrid({
 
   // 曜日を取得
   const getDayOfWeek = (date: Temporal.PlainDate) => {
-    const days =
-      locale === "ja"
-        ? ["日", "月", "火", "水", "木", "金", "土"]
-        : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    return days[date.dayOfWeek % 7];
+    const dayKeys = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+    return t(`weekdays.${dayKeys[date.dayOfWeek % 7] satisfies string}`);
   };
 
   return (
@@ -200,10 +199,10 @@ export function ScheduleAggregateGrid({
           <Group gap="xs">
             <IconUsers size={20} />
             <Text fw={500}>
-              {locale === "ja" ? "参加可能時間" : "Available Times"}
+              {t("aggregate.availableTimes")}
             </Text>
             <Badge color="blue">
-              {participants.length} {locale === "ja" ? "人" : "participants"}
+              {participants.length} {t("aggregate.participants")}
             </Badge>
           </Group>
           {focusedSlot && (
@@ -232,7 +231,7 @@ export function ScheduleAggregateGrid({
           {/* ヘッダー行 */}
           <Box className={classes.headerRow}>
             <Box className={classes.timeHeader}>
-              {locale === "ja" ? "時間" : "Time"}
+              {t("aggregate.time")}
             </Box>
             {dates.map((date) => (
               <Box
@@ -274,8 +273,7 @@ export function ScheduleAggregateGrid({
                         count > 0 ? (
                           <Stack gap={4}>
                             <Text size="xs" fw={500}>
-                              {count}{" "}
-                              {locale === "ja" ? "人参加可能" : "available"}
+                              {count} {t("aggregate.available")}
                             </Text>
                             {(isHovered || isFocused) && (
                               <Stack gap={2}>
@@ -286,16 +284,14 @@ export function ScheduleAggregateGrid({
                                 ))}
                                 {slotParticipants.length > 5 && (
                                   <Text size="xs" c="dimmed">
-                                    +{slotParticipants.length - 5} more
+                                    +{slotParticipants.length - 5} {t("aggregate.more")}
                                   </Text>
                                 )}
                               </Stack>
                             )}
                           </Stack>
-                        ) : locale === "ja" ? (
-                          "参加者なし"
                         ) : (
-                          "No participants"
+                          t("aggregate.noParticipants")
                         )
                       }
                       position="top"
@@ -326,7 +322,7 @@ export function ScheduleAggregateGrid({
                         tabIndex={0}
                         aria-label={`${date.toString() satisfies string} ${time.toString() satisfies string} - ${
                           count satisfies number
-                        } ${(locale === "ja" ? "人参加可能" : "participants available") satisfies string}`}
+                        } ${t("aggregate.participantsAvailable") satisfies string}`}
                       >
                         {count > 0 && (
                           <Text size="xs" className={classes.cellCount}>

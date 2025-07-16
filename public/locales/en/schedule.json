@@ -1,0 +1,21 @@
+{
+  "aggregate": {
+    "availableTimes": "Available Times",
+    "participants": "participants",
+    "time": "Time",
+    "available": "available",
+    "noParticipants": "No participants",
+    "participantsAvailable": "participants available",
+    "peopleAvailable": "available",
+    "more": "more"
+  },
+  "weekdays": {
+    "sun": "Sun",
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat"
+  }
+}

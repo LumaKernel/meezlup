@@ -13,6 +13,7 @@ import {
 } from "@mantine/core";
 import { IconCalendarEvent, IconUsers } from "@tabler/icons-react";
 import { type Temporal } from "temporal-polyfill";
+import { useTranslation } from "react-i18next";
 import { ScheduleGrid } from "./ScheduleGrid";
 import { ScheduleAggregateGrid } from "./ScheduleAggregateGrid";
 import classes from "./ScheduleInputLayout.module.css";
@@ -49,6 +50,7 @@ export function ScheduleInputLayout({
   showEmails,
   timeSlotDuration,
 }: ScheduleInputLayoutProps) {
+  const { t } = useTranslation("schedule");
   const [showParticipantList, setShowParticipantList] = useState(false);
   const [focusedParticipants, setFocusedParticipants] = useState<
     ReadonlyArray<Participant>
@@ -88,9 +90,7 @@ export function ScheduleInputLayout({
               <Group gap="xs">
                 <IconCalendarEvent size={20} />
                 <Title order={3}>
-                  {locale === "ja"
-                    ? "参加可能時間を選択"
-                    : "Select Available Times"}
+                  {t("input.selectAvailableTimes")}
                 </Title>
               </Group>
               <Button
@@ -98,7 +98,7 @@ export function ScheduleInputLayout({
                 loading={isSaving}
                 disabled={currentUserSlots.size === 0}
               >
-                {locale === "ja" ? "保存" : "Save"}
+                {t("input.save")}
               </Button>
             </Group>
 
@@ -107,16 +107,16 @@ export function ScheduleInputLayout({
                 <Stack gap="sm">
                   <Group justify="space-between">
                     <Text fw={500}>
-                      {locale === "ja"
-                        ? `参加可能な人 (${focusedParticipants.length satisfies number}人)`
-                        : `Available Participants (${focusedParticipants.length satisfies number})`}
+                      {t("input.participantCount", {
+                        count: focusedParticipants.length,
+                      })}
                     </Text>
                     <Button
                       size="xs"
                       variant="subtle"
                       onClick={handleBackToEdit}
                     >
-                      {locale === "ja" ? "編集に戻る" : "Back to Edit"}
+                      {t("input.backToEdit")}
                     </Button>
                   </Group>
                   <Stack gap="xs">
@@ -145,9 +145,7 @@ export function ScheduleInputLayout({
             )}
 
             <Text size="sm" c="dimmed">
-              {locale === "ja"
-                ? "マウスでドラッグして複数の時間帯を選択できます"
-                : "Drag with mouse to select multiple time slots"}
+              {t("input.dragToSelect")}
             </Text>
           </Stack>
         </Grid.Col>
@@ -158,9 +156,7 @@ export function ScheduleInputLayout({
             <Group gap="xs">
               <IconUsers size={20} />
               <Title order={3}>
-                {locale === "ja"
-                  ? "全体の参加可能状況"
-                  : "Overall Availability"}
+                {t("input.overallAvailability")}
               </Title>
             </Group>
 
@@ -176,9 +172,7 @@ export function ScheduleInputLayout({
             />
 
             <Text size="sm" c="dimmed">
-              {locale === "ja"
-                ? "セルをホバーまたはクリックして参加者を確認できます"
-                : "Hover or click cells to see participants"}
+              {t("input.hoverOrClickCells")}
             </Text>
           </Stack>
         </Grid.Col>

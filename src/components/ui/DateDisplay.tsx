@@ -2,6 +2,7 @@ import { Text, Group } from "@mantine/core";
 import { IconCalendar } from "@tabler/icons-react";
 import { Temporal } from "temporal-polyfill";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 // vrhemelの比較関数は今のところ使用しない
 
 interface DateDisplayProps {
@@ -35,6 +36,7 @@ export function DateDisplay({
   showRelative = false,
   zonedDateTime,
 }: DateDisplayProps) {
+  const { t } = useTranslation("ui");
   // フォーマッターをメモ化してパフォーマンスを最適化
   const formatter = useMemo(
     () => new Intl.DateTimeFormat(locale, formatOptions),
@@ -49,17 +51,17 @@ export function DateDisplay({
     const targetDate = zonedDateTime.toPlainDate();
 
     if (targetDate.equals(today)) {
-      return locale === "ja" ? "今日" : "Today";
+      return t("date.today");
     }
 
     const tomorrow = today.add({ days: 1 });
     if (targetDate.equals(tomorrow)) {
-      return locale === "ja" ? "明日" : "Tomorrow";
+      return t("date.tomorrow");
     }
 
     const yesterday = today.subtract({ days: 1 });
     if (targetDate.equals(yesterday)) {
-      return locale === "ja" ? "昨日" : "Yesterday";
+      return t("date.yesterday");
     }
 
     return null;

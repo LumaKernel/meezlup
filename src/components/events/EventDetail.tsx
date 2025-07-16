@@ -17,6 +17,7 @@ import {
 import { IconLink, IconCalendar } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { Temporal } from "temporal-polyfill";
+import { useTranslation } from "react-i18next";
 
 import type { Event as EffectEvent } from "@/lib/effects/services/event/schemas";
 
@@ -27,6 +28,7 @@ interface EventDetailProps {
 
 export function EventDetail({ event, params }: EventDetailProps) {
   const { locale } = use(params);
+  const { t } = useTranslation("event");
   const [shareUrl] = useState(() => {
     if (typeof window !== "undefined") {
       return `${window.location.origin satisfies string}/${locale satisfies string}/events/${event.id satisfies string}/participate`;
@@ -53,16 +55,10 @@ export function EventDetail({ event, params }: EventDetailProps) {
           <Group gap="xs">
             <Badge>
               {event.isLinkOnly
-                ? locale === "en"
-                  ? "Link Only"
-                  : "リンクのみ"
+                ? t("detail.linkOnly")
                 : event.participantRestrictionType === "none"
-                  ? locale === "en"
-                    ? "Public"
-                    : "公開"
-                  : locale === "en"
-                    ? "Private"
-                    : "非公開"}
+                  ? t("detail.public")
+                  : t("detail.private")}
             </Badge>
           </Group>
         </div>
@@ -71,13 +67,13 @@ export function EventDetail({ event, params }: EventDetailProps) {
       <Stack gap="lg">
         <Paper shadow="sm" p="lg" withBorder>
           <Title order={3} mb="md">
-            {locale === "en" ? "Event Details" : "イベント詳細"}
+            {t("detail.title")}
           </Title>
 
           {event.description && (
             <>
               <Text size="sm" c="dimmed" mb="xs">
-                {locale === "en" ? "Description" : "説明"}
+                {t("detail.description")}
               </Text>
               <Text mb="md" style={{ whiteSpace: "pre-wrap" }}>
                 {event.description}
@@ -88,13 +84,13 @@ export function EventDetail({ event, params }: EventDetailProps) {
           <Group gap="xl">
             <div>
               <Text size="sm" c="dimmed">
-                {locale === "en" ? "Start Date" : "開始日"}
+                {t("detail.startDate")}
               </Text>
               <Text fw={500}>{formatDate(event.dateRangeStart)}</Text>
             </div>
             <div>
               <Text size="sm" c="dimmed">
-                {locale === "en" ? "End Date" : "終了日"}
+                {t("detail.endDate")}
               </Text>
               <Text fw={500}>{formatDate(event.dateRangeEnd)}</Text>
             </div>
@@ -103,7 +99,7 @@ export function EventDetail({ event, params }: EventDetailProps) {
           {event.deadline && (
             <Box mt="md">
               <Text size="sm" c="dimmed">
-                {locale === "en" ? "Change Deadline" : "変更期限"}
+                {t("detail.changeDeadline")}
               </Text>
               <Text fw={500}>{formatDate(event.deadline)}</Text>
             </Box>
@@ -112,13 +108,11 @@ export function EventDetail({ event, params }: EventDetailProps) {
 
         <Paper shadow="sm" p="lg" withBorder>
           <Title order={3} mb="md">
-            {locale === "en" ? "Share Event" : "イベントを共有"}
+            {t("detail.shareEvent")}
           </Title>
 
           <Text size="sm" mb="md">
-            {locale === "en"
-              ? "Share this link with participants:"
-              : "参加者にこのリンクを共有してください："}
+            {t("detail.shareDescription")}
           </Text>
 
           <Group>
@@ -142,10 +136,7 @@ export function EventDetail({ event, params }: EventDetailProps) {
                     onClick={() => {
                       copy();
                       notifications.show({
-                        message:
-                          locale === "en"
-                            ? "Link copied to clipboard!"
-                            : "リンクをコピーしました！",
+                        message: t("detail.linkCopied"),
                         color: "teal",
                       });
                     }}
@@ -165,7 +156,7 @@ export function EventDetail({ event, params }: EventDetailProps) {
             component="a"
             href={`/${locale satisfies string}/events/${event.id satisfies string}/participate`}
           >
-            {locale === "en" ? "View Participation Page" : "参加ページを表示"}
+            {t("detail.viewParticipationPage")}
           </Button>
         </Group>
       </Stack>

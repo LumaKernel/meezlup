@@ -22,6 +22,7 @@ import Link from "next/link";
 import { DateDisplay } from "@/components/ui/DateDisplay";
 import { EventResultDateSection } from "./EventResultDateSection";
 import { Temporal } from "temporal-polyfill";
+import { useTranslation } from "react-i18next";
 import type { Event as EffectEvent } from "@/lib/effects/services/event/schemas";
 import { getAggregatedTimeSlots } from "@/app/actions/schedule";
 
@@ -44,6 +45,7 @@ type AggregatedSlot = {
 
 export function EventResult({ event, params }: EventResultProps) {
   const { locale } = use(params);
+  const { t } = useTranslation("event");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [aggregatedSlots, setAggregatedSlots] = useState<Array<AggregatedSlot>>(
@@ -85,11 +87,7 @@ export function EventResult({ event, params }: EventResultProps) {
         }
       } catch (err) {
         console.error("集計データ取得エラー:", err);
-        setError(
-          locale === "en"
-            ? "Failed to load aggregated data"
-            : "集計データの取得に失敗しました",
-        );
+        setError(t("result.failedToLoadData"));
       } finally {
         setLoading(false);
       }
@@ -110,7 +108,7 @@ export function EventResult({ event, params }: EventResultProps) {
 
   if (error) {
     return (
-      <Alert color="red" title={locale === "en" ? "Error" : "エラー"}>
+      <Alert color="red" title={t("result.error")}>
         {error}
       </Alert>
     );
@@ -149,16 +147,12 @@ export function EventResult({ event, params }: EventResultProps) {
             {event.name}
           </Title>
           <Text size="lg" c="dimmed">
-            {locale === "en" ? "Aggregated Results" : "集計結果"}
+            {t("result.aggregatedResults")}
           </Text>
         </div>
         <Badge size="lg" leftSection={<IconUsers size={16} />}>
           {totalParticipants}{" "}
-          {locale === "en"
-            ? totalParticipants === 1
-              ? "participant"
-              : "participants"
-            : "人"}
+          {totalParticipants === 1 ? t("result.participant") : t("result.participants")}
         </Badge>
       </Group>
 
@@ -171,14 +165,10 @@ export function EventResult({ event, params }: EventResultProps) {
       <Stack gap="xl">
         <Paper shadow="sm" p="lg" withBorder>
           <Title order={3} mb="md">
-            {locale === "en"
-              ? "Availability Heatmap"
-              : "参加可能時間のヒートマップ"}
+            {t("result.availabilityHeatmap")}
           </Title>
           <Text size="sm" c="dimmed" mb="lg">
-            {locale === "en"
-              ? "Darker colors indicate more participants are available"
-              : "色が濃いほど多くの参加者が参加可能です"}
+            {t("result.heatmapDescription")}
           </Text>
 
           <Stack gap="xl">
@@ -215,11 +205,9 @@ export function EventResult({ event, params }: EventResultProps) {
                               <div>
                                 <Text size="sm" fw={600}>
                                   {slot.participantCount}{" "}
-                                  {locale === "en"
-                                    ? slot.participantCount === 1
-                                      ? "participant"
-                                      : "participants"
-                                    : "人"}
+                                  {slot.participantCount === 1
+                                    ? t("result.participant")
+                                    : t("result.participants")}
                                 </Text>
                                 {event.creatorCanSeeEmails &&
                                   slot.participants.length > 0 && (
@@ -271,7 +259,7 @@ export function EventResult({ event, params }: EventResultProps) {
 
         <Paper shadow="sm" p="lg" withBorder>
           <Title order={3} mb="md">
-            {locale === "en" ? "Best Time Slots" : "最適な時間帯"}
+            {t("result.bestTimeSlots")}
           </Title>
           <Stack gap="sm">
             {aggregatedSlots
@@ -322,16 +310,14 @@ export function EventResult({ event, params }: EventResultProps) {
             href={`/${locale satisfies string}/events/${event.id satisfies string}/participate`}
           >
             <Button variant="light">
-              {locale === "en"
-                ? "Update Your Availability"
-                : "参加可能時間を更新"}
+              {t("result.updateAvailability")}
             </Button>
           </Link>
           <Link
             href={`/${locale satisfies string}/events/${event.id satisfies string}`}
           >
             <Button>
-              {locale === "en" ? "Back to Event Details" : "イベント詳細に戻る"}
+              {t("result.backToEventDetails")}
             </Button>
           </Link>
         </Group>

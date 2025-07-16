@@ -1,0 +1,13 @@
+{
+  "date": {
+    "today": "今日",
+    "tomorrow": "明日",
+    "yesterday": "昨日"
+  },
+  "duration": {
+    "hour": "時間",
+    "hours": "時間",
+    "minute": "分",
+    "minutes": "分"
+  }
+}

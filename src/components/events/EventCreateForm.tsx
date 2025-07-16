@@ -17,6 +17,7 @@ import {
 import { DatePickerInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { Temporal } from "temporal-polyfill";
+import { useTranslation } from "react-i18next";
 import type {
   CreateEventForm as CreateEventFormType,
   TimeSlotDuration,
@@ -30,6 +31,7 @@ interface EventCreateFormProps {
 
 export function EventCreateForm({ params }: EventCreateFormProps) {
   const { locale } = use(params);
+  const { t } = useTranslation("event");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -53,23 +55,16 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
     switch (field) {
       case "name":
         if (!value || (typeof value === "string" && value.trim() === "")) {
-          errors.name =
-            locale === "en" ? "Event name is required" : "イベント名は必須です";
+          errors.name = t("create.eventNameRequired");
         } else if (typeof value === "string" && value.length > 100) {
-          errors.name =
-            locale === "en"
-              ? "Event name must be at most 100 characters"
-              : "イベント名は100文字以内で入力してください";
+          errors.name = t("create.eventNameMaxLength");
         } else {
           delete errors.name;
         }
         break;
       case "description":
         if (typeof value === "string" && value.length > 1000) {
-          errors.description =
-            locale === "en"
-              ? "Description must be at most 1000 characters"
-              : "説明は1000文字以内で入力してください";
+          errors.description = t("create.descriptionMaxLength");
         } else {
           delete errors.description;
         }
@@ -84,10 +79,7 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
           value.end
         ) {
           if (Temporal.PlainDate.compare(value.start, value.end) > 0) {
-            errors.dateRange =
-              locale === "en"
-                ? "End date must be after start date"
-                : "終了日は開始日以降にしてください";
+            errors.dateRange = t("create.dateRangeInvalid");
           } else {
             delete errors.dateRange;
           }
@@ -95,10 +87,7 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
         break;
       case "maxParticipants":
         if (value && typeof value === "number" && value < 1) {
-          errors.maxParticipants =
-            locale === "en"
-              ? "Max participants must be at least 1"
-              : "参加人数は1人以上で設定してください";
+          errors.maxParticipants = t("create.maxParticipantsMin");
         } else {
           delete errors.maxParticipants;
         }
@@ -151,14 +140,14 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
         if ("error" in result) {
           setError(result.error);
           notifications.show({
-            title: "エラー",
+            title: t("create.error"),
             message: result.error,
             color: "red",
           });
         } else {
           notifications.show({
-            title: "成功",
-            message: "イベントを作成しました",
+            title: t("create.success"),
+            message: t("create.eventCreated"),
             color: "green",
           });
 
@@ -169,7 +158,7 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
         }
       } catch (err) {
         console.error("イベント作成エラー:", err);
-        setError("予期しないエラーが発生しました");
+        setError(t("create.unexpectedError"));
       }
     });
   };
@@ -177,23 +166,21 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
   return (
     <div>
       <Title order={1} mb="xl">
-        {locale === "en" ? "Create New Event" : "新しいイベントを作成"}
+        {t("create.title")}
       </Title>
 
       <Paper shadow="sm" p="lg" withBorder>
         <form onSubmit={handleSubmit}>
           <Stack gap="md">
             {error && (
-              <Alert color="red" title="エラー">
+              <Alert color="red" title={t("create.error")}>
                 {error}
               </Alert>
             )}
 
             <TextInput
-              label={locale === "en" ? "Event Name" : "イベント名"}
-              placeholder={
-                locale === "en" ? "Enter event name" : "イベント名を入力"
-              }
+              label={t("create.eventName")}
+              placeholder={t("create.eventNamePlaceholder")}
               required
               value={formData.name}
               onChange={(e) => {
@@ -209,12 +196,8 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
             />
 
             <Textarea
-              label={locale === "en" ? "Description" : "詳細説明"}
-              placeholder={
-                locale === "en"
-                  ? "Enter event description (optional)"
-                  : "イベントの詳細を入力（任意）"
-              }
+              label={t("create.description")}
+              placeholder={t("create.descriptionPlaceholder")}
               value={formData.description}
               onChange={(e) => {
                 const value = e.target.value;
@@ -231,10 +214,8 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
 
             <DatePickerInput
               type="range"
-              label={locale === "en" ? "Date Range" : "日付範囲"}
-              placeholder={
-                locale === "en" ? "Select date range" : "日付範囲を選択"
-              }
+              label={t("create.dateRange")}
+              placeholder={t("create.selectDateRange")}
               required
               value={
                 formData.dateRange
@@ -270,8 +251,8 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
             />
 
             <Select
-              label={locale === "en" ? "Time Slot Duration" : "時間帯の幅"}
-              placeholder={locale === "en" ? "Select duration" : "時間幅を選択"}
+              label={t("create.timeSlotDuration")}
+              placeholder={t("create.selectDuration")}
               required
               value={formData.timeSlotDuration?.toString()}
               onChange={(value) => {
@@ -283,19 +264,15 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
                 }
               }}
               data={[
-                { value: "15", label: locale === "en" ? "15 minutes" : "15分" },
-                { value: "30", label: locale === "en" ? "30 minutes" : "30分" },
-                { value: "60", label: locale === "en" ? "1 hour" : "1時間" },
+                { value: "15", label: t("create.15minutes") },
+                { value: "30", label: t("create.30minutes") },
+                { value: "60", label: t("create.1hour") },
               ]}
             />
 
             <DatePickerInput
-              label={
-                locale === "en"
-                  ? "Change Deadline (Optional)"
-                  : "変更期限（任意）"
-              }
-              placeholder={locale === "en" ? "Select deadline" : "期限を選択"}
+              label={t("create.changeDeadline")}
+              placeholder={t("create.changeDeadlinePlaceholder")}
               value={
                 formData.changeDeadline
                   ? (() => {
@@ -328,16 +305,8 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
             />
 
             <NumberInput
-              label={
-                locale === "en"
-                  ? "Max Participants (Optional)"
-                  : "参加人数制限（任意）"
-              }
-              placeholder={
-                locale === "en"
-                  ? "Enter max participants"
-                  : "最大参加人数を入力"
-              }
+              label={t("create.maxParticipants")}
+              placeholder={t("create.maxParticipantsPlaceholder")}
               value={formData.maxParticipants}
               onChange={(value) => {
                 setFormData({
@@ -355,8 +324,8 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
             />
 
             <Select
-              label={locale === "en" ? "Permission" : "権限設定"}
-              placeholder={locale === "en" ? "Select permission" : "権限を選択"}
+              label={t("create.permission")}
+              placeholder={t("create.selectPermission")}
               required
               value={formData.permission}
               onChange={(value) => {
@@ -368,15 +337,9 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
                 }
               }}
               data={[
-                { value: "public", label: locale === "en" ? "Public" : "公開" },
-                {
-                  value: "private",
-                  label: locale === "en" ? "Private" : "非公開",
-                },
-                {
-                  value: "link-only",
-                  label: locale === "en" ? "Link Only" : "リンクのみ",
-                },
+                { value: "public", label: t("create.public") },
+                { value: "private", label: t("create.private") },
+                { value: "link-only", label: t("create.linkOnly") },
               ]}
             />
 
@@ -388,14 +351,14 @@ export function EventCreateForm({ params }: EventCreateFormProps) {
                 }}
                 disabled={isPending}
               >
-                {locale === "en" ? "Cancel" : "キャンセル"}
+                {t("create.cancel")}
               </Button>
               <Button
                 type="submit"
                 loading={isPending}
                 disabled={!isFormValid() || isPending}
               >
-                {locale === "en" ? "Create Event" : "イベントを作成"}
+                {t("create.createEvent")}
               </Button>
             </Group>
           </Stack>

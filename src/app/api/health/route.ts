@@ -54,7 +54,7 @@ async function performHealthCheck() {
   return {
     status: "healthy",
     timestamp: new Date().toISOString(),
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- NODE_ENVは実行時に未定義の可能性がある
+     
     runtime: process.env.NODE_ENV || "development",
     checks,
     performance: {
