@@ -1,0 +1,76 @@
+タスク: Effect.tsとTanStack Queryを使用した全体的なリファクタリング
+
+問題内容:
+1. 永続化された値（savedScheduleId）が表示されない
+2. Server Actionsのレンダリング中実行によるエラー
+3. 複雑で一貫性のない状態管理
+4. Effect.tsパターンが部分的にしか使われていない
+
+実装内容:
+
+## Phase 1: TanStack Queryの導入
+- @tanstack/react-query と @tanstack/react-query-devtools をインストール
+- providers.tsxにQueryClientProviderを追加
+- React Query DevToolsを設定
+
+## Phase 2: WebApiClientLayerの実装
+- contexts/WebApiClientContext.tsxを作成
+- Effect.tsのレイヤーパターンを実装
+- lib/effect.tsを更新してuseEffectQuery/useEffectMutationフックを提供
+
+## Phase 3: LocalStorageServiceの作成
+- lib/effects/services/local-storage.tsを作成
+- Effect.tsのServiceパターンで実装
+- 型安全なローカルストレージアクセス
+- 参加者情報とscheduleIdの永続化ロジック
+
+## Phase 4: Server ActionsのEffect統合
+- lib/effects/queries/schedule.tsを作成
+- getAggregatedTimeSlotsEffectを実装
+- Effect.tsのパターンでServer Actionsをラップ
+
+## Phase 5: useEventParticipationフックの再実装
+- lib/effects/hooks/use-event-participation-v2.tsを作成
+- TanStack QueryとEffect.tsを活用
+- LocalStorageServiceで参加者情報を適切に永続化・復元
+- 認証済み/非認証ユーザーの処理を統一
+- useMutationでフォーム送信を管理
+
+## Phase 6: EventParticipateコンポーネントの修正
+- 新しいuseEventParticipationV2フックを使用
+- Suspenseを削除し、isLoadingステートで管理
+- レンダリングエラーを根本的に解決
+
+技術的改善:
+1. **永続化された値の復元**
+   - LocalStorageServiceで適切に管理
+   - 初回レンダリング時に選択済みスロットを復元
+
+2. **レンダリングエラーの解決**
+   - Server ActionsをuseQueryで管理
+   - レンダリング中の実行を回避
+
+3. **一貫性のあるEffect.tsパターン**
+   - ServiceとLayerパターンを全面的に採用
+   - エラーハンドリングの統一
+
+4. **型安全性の向上**
+   - すべてのデータフローが型安全
+   - asキャストの削除
+
+修正ファイル:
+- src/app/providers.tsx
+- src/contexts/WebApiClientContext.tsx (新規)
+- src/lib/effect.ts
+- src/lib/effects/services/local-storage.ts (新規)
+- src/lib/effects/services/index.ts
+- src/lib/effects/queries/schedule.ts (新規)
+- src/lib/effects/hooks/use-event-participation-v2.ts (新規)
+- src/components/events/EventParticipate.tsx
+
+結果:
+- 永続化された値が正しく表示される
+- レンダリングエラーが解決
+- 一貫性のあるEffect.ts実装
+- TanStack Queryによるデータ管理の改善
+- 型チェックとlintが成功

@@ -1,0 +1,40 @@
+懸念事項:
+
+1. **WebApiClientの仮実装**
+   - 現在は仮の実装のみ
+   - 実際のRPCクライアントとの統合が必要
+   - TODO: @effect/rpcを使用した実装
+
+2. **ランタイムの管理**
+   - Runtime.defaultRuntimeを直接使用
+   - 本来はプロバイダーから取得すべき
+   - TODO: RuntimeProviderの実装
+
+3. **エラーバウンダリー**
+   - Suspenseを削除したが、エラーバウンダリーがない
+   - TODO: React Error Boundaryの実装
+
+4. **キャッシュ戦略**
+   - TanStack Queryのデフォルト設定のみ
+   - TODO: イベントごとのキャッシュ戦略の最適化
+
+5. **テスト**
+   - 新しい実装のテストが未作成
+   - TODO: Effect.tsとTanStack Queryのテスト戦略
+
+6. **古いコードの削除**
+   - .trashedファイルが残っている
+   - participant-state.tsがまだ使われている可能性
+   - TODO: 不要なコードの完全削除
+
+7. **i18n**
+   - LocalStorageServiceのエラーメッセージが日本語化されていない
+   - TODO: エラーメッセージのi18n対応
+
+8. **パフォーマンス**
+   - useReactEffectでの初期ロードがある
+   - TODO: SSRでの初期データ取得の検討
+
+9. **Effect.tsの活用**
+   - まだ部分的な実装
+   - TODO: 他のコンポーネントへの展開

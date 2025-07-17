@@ -34,7 +34,6 @@ interface ScheduleInputLayoutProps {
   readonly onSlotsChange: (slots: ReadonlySet<string>) => void;
   readonly onSave: () => void;
   readonly isSaving: boolean;
-  readonly locale: string;
   readonly showEmails: boolean;
 }
 
@@ -43,7 +42,6 @@ export function ScheduleInputLayout({
   dateRangeEnd,
   dateRangeStart,
   isSaving,
-  locale,
   onSave,
   onSlotsChange,
   participants,
@@ -89,9 +87,7 @@ export function ScheduleInputLayout({
             <Group justify="space-between">
               <Group gap="xs">
                 <IconCalendarEvent size={20} />
-                <Title order={3}>
-                  {t("input.selectAvailableTimes")}
-                </Title>
+                <Title order={3}>{t("input.selectAvailableTimes")}</Title>
               </Group>
               <Button
                 onClick={onSave}
@@ -140,7 +136,6 @@ export function ScheduleInputLayout({
                 timeSlotDuration={timeSlotDuration}
                 selectedSlots={currentUserSlots}
                 onSlotsChange={onSlotsChange}
-                locale={locale}
               />
             )}
 
@@ -155,9 +150,7 @@ export function ScheduleInputLayout({
           <Stack gap="md">
             <Group gap="xs">
               <IconUsers size={20} />
-              <Title order={3}>
-                {t("input.overallAvailability")}
-              </Title>
+              <Title order={3}>{t("input.overallAvailability")}</Title>
             </Group>
 
             <ScheduleAggregateGrid
@@ -166,7 +159,6 @@ export function ScheduleInputLayout({
               timeSlotDuration={timeSlotDuration}
               participants={participants}
               showEmails={showEmails}
-              locale={locale}
               onSlotHover={handleSlotHover}
               onSlotClick={handleSlotClick}
             />

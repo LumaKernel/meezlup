@@ -1,20 +1,9 @@
-import { Layer } from "effect";
-import { DatabaseServiceLive } from "./database";
-import { EventServiceLive } from "./event";
-import { UserServiceLive } from "./user";
-import { ScheduleServiceLive } from "./schedule";
-import { AuthServiceLiveFull } from "./auth";
+// クライアントサイドで使用可能なサービスのみインポート
 
-// すべてのサービスを含むレイヤー
-export const ServicesLive = Layer.mergeAll(
-  DatabaseServiceLive,
-  EventServiceLive,
-  UserServiceLive,
-  ScheduleServiceLive,
-  AuthServiceLiveFull,
-);
+// クライアントセーフなサービスのみを再エクスポート
+// NOTE: DatabaseService, EventService, UserService, ScheduleServiceはserver-onlyのため除外
 
-// 各サービスの再エクスポート
+// Auth関連（クライアントセーフ）
 export {
   AuthService,
   AuthServiceLive,
@@ -28,9 +17,15 @@ export {
   type AnonymousUser,
   type AuthState,
 } from "./auth/schemas";
-export * from "./database";
-export * from "./event";
-export { UserService, UserServiceLive, type UserServiceType } from "./user";
+
+// LocalStorage関連（クライアントセーフ）
+export {
+  LocalStorageService,
+  LocalStorageServiceLive,
+  type StoredParticipantInfo,
+} from "./local-storage";
+
+// Schema型のみエクスポート（server-onlyでないもの）
 export {
   UserSchema,
   type User,
@@ -39,4 +34,21 @@ export {
   type Auth0User,
   type Language,
 } from "./user/schemas";
-export * from "./schedule";
+
+// Event schemasのみエクスポート（型定義のみ）
+export {
+  EventSchema,
+  type Event,
+  type CreateEventInput,
+  type UpdateEventInput,
+} from "./event/schemas";
+
+// Schedule schemasのみエクスポート（型定義のみ）
+export {
+  ScheduleSchema,
+  TimeSlotAggregationSchema,
+  type Schedule,
+  type TimeSlotAggregation,
+  type CreateScheduleInput,
+  type UpdateScheduleInput,
+} from "./schedule/schemas";

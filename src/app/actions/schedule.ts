@@ -2,9 +2,6 @@
 
 import { Effect, Schema, Option } from "effect";
 import {
-  ScheduleService,
-  AuthService,
-  EventService,
   type CreateScheduleInput,
   type UpdateScheduleInput,
   NonEmptyString,
@@ -13,6 +10,11 @@ import {
   DateTimeString,
   ValidationError,
 } from "@/lib/effects";
+import {
+  ScheduleService,
+  AuthService,
+  EventService,
+} from "@/lib/effects/services/server";
 import { runServerActionSafe } from "./runtime";
 
 // スケジュール作成のServer Action

@@ -2,11 +2,11 @@
 
 import { Effect } from "effect";
 import {
-  UserService,
   type CreateUserInput,
   type UpdateUserInput,
   type Auth0User,
 } from "@/lib/effects";
+import { UserService } from "@/lib/effects/services/server";
 import { runServerActionSafe } from "./runtime";
 
 // ユーザー作成のServer Action

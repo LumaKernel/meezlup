@@ -79,9 +79,7 @@ export function EventList({ params }: EventListProps) {
   return (
     <div>
       <Group justify="space-between" mb="xl">
-        <Title order={1}>
-          {t("list.myEvents")}
-        </Title>
+        <Title order={1}>{t("list.myEvents")}</Title>
         <Link href={`/${locale satisfies string}/events/new`}>
           <Button leftSection={<IconPlus size={18} />}>
             {t("list.createEvent")}
@@ -97,9 +95,7 @@ export function EventList({ params }: EventListProps) {
               {t("list.noEvents")}
             </Text>
             <Link href={`/${locale satisfies string}/events/new`}>
-              <Button variant="light">
-                {t("list.createEvent")}
-              </Button>
+              <Button variant="light">{t("list.createEvent")}</Button>
             </Link>
           </Stack>
         </Card>

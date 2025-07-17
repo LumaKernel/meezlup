@@ -1,0 +1,32 @@
+タスク: Cannot update component while renderingエラーの修正
+
+問題内容:
+- EventParticipateコンポーネントでレンダリング中に状態更新が発生
+- "Cannot update a component (Router) while rendering a different component (EventParticipateContent)"エラー
+- 初期化時にselectedSlotsの状態更新がレンダリング中に実行されていた
+
+解決方法:
+1. use-event-participation.ts: 初期化ロジックの改善
+   - useEffectを削除
+   - useLayoutEffectを使用してレンダリング後に状態を更新
+   - hasInitializedフラグで重複実行を防止
+
+2. Promiseキャッシュの改善
+   - createAggregationPromiseを通常のasync関数に変更
+   - エラーハンドリングを簡潔に
+
+修正ファイル:
+- src/lib/effects/hooks/use-event-participation.ts
+
+技術的改善:
+- レンダリング中の状態更新を回避
+- React のベストプラクティスに準拠
+- useLayoutEffectで同期的な更新を実現
+
+追加修正:
+- ScheduleAggregateGrid.tsx: 未使用のlocaleパラメータを_localeに変更
+- ScheduleGrid.tsx: 未使用のlocaleパラメータを_localeに変更
+
+結果:
+- レンダリングエラーの根本原因を解決
+- 型チェックとlintの一部が成功（他のファイルにまだエラーあり）

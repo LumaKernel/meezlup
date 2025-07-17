@@ -1,0 +1,2 @@
+useEffectを利用している箇所は、React Queryを入れる前の状態かと思われる。すべてのuseEffectをなくせ。
+You may not need useEffectの考え方などを参考にせよ.

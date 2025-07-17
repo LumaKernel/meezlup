@@ -364,7 +364,8 @@ const resources = {
         participants: "participants",
         error: "Error",
         availabilityHeatmap: "Availability Heatmap",
-        heatmapDescription: "Darker colors indicate more participants are available",
+        heatmapDescription:
+          "Darker colors indicate more participants are available",
         bestTimeSlots: "Best Time Slots",
         updateAvailability: "Update Your Availability",
         backToEventDetails: "Back to Event Details",

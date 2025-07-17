@@ -2,14 +2,13 @@
 
 import { Effect, Schema, Option } from "effect";
 import {
-  EventService,
-  AuthService,
   type CreateEventInput,
   type UpdateEventInput,
   AuthenticationError,
   NonEmptyString,
   DateTimeString,
 } from "@/lib/effects";
+import { EventService, AuthService } from "@/lib/effects/services/server";
 import { runServerActionSafe } from "./runtime";
 
 // イベント作成のServer Action

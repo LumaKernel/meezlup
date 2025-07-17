@@ -12,13 +12,11 @@ interface ScheduleGridProps {
   readonly timeSlotDuration: 15 | 30 | 60;
   readonly selectedSlots: ReadonlySet<string>;
   readonly onSlotsChange: (slots: ReadonlySet<string>) => void;
-  readonly locale: string;
 }
 
 export function ScheduleGrid({
   dateRangeEnd,
   dateRangeStart,
-  locale,
   onSlotsChange,
   selectedSlots,
   timeSlotDuration,
@@ -183,9 +181,7 @@ export function ScheduleGrid({
       <Box className={classes.gridContainer}>
         {/* ヘッダー行 */}
         <Box className={classes.headerRow}>
-          <Box className={classes.timeHeader}>
-            {t("grid.time")}
-          </Box>
+          <Box className={classes.timeHeader}>{t("grid.time")}</Box>
           {dates.map((date) => (
             <Box
               key={date.toString()}

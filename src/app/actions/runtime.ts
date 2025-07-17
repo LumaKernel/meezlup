@@ -2,7 +2,7 @@
 
 import { type Effect, type Layer, ManagedRuntime, Exit, Cause } from "effect";
 import type { ParseError } from "effect/ParseResult";
-import { ServicesLive } from "@/lib/effects";
+import { ServicesLive } from "@/lib/effects/services/server";
 import type { AppError } from "@/lib/effects";
 
 // Server Actions用のランタイムを作成

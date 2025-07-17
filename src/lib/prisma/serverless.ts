@@ -1,4 +1,5 @@
 // サーバーレス環境用のPrismaクライアント設定
+import "server-only";
 import { PrismaClient } from "@prisma/client";
 import { neonConfig } from "@neondatabase/serverless";
 import { PRISMA_CONFIG, buildConnectionUrl } from "./config";
@@ -29,17 +30,16 @@ function createPrismaClient() {
   });
 }
 
-// グローバルな型定義
-declare global {
-  var prisma: PrismaClient | undefined;
-}
+// Singletonパターンで実装（globalは使わない）
+let prismaInstance: PrismaClient | undefined;
 
 // サーバーレス環境でのコネクション再利用
-export const prisma = global.prisma || createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  global.prisma = prisma;
-}
+export const prisma = (() => {
+  if (!prismaInstance) {
+    prismaInstance = createPrismaClient();
+  }
+  return prismaInstance;
+})();
 
 // クリーンアップ関数
 export async function disconnect() {

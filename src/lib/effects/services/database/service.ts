@@ -1,3 +1,4 @@
+import "server-only";
 import { Effect, Context, Layer } from "effect";
 import type { PrismaClient } from "@prisma/client";
 import { prisma as serverlessPrisma } from "@/lib/prisma/serverless";

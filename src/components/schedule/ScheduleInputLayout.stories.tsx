@@ -100,7 +100,6 @@ export const Default: Story = {
     timeSlotDuration: 30,
     participants: sampleParticipants,
     isSaving: false,
-    locale: "ja",
     showEmails: false,
   },
 };
@@ -121,7 +120,6 @@ export const WithExistingSelection: Story = {
     ]),
     participants: sampleParticipants,
     isSaving: false,
-    locale: "ja",
     showEmails: false,
   },
 };
@@ -135,7 +133,6 @@ export const EnglishLocale: Story = {
     timeSlotDuration: 30,
     participants: sampleParticipants,
     isSaving: false,
-    locale: "en",
     showEmails: false,
   },
 };
@@ -149,7 +146,6 @@ export const WithEmailsShown: Story = {
     timeSlotDuration: 30,
     participants: sampleParticipants,
     isSaving: false,
-    locale: "ja",
     showEmails: true,
   },
 };
@@ -164,7 +160,6 @@ export const SavingState: Story = {
     currentUserSlots: new Set(["2025-01-20_10:00:00"]),
     participants: sampleParticipants,
     isSaving: true,
-    locale: "ja",
     showEmails: false,
   },
 };
@@ -178,7 +173,6 @@ export const NoParticipants: Story = {
     timeSlotDuration: 30,
     participants: [],
     isSaving: false,
-    locale: "ja",
     showEmails: false,
   },
 };
@@ -204,7 +198,6 @@ export const ManyParticipants: Story = {
       ),
     })),
     isSaving: false,
-    locale: "ja",
     showEmails: false,
   },
 };

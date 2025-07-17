@@ -67,10 +67,7 @@ export const causeToErrorResponse = (
   if (failureArray.length > 0) {
     // Chunkの最初の要素を取得
     const firstFailure = failureArray[0];
-     
-    if (firstFailure) {
-      return appErrorToResponse(firstFailure);
-    }
+    return appErrorToResponse(firstFailure);
   }
 
   const defects = Cause.defects(cause);

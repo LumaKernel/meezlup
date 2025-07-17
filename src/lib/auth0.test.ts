@@ -82,9 +82,8 @@ describe("Auth0 Callback Handler", () => {
         },
       });
 
-      const mockRedirect = vi.mocked(NextResponse.redirect);
-
-      expect(mockRedirect).toHaveBeenCalledWith(
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(NextResponse.redirect).toHaveBeenCalledWith(
         expect.objectContaining({
           href: "http://localhost:5825/dashboard",
         }),
@@ -100,9 +99,8 @@ describe("Auth0 Callback Handler", () => {
 
       const _result = await onCallback(mockError, mockContext, null);
 
-      const mockRedirect = vi.mocked(NextResponse.redirect);
-
-      expect(mockRedirect).toHaveBeenCalledWith(
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(NextResponse.redirect).toHaveBeenCalledWith(
         expect.objectContaining({
           href: "http://localhost:5825/error?error=Auth0%20error",
         }),
@@ -139,9 +137,8 @@ describe("Auth0 Callback Handler", () => {
       );
 
       // エラーが発生してもログインは継続される
-      const mockRedirect = vi.mocked(NextResponse.redirect);
-
-      expect(mockRedirect).toHaveBeenCalledWith(
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(NextResponse.redirect).toHaveBeenCalledWith(
         expect.objectContaining({
           href: "http://localhost:5825/",
         }),

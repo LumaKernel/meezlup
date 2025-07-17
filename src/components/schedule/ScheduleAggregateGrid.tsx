@@ -29,7 +29,6 @@ interface ScheduleAggregateGridProps {
   readonly timeSlotDuration: 15 | 30 | 60;
   readonly participants: ReadonlyArray<Participant>;
   readonly showEmails: boolean;
-  readonly locale: string;
   readonly onSlotHover?: (
     slotId: string,
     participants: ReadonlyArray<Participant>,
@@ -43,7 +42,6 @@ interface ScheduleAggregateGridProps {
 export function ScheduleAggregateGrid({
   dateRangeEnd,
   dateRangeStart,
-  locale,
   onSlotClick,
   onSlotHover,
   participants,
@@ -198,9 +196,7 @@ export function ScheduleAggregateGrid({
         <Group justify="space-between">
           <Group gap="xs">
             <IconUsers size={20} />
-            <Text fw={500}>
-              {t("aggregate.availableTimes")}
-            </Text>
+            <Text fw={500}>{t("aggregate.availableTimes")}</Text>
             <Badge color="blue">
               {participants.length} {t("aggregate.participants")}
             </Badge>
@@ -230,9 +226,7 @@ export function ScheduleAggregateGrid({
         <Box className={classes.gridContainer}>
           {/* ヘッダー行 */}
           <Box className={classes.headerRow}>
-            <Box className={classes.timeHeader}>
-              {t("aggregate.time")}
-            </Box>
+            <Box className={classes.timeHeader}>{t("aggregate.time")}</Box>
             {dates.map((date) => (
               <Box
                 key={date.toString()}
@@ -284,7 +278,8 @@ export function ScheduleAggregateGrid({
                                 ))}
                                 {slotParticipants.length > 5 && (
                                   <Text size="xs" c="dimmed">
-                                    +{slotParticipants.length - 5} {t("aggregate.more")}
+                                    +{slotParticipants.length - 5}{" "}
+                                    {t("aggregate.more")}
                                   </Text>
                                 )}
                               </Stack>

@@ -1,0 +1,37 @@
+タスク: useEffectを排除してEventParticipateコンポーネントをリファクタリング
+
+問題内容:
+- 無限ループが発生（useEffectの依存配列でprocessAggregationsが毎回新しく作られていた）
+- 「You Might Not Need an Effect」の原則に反していた
+- useEffectによる複雑なデータフェッチ処理
+
+解決方法:
+1. use-event-participation.ts: データフェッチロジックをカスタムフックに分離
+   - React 19のuseを使ってSuspense対応
+   - Promiseのキャッシュで重複フェッチを防止
+   - useMemoで計算結果をメモ化
+
+2. time-slot-aggregation.ts: フック関数を純粋関数に変更
+   - useTimeSlotAggregationからprocessAggregationsに変更
+   - 無限ループの原因となっていた関数の再生成を防止
+
+3. EventParticipate.tsx: Suspenseベースの実装に全面刷新
+   - useEffectを完全に排除
+   - EventParticipateLoadingとEventParticipateContentに分離
+   - Suspenseでローディング状態を宣言的に管理
+
+修正ファイル:
+- src/lib/effects/hooks/use-event-participation.ts (新規)
+- src/lib/effects/hooks/time-slot-aggregation.ts (修正)
+- src/components/events/EventParticipate.tsx (全面書き換え)
+
+技術的改善:
+- useEffectの排除によりコードが簡潔に
+- Suspenseによる宣言的なローディング処理
+- データフェッチのキャッシュによるパフォーマンス向上
+- 無限ループの根本的解決
+
+結果:
+- 無限ループが解消
+- コードの可読性と保守性が大幅に向上
+- Reactのベストプラクティスに準拠

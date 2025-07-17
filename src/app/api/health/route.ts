@@ -54,8 +54,8 @@ async function performHealthCheck() {
   return {
     status: "healthy",
     timestamp: new Date().toISOString(),
-     
-    runtime: process.env.NODE_ENV || "development",
+
+    runtime: process.env.NODE_ENV,
     checks,
     performance: {
       warmupDuration: duration,

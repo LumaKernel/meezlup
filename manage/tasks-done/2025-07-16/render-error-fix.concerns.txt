@@ -1,0 +1,29 @@
+懸念事項:
+
+1. **レンダリング中の状態更新エラー**
+   - useLayoutEffectで解決を試みた
+   - ブラウザでの動作確認が必要
+   - TODO: 実際にブラウザで動作確認し、エラーが解消されているか確認
+
+2. **useLayoutEffectの使用**
+   - SSRでは動作しない（Next.jsではuseEffectに自動的にフォールバック）
+   - クライアントサイドでのみ動作
+   - TODO: SSR時の挙動を確認
+
+3. **初期化ロジック**
+   - hasInitializedフラグで重複実行を防止
+   - currentUserSlotsが変更された場合の挙動に注意
+   - TODO: ユーザーが切り替わった場合の挙動を確認
+
+4. **lint エラー**
+   - 他のファイルにまだlintエラーが残っている
+   - health/route.ts、auth0.test.ts、error-handling.tsに未解決のエラー
+   - TODO: 残りのlintエラーを修正
+
+5. **パフォーマンス**
+   - aggregationPromiseCacheのメモリリークの可能性
+   - TODO: キャッシュのクリア戦略を実装
+
+6. **型安全性**
+   - participants as Array<Participant>のキャストが残っている
+   - TODO: より型安全な実装を検討

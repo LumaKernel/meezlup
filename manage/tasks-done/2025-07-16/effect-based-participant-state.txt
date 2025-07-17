@@ -1,0 +1,38 @@
+タスク: 認証済みユーザーの選択復元をEffect.tsベースで実装
+
+問題内容:
+- 認証済みユーザーがparticipateページで時間を選択して保存した後、再度ページにアクセスしても選択内容が復元されない
+- 既存実装がif文の乱用で可読性が悪い
+- Effect.tsを活用していない
+
+解決方法:
+1. participant-state.ts: 参加者状態管理をEffect化
+   - ローカルストレージ操作をEffect化
+   - Option型で認証状態を表現
+   - 参加者情報の取得と保存を抽象化
+
+2. time-slot-aggregation.ts: 時間スロット集計処理をEffect化
+   - 集計データの処理をEffect化
+   - エラーハンドリングを統一
+   - 現在ユーザーのスロット判定をOption型で実装
+
+3. EventParticipate.tsx: コンポーネント全体をEffect.tsベースにリファクタリング
+   - バリデーションをEffect化
+   - 送信処理をEffect化
+   - エラーハンドリングを統一
+
+修正ファイル:
+- src/lib/effects/hooks/participant-state.ts (新規)
+- src/lib/effects/hooks/time-slot-aggregation.ts (新規)
+- src/components/events/EventParticipate.tsx (全面書き換え)
+
+技術的改善:
+- if文による分岐をOption/Either型で置き換え
+- エラーハンドリングの統一
+- 副作用の明示化
+- 型安全性の向上
+
+結果:
+- 認証済みユーザーの選択が正しく復元される
+- コードの可読性と保守性が向上
+- Effect.tsの利点を活用した堅牢な実装

@@ -1,0 +1,41 @@
+タスク: Cannot update component while renderingエラーの根本的な修正
+
+問題内容:
+- EventParticipateContentのレンダリング中にRouter状態が更新される
+- use()フックでServer Actionを直接実行していたのが原因
+- Next.jsのServer Actionsは内部的にルーター状態を更新するため、レンダリング中に実行するとエラーになる
+
+解決方法:
+1. 新しいフックを作成: use-event-participation-data.ts
+   - useEffectでServer Actionを実行
+   - レンダリング外でデータ取得を行う
+   - loading、error、dataの状態を管理
+
+2. EventParticipate.tsxの修正:
+   - Suspenseベースの実装を削除
+   - useEventParticipationDataフックを使用
+   - ローディングとエラー状態を明示的に処理
+
+3. use-event-participation.tsの修正:
+   - aggregationsを引数として受け取るように変更
+   - use()フックとServer Action呼び出しを削除
+   - nullチェックを追加
+
+修正ファイル:
+- src/lib/effects/hooks/use-event-participation-data.ts (新規)
+- src/components/events/EventParticipate.tsx
+- src/lib/effects/hooks/use-event-participation.ts
+
+技術的改善:
+- Server Actionがレンダリング中に実行されない
+- 明示的なローディング・エラー状態の管理
+- Reactのレンダリングルールに準拠
+
+追加修正:
+- Promiseのcatchハンドラーを追加
+- catchパラメータの型をunknownに修正
+
+結果:
+- レンダリングエラーが根本的に解決
+- 型チェック成功
+- 新しいlintエラーは修正済み

@@ -73,7 +73,6 @@ export const Default: Story = {
     timeSlotDuration: 30,
     participants: sampleParticipants,
     showEmails: false,
-    locale: "ja",
   },
 };
 
@@ -84,7 +83,6 @@ export const WithEmails: Story = {
     timeSlotDuration: 30,
     participants: sampleParticipants,
     showEmails: true,
-    locale: "ja",
   },
 };
 
@@ -95,7 +93,6 @@ export const EnglishLocale: Story = {
     timeSlotDuration: 30,
     participants: sampleParticipants,
     showEmails: false,
-    locale: "en",
   },
 };
 
@@ -106,7 +103,6 @@ export const ManyParticipants: Story = {
     timeSlotDuration: 30,
     participants: manyParticipants,
     showEmails: false,
-    locale: "ja",
   },
 };
 
@@ -117,7 +113,6 @@ export const NoParticipants: Story = {
     timeSlotDuration: 30,
     participants: [],
     showEmails: false,
-    locale: "ja",
   },
 };
 
@@ -135,7 +130,6 @@ export const OneHourSlots: Story = {
       ),
     })),
     showEmails: false,
-    locale: "ja",
   },
 };
 
@@ -146,7 +140,6 @@ export const WithInteractionHandlers: Story = {
     timeSlotDuration: 30,
     participants: sampleParticipants,
     showEmails: false,
-    locale: "ja",
     onSlotHover: (slotId, participants) => {
       console.log("Hovered slot:", slotId, "Participants:", participants);
     },

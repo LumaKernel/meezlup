@@ -23,7 +23,7 @@ import { DateDisplay } from "@/components/ui/DateDisplay";
 import { EventResultDateSection } from "./EventResultDateSection";
 import { Temporal } from "temporal-polyfill";
 import { useTranslation } from "react-i18next";
-import type { Event as EffectEvent } from "@/lib/effects/services/event/schemas";
+import type { Event as EffectEvent, TimeSlotAggregation } from "@/lib/effects";
 import { getAggregatedTimeSlots } from "@/app/actions/schedule";
 
 interface EventResultProps {
@@ -64,24 +64,30 @@ export function EventResult({ event, params }: EventResultProps) {
         } else {
           // result.dataは直接TimeSlotAggregationの配列
           // Brand型を含むため、明示的に変換
-          const slots: Array<AggregatedSlot> = result.data.map((slot) => ({
-            date: slot.date,
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-            participantCount: slot.participantCount,
-            participants: slot.participants.map((p) => ({
-              scheduleId: p.scheduleId,
-              displayName: p.displayName,
-              userId: p.userId,
-            })),
-          }));
+          const slots: Array<AggregatedSlot> = result.data.map(
+            (slot: TimeSlotAggregation) => ({
+              date: slot.date,
+              startTime: slot.startTime,
+              endTime: slot.endTime,
+              participantCount: slot.participantCount,
+              participants: slot.participants.map(
+                (p: TimeSlotAggregation["participants"][number]) => ({
+                  scheduleId: p.scheduleId,
+                  displayName: p.displayName,
+                  userId: p.userId,
+                }),
+              ),
+            }),
+          );
           setAggregatedSlots(slots);
           // ユニークな参加者数を計算
           const uniqueParticipants = new Set<string>();
-          result.data.forEach((slot) => {
-            slot.participants.forEach((p) => {
-              uniqueParticipants.add(p.scheduleId);
-            });
+          result.data.forEach((slot: TimeSlotAggregation) => {
+            slot.participants.forEach(
+              (p: TimeSlotAggregation["participants"][number]) => {
+                uniqueParticipants.add(p.scheduleId);
+              },
+            );
           });
           setTotalParticipants(uniqueParticipants.size);
         }
@@ -152,7 +158,9 @@ export function EventResult({ event, params }: EventResultProps) {
         </div>
         <Badge size="lg" leftSection={<IconUsers size={16} />}>
           {totalParticipants}{" "}
-          {totalParticipants === 1 ? t("result.participant") : t("result.participants")}
+          {totalParticipants === 1
+            ? t("result.participant")
+            : t("result.participants")}
         </Badge>
       </Group>
 
@@ -309,16 +317,12 @@ export function EventResult({ event, params }: EventResultProps) {
           <Link
             href={`/${locale satisfies string}/events/${event.id satisfies string}/participate`}
           >
-            <Button variant="light">
-              {t("result.updateAvailability")}
-            </Button>
+            <Button variant="light">{t("result.updateAvailability")}</Button>
           </Link>
           <Link
             href={`/${locale satisfies string}/events/${event.id satisfies string}`}
           >
-            <Button>
-              {t("result.backToEventDetails")}
-            </Button>
+            <Button>{t("result.backToEventDetails")}</Button>
           </Link>
         </Group>
       </Stack>

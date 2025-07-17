@@ -1,0 +1,33 @@
+懸念事項:
+
+1. **Suspenseの削除**
+   - React 19の新機能であるuseフックとSuspenseを使わない実装に変更
+   - 将来的にはSuspenseベースの実装が推奨される可能性
+   - TODO: Next.jsがServer ActionsとSuspenseの統合を改善したら再検討
+
+2. **useEffectの使用**
+   - "You might not need useEffect"の原則に反する実装
+   - ただし、Server Actionをレンダリング外で実行するために必要
+   - TODO: より良い方法が提供されたら改善
+
+3. **エラーハンドリング**
+   - dataErrorとerrorの2つのエラー状態がある
+   - ユーザーにとって混乱する可能性
+   - TODO: エラー状態を統一的に管理
+
+4. **パフォーマンス**
+   - Suspenseを使わないため、初回レンダリングが遅延する可能性
+   - TODO: パフォーマンス測定と最適化
+
+5. **キャッシュ戦略**
+   - aggregationPromiseCacheが残っているが使われていない
+   - TODO: 不要なコードの削除
+
+6. **useLayoutEffectとPromise**
+   - useLayoutEffect内でPromiseを使っている
+   - 本来は同期的な処理に使うべき
+   - TODO: より適切な実装方法を検討
+
+7. **型安全性**
+   - participants as Array<Participant>のキャストがまだ残っている
+   - TODO: より型安全な実装を検討

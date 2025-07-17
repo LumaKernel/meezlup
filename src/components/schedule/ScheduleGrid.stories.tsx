@@ -44,7 +44,6 @@ export const Default: Story = {
     dateRangeStart: Temporal.PlainDate.from("2025-01-20"),
     dateRangeEnd: Temporal.PlainDate.from("2025-01-26"),
     timeSlotDuration: 30,
-    locale: "ja",
   },
 };
 
@@ -55,7 +54,6 @@ export const EnglishLocale: Story = {
     dateRangeStart: Temporal.PlainDate.from("2025-01-20"),
     dateRangeEnd: Temporal.PlainDate.from("2025-01-26"),
     timeSlotDuration: 30,
-    locale: "en",
   },
 };
 
@@ -66,7 +64,6 @@ export const FifteenMinuteSlots: Story = {
     dateRangeStart: Temporal.PlainDate.from("2025-01-20"),
     dateRangeEnd: Temporal.PlainDate.from("2025-01-22"),
     timeSlotDuration: 15,
-    locale: "ja",
   },
 };
 
@@ -77,7 +74,6 @@ export const OneHourSlots: Story = {
     dateRangeStart: Temporal.PlainDate.from("2025-01-20"),
     dateRangeEnd: Temporal.PlainDate.from("2025-01-26"),
     timeSlotDuration: 60,
-    locale: "ja",
   },
 };
 
@@ -88,7 +84,6 @@ export const LongDateRange: Story = {
     dateRangeStart: Temporal.PlainDate.from("2025-01-01"),
     dateRangeEnd: Temporal.PlainDate.from("2025-01-31"),
     timeSlotDuration: 60,
-    locale: "ja",
   },
 };
 
@@ -118,6 +113,5 @@ export const WithPreselectedSlots: Story = {
     dateRangeStart: Temporal.PlainDate.from("2025-01-20"),
     dateRangeEnd: Temporal.PlainDate.from("2025-01-26"),
     timeSlotDuration: 30,
-    locale: "ja",
   },
 };
