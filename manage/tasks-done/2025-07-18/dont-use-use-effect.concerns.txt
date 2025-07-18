@@ -1,0 +1,45 @@
+# useEffect削除タスクの懸念事項
+
+## 完了内容
+1. プロジェクト内のuseEffectをすべて調査し、以下の対応を実施：
+   - データフェッチ系 → React Query (useQuery) に置き換え
+   - ロケール同期系 → 直接実行に置き換え  
+   - リダイレクト系 → 直接実行に置き換え
+   - 認証後リフレッシュ処理 → カスタムフックに抽出
+   - DOMイベントリスナー系 → useEffectのまま維持（適切なため）
+
+## 修正したファイル
+- EventList.tsx - React Queryに移行
+- auth/hooks.ts - React Queryに移行
+- EventResult.tsx - React Queryに移行
+- participant-state.ts - React Queryに移行
+- I18nProvider.tsx - 直接実行に移行
+- home.tsx - ロケール同期を直接実行、認証処理をカスタムフックに
+- profile/page.tsx - 直接実行に移行
+- AuthGuard.tsx - 直接実行に移行
+
+## 残存するuseEffect
+- ScheduleGrid.tsx - DOMイベントリスナーのクリーンアップが必要なため維持
+- use-event-participation-v2.ts - Effect.tsの高度な実装で既に最適化済み
+
+## 懸念事項
+1. **テストの失敗**
+   - Auth0関連のテストが失敗している（onCallback関数へのアクセス方法が変更されたため）
+   - UserProfileのテストが失敗している（スケルトンローダーの実装が変更されたため）
+   - これらはuseEffect削除とは直接関係ないが、別途修正が必要
+
+2. **直接実行への移行の影響**
+   - ロケール同期やリダイレクトを直接実行に変更したことで、
+     レンダリング中に副作用が発生する可能性がある
+   - 特にSSR環境での動作確認が必要
+
+3. **認証リダイレクトのカスタムフック**
+   - useAuthRedirectフックは複雑なロジックを含んでおり、
+     setTimeoutを使用している点で完全な副作用フリーではない
+   - より良いアプローチとして、状態管理ライブラリの使用を検討すべき
+
+## TODO
+- [ ] Auth0関連のテストを新しい実装に合わせて修正
+- [ ] UserProfileコンポーネントのテストを修正
+- [ ] SSR環境での動作テスト
+- [ ] use-event-participation-v2.tsの更なる最適化の検討

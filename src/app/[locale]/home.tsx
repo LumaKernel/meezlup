@@ -2,11 +2,12 @@
 
 import { LoginButton } from "@/components/auth/LoginButton";
 import { useAuth } from "@/lib/auth/hooks";
+import { useAuthRedirect } from "@/lib/auth/use-auth-redirect";
 import { Button } from "@/components/ui/Button";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { use, useEffect } from "react";
+import { use } from "react";
 import {
   Container,
   Group,
@@ -28,71 +29,19 @@ export default function Home({ params }: HomeProps) {
   const { i18n, t } = useTranslation("common");
 
   // ロケールに基づいて言語を設定
-  useEffect(() => {
+  if (i18n.language !== locale) {
     console.log("Current i18n language:", i18n.language);
     console.log("Locale from URL:", locale);
-    if (i18n.language !== locale) {
-      i18n
-        .changeLanguage(locale)
-        .then(() => {
-          console.log("Language changed to:", locale);
-        })
-        .catch(console.error);
-    }
-  }, [locale, i18n]);
+    i18n
+      .changeLanguage(locale)
+      .then(() => {
+        console.log("Language changed to:", locale);
+      })
+      .catch(console.error);
+  }
 
-  // 認証後のリフレッシュ処理（デバッグ情報付き）
-  useEffect(() => {
-    // URLパラメータをチェック
-    const urlParams = new URLSearchParams(window.location.search);
-    console.log("[Home] Current URL:", window.location.href);
-    console.log("[Home] URL params:", urlParams.toString());
-    console.log("[Home] Has auth param:", urlParams.has("auth"));
-    console.log("[Home] Is authenticated:", isAuthenticated);
-    console.log("[Home] Is loading:", isLoading);
-    console.log("[Home] User:", user);
-
-    if (urlParams.has("auth") && !isLoading) {
-      console.log(
-        "[Home] Auth param detected, waiting for authentication state...",
-      );
-
-      // authパラメータがある場合は、認証状態の取得を待つ
-      if (!isAuthenticated) {
-        // まだ認証されていない場合は、少し待ってから再試行
-        const retryCount = parseInt(urlParams.get("retry") || "0");
-        if (retryCount < 3) {
-          console.log(
-            `[Home] Retry attempt ${(retryCount + 1) satisfies number}/3`,
-          );
-          setTimeout(() => {
-            urlParams.set("retry", String(retryCount + 1));
-            window.location.search = urlParams.toString();
-          }, 1000);
-        } else {
-          console.error("[Home] Failed to authenticate after 3 retries");
-          // リトライ上限に達したら、パラメータを削除
-          urlParams.delete("auth");
-          urlParams.delete("retry");
-          const queryString = urlParams.toString();
-          const newUrl = queryString
-            ? `${window.location.pathname satisfies string}?${queryString satisfies string}`
-            : window.location.pathname;
-          window.history.replaceState({}, "", newUrl);
-        }
-      } else {
-        // 認証成功したら、パラメータを削除
-        console.log("[Home] Authentication successful, cleaning URL");
-        urlParams.delete("auth");
-        urlParams.delete("retry");
-        const queryString = urlParams.toString();
-        const newUrl = queryString
-          ? `${window.location.pathname satisfies string}?${queryString satisfies string}`
-          : window.location.pathname;
-        window.history.replaceState({}, "", newUrl);
-      }
-    }
-  }, [isAuthenticated, isLoading, user]);
+  // 認証後のリフレッシュ処理
+  useAuthRedirect(isAuthenticated, isLoading);
 
   return (
     <Box mih="100vh">

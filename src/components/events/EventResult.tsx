@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useMemo } from "react";
 import {
   Title,
   Text,
@@ -25,6 +25,7 @@ import { Temporal } from "temporal-polyfill";
 import { useTranslation } from "react-i18next";
 import type { Event as EffectEvent, TimeSlotAggregation } from "@/lib/effects";
 import { getAggregatedTimeSlots } from "@/app/actions/schedule";
+import { useQuery } from "@tanstack/react-query";
 
 interface EventResultProps {
   readonly event: EffectEvent;
@@ -46,65 +47,63 @@ type AggregatedSlot = {
 export function EventResult({ event, params }: EventResultProps) {
   const { locale } = use(params);
   const { t } = useTranslation("event");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [aggregatedSlots, setAggregatedSlots] = useState<Array<AggregatedSlot>>(
-    [],
-  );
-  const [totalParticipants, setTotalParticipants] = useState(0);
-
-  useEffect(() => {
-    const fetchAggregation = async () => {
-      try {
-        setLoading(true);
-        const result = await getAggregatedTimeSlots(event.id);
-
-        if (!result.success) {
-          setError(result.error);
-        } else {
-          // result.dataは直接TimeSlotAggregationの配列
-          // Brand型を含むため、明示的に変換
-          const slots: Array<AggregatedSlot> = result.data.map(
-            (slot: TimeSlotAggregation) => ({
-              date: slot.date,
-              startTime: slot.startTime,
-              endTime: slot.endTime,
-              participantCount: slot.participantCount,
-              participants: slot.participants.map(
-                (p: TimeSlotAggregation["participants"][number]) => ({
-                  scheduleId: p.scheduleId,
-                  displayName: p.displayName,
-                  userId: p.userId,
-                }),
-              ),
-            }),
-          );
-          setAggregatedSlots(slots);
-          // ユニークな参加者数を計算
-          const uniqueParticipants = new Set<string>();
-          result.data.forEach((slot: TimeSlotAggregation) => {
-            slot.participants.forEach(
-              (p: TimeSlotAggregation["participants"][number]) => {
-                uniqueParticipants.add(p.scheduleId);
-              },
-            );
-          });
-          setTotalParticipants(uniqueParticipants.size);
-        }
-      } catch (err) {
-        console.error("集計データ取得エラー:", err);
-        setError(t("result.failedToLoadData"));
-      } finally {
-        setLoading(false);
+  const {
+    data: aggregationResult,
+    error: queryError,
+    isLoading,
+  } = useQuery({
+    queryKey: ["schedule", "aggregation", event.id],
+    queryFn: async () => {
+      const result = await getAggregatedTimeSlots(event.id);
+      if (!result.success) {
+        throw new Error(result.error);
       }
-    };
+      return result.data;
+    },
+  });
 
-    fetchAggregation().catch((err: unknown) => {
-      console.error("非同期エラー:", err);
+  const error = queryError ? t("result.failedToFetch") : null;
+
+  const { aggregatedSlots, totalParticipants } = useMemo(() => {
+    if (!aggregationResult) {
+      return { aggregatedSlots: [], totalParticipants: 0 };
+    }
+
+    // result.dataは直接TimeSlotAggregationの配列
+    // Brand型を含むため、明示的に変換
+    const slots: Array<AggregatedSlot> = aggregationResult.map(
+      (slot: TimeSlotAggregation) => ({
+        date: slot.date,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        participantCount: slot.participantCount,
+        participants: slot.participants.map(
+          (p: TimeSlotAggregation["participants"][number]) => ({
+            scheduleId: p.scheduleId,
+            displayName: p.displayName,
+            userId: p.userId,
+          }),
+        ),
+      }),
+    );
+
+    // ユニークな参加者数を計算
+    const uniqueParticipants = new Set<string>();
+    aggregationResult.forEach((slot: TimeSlotAggregation) => {
+      slot.participants.forEach(
+        (p: TimeSlotAggregation["participants"][number]) => {
+          uniqueParticipants.add(p.scheduleId);
+        },
+      );
     });
-  }, [event.id, locale]);
 
-  if (loading) {
+    return {
+      aggregatedSlots: slots,
+      totalParticipants: uniqueParticipants.size,
+    };
+  }, [aggregationResult]);
+
+  if (isLoading) {
     return (
       <Center h={400}>
         <Loader size="lg" />

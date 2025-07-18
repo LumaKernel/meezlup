@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use } from "react";
 import Link from "next/link";
 import {
   Title,
@@ -19,7 +19,7 @@ import { Temporal } from "temporal-polyfill";
 import { useTranslation } from "react-i18next";
 import { getEventsByCreator } from "@/app/actions/event";
 import { useAuth } from "@/lib/auth/hooks";
-import type { Event } from "@/lib/effects/services/event/schemas";
+import { useQuery } from "@tanstack/react-query";
 
 interface EventListProps {
   readonly params: Promise<{ locale: string }>;
@@ -29,38 +29,30 @@ export function EventList({ params }: EventListProps) {
   const { locale } = use(params);
   const { t } = useTranslation("event");
   const { user } = useAuth();
-  const [events, setEvents] = useState<Array<Event>>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const result = await getEventsByCreator(user.id);
-
-        if ("error" in result) {
-          setError(result.error);
-        } else {
-          // ReadonlyArrayを通常の配列に変換
-          setEvents([...result.data]);
-        }
-      } catch (err) {
-        console.error("イベント取得エラー:", err);
-        setError(t("list.failedToFetch"));
-      } finally {
-        setLoading(false);
+  const {
+    data: events = [],
+    error: queryError,
+    isLoading,
+  } = useQuery({
+    queryKey: ["events", "creator", user?.id],
+    queryFn: async () => {
+      if (!user?.id) {
+        return [];
       }
-    };
+      const result = await getEventsByCreator(user.id);
+      if ("error" in result) {
+        throw new Error(result.error);
+      }
+      // ReadonlyArrayを通常の配列に変換
+      return [...result.data];
+    },
+    enabled: !!user?.id,
+  });
 
-    fetchEvents().catch((err: unknown) => {
-      console.error("非同期エラー:", err);
-    });
-  }, [user?.id, locale]);
+  const error = queryError ? t("list.failedToFetch") : null;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Center h={400}>
         <Loader size="lg" />

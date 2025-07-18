@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * ユーザー認証状態
@@ -21,7 +21,7 @@ export interface UseAuthResult {
   readonly isAuthenticated: boolean;
   readonly isLoading: boolean;
   readonly user: AuthUser | null;
-  readonly error?: Error;
+  readonly error?: Error | null;
 }
 
 /**
@@ -44,59 +44,49 @@ interface Auth0ProfileResponse {
  * /auth/profileエンドポイントから取得
  */
 export function useAuth(): UseAuthResult {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | undefined>(undefined);
-
-  useEffect(() => {
-    const fetchUser = async () => {
+  const {
+    data: user = null,
+    error,
+    isLoading,
+  } = useQuery<AuthUser | null>({
+    queryKey: ["auth", "profile"],
+    queryFn: async () => {
       console.log("[useAuth] Fetching user profile...");
-      try {
-        const response = await fetch("/auth/profile");
-        console.log("[useAuth] Profile response status:", response.status);
+      const response = await fetch("/auth/profile");
+      console.log("[useAuth] Profile response status:", response.status);
 
-        if (response.ok) {
-          const data = (await response.json()) as Auth0ProfileResponse;
-          console.log("[useAuth] Profile data:", data);
+      if (response.ok) {
+        const data = (await response.json()) as Auth0ProfileResponse;
+        console.log("[useAuth] Profile data:", data);
 
-          if (data.sub && data.email) {
-            const userData = {
-              id: data.sub,
-              email: data.email,
-              name: data.name,
-              picture: data.picture,
-              nickname: data.nickname,
-              emailVerified: data.email_verified,
-            };
-            console.log("[useAuth] Setting user:", userData);
-            setUser(userData);
-          } else {
-            console.log("[useAuth] No user data in response");
-          }
-        } else if (response.status === 401) {
-          console.log("[useAuth] User not authenticated (401)");
+        if (data.sub && data.email) {
+          const userData = {
+            id: data.sub,
+            email: data.email,
+            name: data.name,
+            picture: data.picture,
+            nickname: data.nickname,
+            emailVerified: data.email_verified,
+          };
+          console.log("[useAuth] Setting user:", userData);
+          return userData;
         } else {
-          console.error(
-            "[useAuth] Unexpected response status:",
-            response.status,
-          );
-          throw new Error(
-            `Failed to fetch user profile: ${response.status satisfies number}`,
-          );
+          console.log("[useAuth] No user data in response");
+          return null;
         }
-      } catch (err) {
-        console.error("[useAuth] Error fetching profile:", err);
-        setError(err instanceof Error ? err : new Error("Unknown error"));
-      } finally {
-        setIsLoading(false);
+      } else if (response.status === 401) {
+        console.log("[useAuth] User not authenticated (401)");
+        return null;
+      } else {
+        console.error("[useAuth] Unexpected response status:", response.status);
+        throw new Error(
+          `Failed to fetch user profile: ${response.status satisfies number}`,
+        );
       }
-    };
-
-    fetchUser().catch((err: unknown) => {
-      console.error("[useAuth] fetchUser error:", err);
-      setError(err instanceof Error ? err : new Error("Unknown error"));
-    });
-  }, []);
+    },
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5分間キャッシュ
+  });
 
   return {
     isAuthenticated: !!user,

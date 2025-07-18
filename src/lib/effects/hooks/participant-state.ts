@@ -1,7 +1,8 @@
 "use client";
 
 import { Effect, Option, Schema, pipe } from "effect";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { AuthUser } from "@/lib/auth/hooks";
 import type { Event as EffectEvent } from "@/lib/effects/services/event/schemas";
 
@@ -119,41 +120,46 @@ export const isCurrentUserSlot = (
 
 // カスタムフック
 export function useParticipantState(event: EffectEvent, user: AuthUser | null) {
-  const [participantInfo, setParticipantInfo] = useState<ParticipantInfo>({
-    name: "",
-    email: "",
-    scheduleId: undefined,
+  // 参加者情報の取得
+  const { data: initialInfo } = useQuery({
+    queryKey: ["participant", "info", event.id, user?.id],
+    queryFn: async () => {
+      return await pipe(getParticipantInfo(event, user), Effect.runPromise);
+    },
   });
 
-  const [savedScheduleId, setSavedScheduleId] = useState<Option.Option<string>>(
-    Option.none(),
+  // scheduleIdの取得
+  const { data: savedScheduleId = Option.none() } = useQuery({
+    queryKey: ["participant", "scheduleId", event.id],
+    queryFn: async () => {
+      return await pipe(
+        LocalStorageEffect.get(makeStorageKey(event.id, "scheduleId")),
+        Effect.runPromise,
+      );
+    },
+  });
+
+  // React Queryのデータから直接使用、またはローカル更新を保持
+  const [localUpdates, setLocalUpdates] = useState<Partial<ParticipantInfo>>(
+    {},
   );
 
-  // 初期化Effect
-  useEffect(() => {
-    const loadParticipantInfo = pipe(
-      getParticipantInfo(event, user),
-      Effect.runPromise,
-    );
-
-    loadParticipantInfo.then(setParticipantInfo).catch(console.error);
-
-    // ローカルストレージからscheduleIdを取得
-    const loadScheduleId = pipe(
-      LocalStorageEffect.get(makeStorageKey(event.id, "scheduleId")),
-      Effect.runPromise,
-    );
-
-    loadScheduleId.then(setSavedScheduleId).catch(console.error);
-  }, [event, user]);
+  // 現在の参加者情報（React Queryデータ + ローカル更新）
+  const participantInfo: ParticipantInfo = {
+    ...(initialInfo || {
+      name: "",
+      email: "",
+      scheduleId: undefined,
+    }),
+    ...localUpdates,
+  };
 
   // 情報更新関数
   const updateParticipantInfo = (
     updates: Partial<ParticipantInfo>,
   ): ParticipantInfo => {
-    const newInfo = { ...participantInfo, ...updates };
-    setParticipantInfo(newInfo);
-    return newInfo;
+    setLocalUpdates((prev) => ({ ...prev, ...updates }));
+    return { ...participantInfo, ...updates };
   };
 
   // 保存関数
