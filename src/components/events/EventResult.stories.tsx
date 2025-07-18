@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { EventResult } from "./EventResult";
 import type { Event as EffectEvent } from "@/lib/effects/services/event/schemas";
+import type { TimeSlotAggregation } from "@/lib/effects";
 import { Schema } from "effect";
 import { EventId, NonEmptyString, DateTimeString, UserId } from "@/lib/effects";
+import { getAggregatedTimeSlots } from "#app/actions/schedule";
 
 const meta = {
   title: "Events/EventResult",
@@ -44,7 +46,46 @@ const mockEvent: EffectEvent = {
   isLinkOnly: false,
 };
 
-// モックデータ生成関数は不要なので削除
+// モック用の集計データ
+const mockManyParticipants: TimeSlotAggregation[] = [
+  {
+    date: new Date().toISOString().split("T")[0],
+    startTime: 9,
+    endTime: 10,
+    participantCount: 5,
+    participants: [
+      { scheduleId: "s1", displayName: "田中太郎", userId: "user1" },
+      { scheduleId: "s2", displayName: "佐藤花子", userId: "user2" },
+      { scheduleId: "s3", displayName: "鈴木一郎", userId: null },
+      { scheduleId: "s4", displayName: "山田次郎", userId: "user4" },
+      { scheduleId: "s5", displayName: "高橋三郎", userId: "user5" },
+    ],
+  },
+  {
+    date: new Date().toISOString().split("T")[0],
+    startTime: 14,
+    endTime: 15,
+    participantCount: 3,
+    participants: [
+      { scheduleId: "s1", displayName: "田中太郎", userId: "user1" },
+      { scheduleId: "s2", displayName: "佐藤花子", userId: "user2" },
+      { scheduleId: "s3", displayName: "鈴木一郎", userId: null },
+    ],
+  },
+];
+
+const mockFewParticipants: TimeSlotAggregation[] = [
+  {
+    date: new Date().toISOString().split("T")[0],
+    startTime: 10,
+    endTime: 11,
+    participantCount: 2,
+    participants: [
+      { scheduleId: "s1", displayName: "田中太郎", userId: "user1" },
+      { scheduleId: "s2", displayName: "佐藤花子", userId: "user2" },
+    ],
+  },
+];
 
 // 多くの参加者がいる場合
 export const ManyParticipants: Story = {
@@ -52,11 +93,17 @@ export const ManyParticipants: Story = {
     event: mockEvent,
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
+  beforeEach: () => {
+    getAggregatedTimeSlots.mockResolvedValue({
+      success: true,
+      data: mockManyParticipants,
+    });
+  },
   parameters: {
     docs: {
       description: {
         story:
-          "多くの参加者がいる場合の表示例です。実際の動作では、Server Actionからデータを取得します。",
+          "多くの参加者がいる場合の表示例です。",
       },
     },
   },
@@ -68,11 +115,17 @@ export const FewParticipants: Story = {
     event: mockEvent,
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
+  beforeEach: () => {
+    getAggregatedTimeSlots.mockResolvedValue({
+      success: true,
+      data: mockFewParticipants,
+    });
+  },
   parameters: {
     docs: {
       description: {
         story:
-          "少数の参加者がいる場合の表示例です。実際の動作では、Server Actionからデータを取得します。",
+          "少数の参加者がいる場合の表示例です。",
       },
     },
   },
@@ -84,11 +137,17 @@ export const NoParticipants: Story = {
     event: mockEvent,
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
+  beforeEach: () => {
+    getAggregatedTimeSlots.mockResolvedValue({
+      success: true,
+      data: [],
+    });
+  },
   parameters: {
     docs: {
       description: {
         story:
-          "参加者がいない場合の表示例です。実際の動作では、Server Actionからデータを取得します。",
+          "参加者がいない場合の表示例です。",
       },
     },
   },
@@ -105,11 +164,17 @@ export const EnglishLocale: Story = {
     },
     params: Promise.resolve({ locale: "en", id: "event123" }),
   },
+  beforeEach: () => {
+    getAggregatedTimeSlots.mockResolvedValue({
+      success: true,
+      data: mockFewParticipants,
+    });
+  },
   parameters: {
     docs: {
       description: {
         story:
-          "英語表示での表示例です。実際の動作では、Server Actionからデータを取得します。",
+          "英語表示での表示例です。",
       },
     },
   },
@@ -124,11 +189,17 @@ export const WithoutEmailAccess: Story = {
     },
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
+  beforeEach: () => {
+    getAggregatedTimeSlots.mockResolvedValue({
+      success: true,
+      data: mockManyParticipants,
+    });
+  },
   parameters: {
     docs: {
       description: {
         story:
-          "メールアドレスが非表示の場合の表示例です。実際の動作では、Server Actionからデータを取得します。",
+          "メールアドレスが非表示の場合の表示例です。",
       },
     },
   },
@@ -140,11 +211,17 @@ export const Loading: Story = {
     event: mockEvent,
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
+  beforeEach: () => {
+    // ローディング状態をシミュレートするために遅延を追加
+    getAggregatedTimeSlots.mockImplementation(
+      () => new Promise(() => {}) // 永久にpending
+    );
+  },
   parameters: {
     docs: {
       description: {
         story:
-          "データ読み込み中の表示例です。実際の動作では、Server Actionからデータを取得します。",
+          "データ読み込み中の表示例です。",
       },
     },
   },
@@ -156,11 +233,17 @@ export const Error: Story = {
     event: mockEvent,
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
+  beforeEach: () => {
+    getAggregatedTimeSlots.mockResolvedValue({
+      success: false,
+      error: "データの取得に失敗しました",
+    });
+  },
   parameters: {
     docs: {
       description: {
         story:
-          "エラーが発生した場合の表示例です。実際の動作では、Server Actionからデータを取得します。",
+          "エラーが発生した場合の表示例です。",
       },
     },
   },

@@ -24,7 +24,7 @@ import { EventResultDateSection } from "./EventResultDateSection";
 import { Temporal } from "temporal-polyfill";
 import { useTranslation } from "react-i18next";
 import type { Event as EffectEvent, TimeSlotAggregation } from "@/lib/effects";
-import { getAggregatedTimeSlots } from "@/app/actions/schedule";
+import { getAggregatedTimeSlots } from "#app/actions/schedule";
 import { useQuery } from "@tanstack/react-query";
 
 interface EventResultProps {

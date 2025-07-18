@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 import { MantineProvider, createTheme } from "@mantine/core";
 import { I18nextProvider } from "react-i18next";
 import i18n from "../src/lib/i18n/client";
+import { withQueryClient } from "./decorators/QueryClientDecorator";
 import "@mantine/core/styles.css";
 
 const theme = createTheme({
@@ -117,7 +118,7 @@ const preview: Preview = {
       ],
     },
   },
-  decorators: [withProviders],
+  decorators: [withQueryClient, withProviders],
   globalTypes: {
     locale: {
       name: "Locale",

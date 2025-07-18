@@ -17,7 +17,7 @@ import {
 import { IconPlus, IconCalendar } from "@tabler/icons-react";
 import { Temporal } from "temporal-polyfill";
 import { useTranslation } from "react-i18next";
-import { getEventsByCreator } from "@/app/actions/event";
+import { getEventsByCreator } from "#app/actions/event";
 import { useAuth } from "@/lib/auth/hooks";
 import { useQuery } from "@tanstack/react-query";
 
