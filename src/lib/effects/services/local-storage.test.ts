@@ -125,7 +125,11 @@ describe("LocalStorageService", () => {
 
   describe("選択した時間枠の保存と取得", () => {
     it("選択した時間枠を保存して取得できる", async () => {
-      const slots = ["2025-01-20_09:00", "2025-01-20_10:00", "2025-01-20_11:00"];
+      const slots = [
+        "2025-01-20_09:00",
+        "2025-01-20_10:00",
+        "2025-01-20_11:00",
+      ];
 
       const program = Effect.gen(function* () {
         const service = yield* LocalStorageService;

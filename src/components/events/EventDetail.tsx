@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import {
   Title,
   Text,
@@ -29,12 +29,14 @@ interface EventDetailProps {
 export function EventDetail({ event, params }: EventDetailProps) {
   const { locale } = use(params);
   const { t } = useTranslation("event");
-  const [shareUrl] = useState(() => {
-    if (typeof window !== "undefined") {
-      return `${window.location.origin satisfies string}/${locale satisfies string}/events/${event.id satisfies string}/participate`;
-    }
-    return "";
-  });
+  const [shareUrl, setShareUrl] = useState("");
+
+  useEffect(() => {
+    // クライアント側でのみURLを設定
+    setShareUrl(
+      `${window.location.origin satisfies string}/${locale satisfies string}/events/${event.id satisfies string}/participate`,
+    );
+  }, [locale, event.id]);
 
   const formatDate = (dateTimeString: string) => {
     const plainDate = Temporal.PlainDate.from(dateTimeString.split("T")[0]);
@@ -126,19 +128,22 @@ export function EventDetail({ event, params }: EventDetailProps) {
                 flex: 1,
               }}
             >
-              {shareUrl}
+              {shareUrl || "\u00A0"}
             </Text>
-            <CopyButton value={shareUrl}>
+            <CopyButton value={shareUrl || ""}>
               {({ copied, copy }) => (
                 <Tooltip label={copied ? "Copied!" : "Copy"}>
                   <ActionIcon
                     color={copied ? "teal" : "gray"}
+                    disabled={!shareUrl}
                     onClick={() => {
-                      copy();
-                      notifications.show({
-                        message: t("detail.linkCopied"),
-                        color: "teal",
-                      });
+                      if (shareUrl) {
+                        copy();
+                        notifications.show({
+                          message: t("detail.linkCopied"),
+                          color: "teal",
+                        });
+                      }
                     }}
                   >
                     <IconLink size={20} />
