@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { EventCreateForm } from "./EventCreateForm";
+import { expect, within, userEvent, waitFor } from "@storybook/test";
 
 const meta = {
   title: "Events/EventCreateForm",
@@ -24,6 +25,22 @@ export const DefaultJapanese: Story = {
   args: {
     params: Promise.resolve({ locale: "ja" }),
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // フォームが表示されることを確認
+    await waitFor(async () => {
+      const titleInput = canvas.getByRole("textbox", { name: "イベント名" });
+      await expect(titleInput).toBeInTheDocument();
+    });
+
+    // 必須フィールドが存在することを確認
+    const descriptionInput = canvas.getByRole("textbox", { name: "詳細説明" });
+    await expect(descriptionInput).toBeInTheDocument();
+
+    const submitButton = canvas.getByRole("button", { name: "イベントを作成" });
+    await expect(submitButton).toBeInTheDocument();
+  },
 };
 
 // 基本的な表示（英語）
@@ -37,6 +54,26 @@ export const DefaultEnglish: Story = {
 export const FilledFormJapanese: Story = {
   args: {
     params: Promise.resolve({ locale: "ja" }),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // フォームが表示されるまで待つ
+    const titleInput = await canvas.findByRole("textbox", { name: "イベント名" });
+
+    // フォームに入力する
+    await userEvent.clear(titleInput);
+    await userEvent.type(titleInput, "テストイベント");
+
+    const descriptionInput = canvas.getByRole("textbox", { name: "詳細説明" });
+    await userEvent.clear(descriptionInput);
+    await userEvent.type(descriptionInput, "これはテストイベントの説明です");
+
+    // 入力値が反映されていることを確認
+    await expect(titleInput).toHaveValue("テストイベント");
+    await expect(descriptionInput).toHaveValue(
+      "これはテストイベントの説明です",
+    );
   },
 };
 

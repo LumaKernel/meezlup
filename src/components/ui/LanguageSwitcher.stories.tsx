@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { I18nProvider } from "@/components/I18nProvider";
+import { expect, within, userEvent, waitFor } from "@storybook/test";
 
 const meta = {
   title: "Components/UI/LanguageSwitcher",
@@ -36,6 +37,25 @@ export const JapaneseSelected: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 言語切り替えボタンが表示されていることを確認
+    await waitFor(async () => {
+      const languageButton = canvas.getByRole("button", { name: /日本語|JA/i });
+      await expect(languageButton).toBeInTheDocument();
+    });
+    
+    // ボタンをクリックしてドロップダウンを開く
+    const languageButton = canvas.getByRole("button", { name: /日本語|JA/i });
+    await userEvent.click(languageButton);
+    
+    // 英語オプションが表示されていることを確認
+    await waitFor(async () => {
+      const englishOption = canvas.getByText(/English|EN/i);
+      await expect(englishOption).toBeInTheDocument();
+    });
+  },
 };
 
 // 英語が選択されている状態
@@ -46,6 +66,25 @@ export const EnglishSelected: Story = {
         params: { locale: "en" },
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 英語の言語切り替えボタンが表示されていることを確認
+    await waitFor(async () => {
+      const languageButton = canvas.getByRole("button", { name: /English|EN/i });
+      await expect(languageButton).toBeInTheDocument();
+    });
+    
+    // ボタンをクリックしてドロップダウンを開く
+    const languageButton = canvas.getByRole("button", { name: /English|EN/i });
+    await userEvent.click(languageButton);
+    
+    // 日本語オプションが表示されていることを確認
+    await waitFor(async () => {
+      const japaneseOption = canvas.getByText(/日本語|JA/i);
+      await expect(japaneseOption).toBeInTheDocument();
+    });
   },
 };
 
@@ -67,4 +106,22 @@ export const CustomStyle: Story = {
       </div>
     ),
   ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // カスタム背景内でも言語切り替えボタンが表示されていることを確認
+    await waitFor(async () => {
+      const languageButton = canvas.getByRole("button", { name: /日本語|JA/i });
+      await expect(languageButton).toBeInTheDocument();
+    });
+    
+    // ボタンが正しく動作することを確認
+    const languageButton = canvas.getByRole("button", { name: /日本語|JA/i });
+    await userEvent.click(languageButton);
+    
+    await waitFor(async () => {
+      const englishOption = canvas.getByText(/English|EN/i);
+      await expect(englishOption).toBeInTheDocument();
+    });
+  },
 };

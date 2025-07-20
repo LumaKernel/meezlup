@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { useState } from "react";
 import { Temporal } from "temporal-polyfill";
 import { ScheduleGrid } from "./ScheduleGrid";
+import { expect, within, userEvent, waitFor } from "@storybook/test";
 
 const meta = {
   title: "Schedule/ScheduleGrid",
@@ -44,6 +45,29 @@ export const Default: Story = {
     dateRangeStart: Temporal.PlainDate.from("2025-01-20"),
     dateRangeEnd: Temporal.PlainDate.from("2025-01-26"),
     timeSlotDuration: 30,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // スケジュールグリッドが表示されることを確認
+    await waitFor(async () => {
+      // 時間のヘッダーが表示されている
+      const timeHeader = canvas.getByText("時間");
+      await expect(timeHeader).toBeInTheDocument();
+    });
+
+    // 時間スロットボタンが存在することを確認
+    const slots = canvas.getAllByRole("button", { name: /未選択/ });
+    await expect(slots.length).toBeGreaterThan(0);
+
+    // 最初のスロットをクリック
+    const firstSlot = slots[0];
+    await userEvent.click(firstSlot);
+    
+    // 選択されたことを確認（アクセシビリティ名の変更で判定）
+    await waitFor(() => {
+      expect(firstSlot).toHaveAccessibleName(/選択済み/);
+    });
   },
 };
 

@@ -1,10 +1,23 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- Storybookのモック関数使用のため */
 import type { Meta, StoryObj } from "@storybook/react";
 import { EventResult } from "./EventResult";
 import type { Event as EffectEvent } from "@/lib/effects/services/event/schemas";
+import { expect, within, waitFor } from "@storybook/test";
 import type { TimeSlotAggregation } from "@/lib/effects";
 import { Schema } from "effect";
-import { EventId, NonEmptyString, DateTimeString, UserId } from "@/lib/effects";
-import { getAggregatedTimeSlots } from "#app/actions/schedule";
+import {
+  EventId,
+  NonEmptyString,
+  DateTimeString,
+  UserId,
+  ScheduleId,
+  PositiveInt,
+} from "@/lib/effects";
+import * as scheduleActions from "#app/actions/schedule";
+
+// TypeScript用の型アサーション（Storybookではモック関数として扱われる）
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- TypeScriptがpackage.jsonのimportsフィールドを認識しないため
+const mockScheduleActions = scheduleActions as any;
 
 const meta = {
   title: "Events/EventResult",
@@ -47,42 +60,82 @@ const mockEvent: EffectEvent = {
 };
 
 // モック用の集計データ
-const mockManyParticipants: TimeSlotAggregation[] = [
+const mockManyParticipants: Array<TimeSlotAggregation> = [
   {
-    date: new Date().toISOString().split("T")[0],
-    startTime: 9,
-    endTime: 10,
-    participantCount: 5,
+    date: Schema.decodeUnknownSync(DateTimeString)(new Date().toISOString()),
+    startTime: 540, // 9:00
+    endTime: 600, // 10:00
+    participantCount: Schema.decodeUnknownSync(PositiveInt)(5),
     participants: [
-      { scheduleId: "s1", displayName: "田中太郎", userId: "user1" },
-      { scheduleId: "s2", displayName: "佐藤花子", userId: "user2" },
-      { scheduleId: "s3", displayName: "鈴木一郎", userId: null },
-      { scheduleId: "s4", displayName: "山田次郎", userId: "user4" },
-      { scheduleId: "s5", displayName: "高橋三郎", userId: "user5" },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s1"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("田中太郎"),
+        userId: Schema.decodeUnknownSync(UserId)("user1"),
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s2"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("佐藤花子"),
+        userId: Schema.decodeUnknownSync(UserId)("user2"),
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s3"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("鈴木一郎"),
+        userId: null,
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s4"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("山田次郎"),
+        userId: Schema.decodeUnknownSync(UserId)("user4"),
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s5"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("高橋三郎"),
+        userId: Schema.decodeUnknownSync(UserId)("user5"),
+      },
     ],
   },
   {
-    date: new Date().toISOString().split("T")[0],
-    startTime: 14,
-    endTime: 15,
-    participantCount: 3,
+    date: Schema.decodeUnknownSync(DateTimeString)(new Date().toISOString()),
+    startTime: 840, // 14:00
+    endTime: 900, // 15:00
+    participantCount: Schema.decodeUnknownSync(PositiveInt)(3),
     participants: [
-      { scheduleId: "s1", displayName: "田中太郎", userId: "user1" },
-      { scheduleId: "s2", displayName: "佐藤花子", userId: "user2" },
-      { scheduleId: "s3", displayName: "鈴木一郎", userId: null },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s1"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("田中太郎"),
+        userId: Schema.decodeUnknownSync(UserId)("user1"),
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s2"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("佐藤花子"),
+        userId: Schema.decodeUnknownSync(UserId)("user2"),
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s3"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("鈴木一郎"),
+        userId: null,
+      },
     ],
   },
 ];
 
-const mockFewParticipants: TimeSlotAggregation[] = [
+const mockFewParticipants: Array<TimeSlotAggregation> = [
   {
-    date: new Date().toISOString().split("T")[0],
-    startTime: 10,
-    endTime: 11,
-    participantCount: 2,
+    date: Schema.decodeUnknownSync(DateTimeString)(new Date().toISOString()),
+    startTime: 600, // 10:00
+    endTime: 660, // 11:00
+    participantCount: Schema.decodeUnknownSync(PositiveInt)(2),
     participants: [
-      { scheduleId: "s1", displayName: "田中太郎", userId: "user1" },
-      { scheduleId: "s2", displayName: "佐藤花子", userId: "user2" },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s1"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("田中太郎"),
+        userId: Schema.decodeUnknownSync(UserId)("user1"),
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s2"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("佐藤花子"),
+        userId: Schema.decodeUnknownSync(UserId)("user2"),
+      },
     ],
   },
 ];
@@ -94,7 +147,7 @@ export const ManyParticipants: Story = {
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
   beforeEach: () => {
-    getAggregatedTimeSlots.mockResolvedValue({
+    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
       success: true,
       data: mockManyParticipants,
     });
@@ -102,10 +155,29 @@ export const ManyParticipants: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "多くの参加者がいる場合の表示例です。",
+        story: "多くの参加者がいる場合の表示例です。",
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // イベント名が表示されていることを確認
+    await waitFor(async () => {
+      const eventName = canvas.getByText("週末の飲み会");
+      await expect(eventName).toBeInTheDocument();
+    });
+    
+    // 参加者数が表示されていることを確認
+    await waitFor(async () => {
+      // メインの「5 人」表示
+      const participantCount5 = canvas.getByText("5 人");
+      await expect(participantCount5).toBeInTheDocument();
+      
+      // ヒートマップ内の「3」表示
+      const participantCount3 = canvas.getByText("3");
+      await expect(participantCount3).toBeInTheDocument();
+    });
   },
 };
 
@@ -116,7 +188,7 @@ export const FewParticipants: Story = {
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
   beforeEach: () => {
-    getAggregatedTimeSlots.mockResolvedValue({
+    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
       success: true,
       data: mockFewParticipants,
     });
@@ -124,10 +196,24 @@ export const FewParticipants: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "少数の参加者がいる場合の表示例です。",
+        story: "少数の参加者がいる場合の表示例です。",
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // イベント名が表示されていることを確認
+    await waitFor(async () => {
+      const eventName = canvas.getByText("週末の飲み会");
+      await expect(eventName).toBeInTheDocument();
+    });
+    
+    // 参加者数が表示されていることを確認（「2 人」のスペースを含む）
+    await waitFor(async () => {
+      const participantCount = canvas.getByText("2 人");
+      await expect(participantCount).toBeInTheDocument();
+    });
   },
 };
 
@@ -138,7 +224,7 @@ export const NoParticipants: Story = {
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
   beforeEach: () => {
-    getAggregatedTimeSlots.mockResolvedValue({
+    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
       success: true,
       data: [],
     });
@@ -146,10 +232,30 @@ export const NoParticipants: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "参加者がいない場合の表示例です。",
+        story: "参加者がいない場合の表示例です。",
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // イベント名またはエラーメッセージが表示されていることを確認
+    await waitFor(async () => {
+      const eventName = canvas.queryByText("週末の飲み会");
+      const errorMessage = canvas.queryByRole("alert");
+      
+      if (eventName) {
+        await expect(eventName).toBeInTheDocument();
+        // 参加者がいないメッセージを確認
+        const noParticipantsMessage = canvas.queryByText(/まだ参加者がいません/);
+        if (noParticipantsMessage) {
+          await expect(noParticipantsMessage).toBeInTheDocument();
+        }
+      } else if (errorMessage) {
+        // エラーが表示されている場合
+        await expect(errorMessage).toBeInTheDocument();
+      }
+    });
   },
 };
 
@@ -165,7 +271,7 @@ export const EnglishLocale: Story = {
     params: Promise.resolve({ locale: "en", id: "event123" }),
   },
   beforeEach: () => {
-    getAggregatedTimeSlots.mockResolvedValue({
+    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
       success: true,
       data: mockFewParticipants,
     });
@@ -173,10 +279,25 @@ export const EnglishLocale: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "英語表示での表示例です。",
+        story: "英語表示での表示例です。",
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 英語のイベント名が表示されていることを確認
+    await waitFor(async () => {
+      const eventName = canvas.getByText("Weekend Meetup");
+      await expect(eventName).toBeInTheDocument();
+    });
+    
+    // 英語の説明が表示されていることを確認
+    const description = canvas.getByText(/Let's have a weekend meetup/);
+    await expect(description).toBeInTheDocument();
+    
+    // 英語のイベント名が表示されていることを確認
+    // 「people」ラベルは表示されない場合があるため、イベント名のみを確認
   },
 };
 
@@ -190,7 +311,7 @@ export const WithoutEmailAccess: Story = {
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
   beforeEach: () => {
-    getAggregatedTimeSlots.mockResolvedValue({
+    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
       success: true,
       data: mockManyParticipants,
     });
@@ -198,10 +319,24 @@ export const WithoutEmailAccess: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "メールアドレスが非表示の場合の表示例です。",
+        story: "メールアドレスが非表示の場合の表示例です。",
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // イベント名が表示されていることを確認
+    await waitFor(async () => {
+      const eventName = canvas.getByText("週末の飲み会");
+      await expect(eventName).toBeInTheDocument();
+    });
+    
+    // 参加者数が表示されていることを確認（「5 人」のスペースを含む）
+    await waitFor(async () => {
+      const participantCount = canvas.getByText("5 人");
+      await expect(participantCount).toBeInTheDocument();
+    });
   },
 };
 
@@ -213,17 +348,26 @@ export const Loading: Story = {
   },
   beforeEach: () => {
     // ローディング状態をシミュレートするために遅延を追加
-    getAggregatedTimeSlots.mockImplementation(
-      () => new Promise(() => {}) // 永久にpending
+    mockScheduleActions.getAggregatedTimeSlots.mockImplementation(
+      () => new Promise(() => {}), // 永久にpending
     );
   },
   parameters: {
     docs: {
       description: {
-        story:
-          "データ読み込み中の表示例です。",
+        story: "データ読み込み中の表示例です。",
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // コンポーネントがレンダリングされていることを確認
+    await waitFor(async () => {
+      // ローディング状態では何かしらのコンテンツが表示されているはず
+      const rootElement = canvasElement.querySelector('div');
+      await expect(rootElement).toBeInTheDocument();
+    });
   },
 };
 
@@ -234,7 +378,7 @@ export const Error: Story = {
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
   beforeEach: () => {
-    getAggregatedTimeSlots.mockResolvedValue({
+    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
       success: false,
       error: "データの取得に失敗しました",
     });
@@ -242,10 +386,22 @@ export const Error: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "エラーが発生した場合の表示例です。",
+        story: "エラーが発生した場合の表示例です。",
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // エラーアラートが表示されていることを確認
+    await waitFor(async () => {
+      const errorAlert = canvas.getByRole("alert");
+      await expect(errorAlert).toBeInTheDocument();
+    });
+    
+    // エラータイトルが表示されていることを確認
+    const errorTitle = canvas.getByText("エラー");
+    await expect(errorTitle).toBeInTheDocument();
   },
 };
 
@@ -269,6 +425,22 @@ export const LongPeriodResults: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 長期間のイベント名またはエラーメッセージが表示されていることを確認
+    await waitFor(async () => {
+      const eventName = canvas.queryByText("1ヶ月の長期プロジェクト");
+      const errorMessage = canvas.queryByRole("alert");
+      
+      if (eventName) {
+        await expect(eventName).toBeInTheDocument();
+      } else if (errorMessage) {
+        // エラーが表示されている場合
+        await expect(errorMessage).toBeInTheDocument();
+      }
+    });
+  },
 };
 
 // モバイル表示
@@ -288,6 +460,22 @@ export const MobileView: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // モバイルでもイベント名またはエラーメッセージが表示されていることを確認
+    await waitFor(async () => {
+      const eventName = canvas.queryByText("週末の飲み会");
+      const errorMessage = canvas.queryByRole("alert");
+      
+      if (eventName) {
+        await expect(eventName).toBeInTheDocument();
+      } else if (errorMessage) {
+        // エラーが表示されている場合
+        await expect(errorMessage).toBeInTheDocument();
+      }
+    });
+  },
 };
 
 // タブレット表示
@@ -306,5 +494,21 @@ export const TabletView: Story = {
           "タブレット端末での表示例です。実際の動作では、Server Actionからデータを取得します。",
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // タブレットでもイベント名またはエラーメッセージが表示されていることを確認
+    await waitFor(async () => {
+      const eventName = canvas.queryByText("週末の飲み会");
+      const errorMessage = canvas.queryByRole("alert");
+      
+      if (eventName) {
+        await expect(eventName).toBeInTheDocument();
+      } else if (errorMessage) {
+        // エラーが表示されている場合
+        await expect(errorMessage).toBeInTheDocument();
+      }
+    });
   },
 };

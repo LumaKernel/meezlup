@@ -25,14 +25,15 @@ const setupApiMocks = () => {
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
 
-      // /auth/profile エンドポイントをモック
-      if (url.includes("/auth/profile")) {
+      // /api/user/profile エンドポイントをモック
+      if (url.includes("/api/user/profile")) {
         // 現在のauth parametersを取得
         const authParams = (globalThis as any).__STORYBOOK_AUTH__;
 
         if (authParams?.isAuthenticated && authParams?.user) {
           return new Response(
             JSON.stringify({
+              id: authParams.user.id,
               sub: authParams.user.id,
               email: authParams.user.email,
               name: authParams.user.name,

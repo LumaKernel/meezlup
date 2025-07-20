@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Button } from "./Button";
+import { expect, within, userEvent } from "@storybook/test";
 
 const meta = {
   title: "UI/Button",
@@ -64,6 +65,19 @@ export const Default: Story = {
   args: {
     children: "ボタン",
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // ボタンが表示されていることを確認
+    const button = canvas.getByRole("button", { name: "ボタン" });
+    await expect(button).toBeInTheDocument();
+
+    // ボタンがクリック可能であることを確認
+    await expect(button).not.toBeDisabled();
+
+    // ボタンをクリック
+    await userEvent.click(button);
+  },
 };
 
 // プライマリーボタン
@@ -103,6 +117,16 @@ export const Disabled: Story = {
   args: {
     children: "無効なボタン",
     disabled: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // 無効化されたボタンが表示されていることを確認
+    const button = canvas.getByRole("button", { name: "無効なボタン" });
+    await expect(button).toBeInTheDocument();
+
+    // ボタンが無効化されていることを確認
+    await expect(button).toBeDisabled();
   },
 };
 

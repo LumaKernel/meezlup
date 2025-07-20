@@ -28,7 +28,8 @@ export interface UseAuthResult {
  * Auth0プロファイルレスポンスの型定義
  */
 interface Auth0ProfileResponse {
-  sub?: string;
+  id?: string; // データベースID
+  sub?: string; // Auth0 ID
   email?: string;
   name?: string;
   picture?: string;
@@ -52,16 +53,16 @@ export function useAuth(): UseAuthResult {
     queryKey: ["auth", "profile"],
     queryFn: async () => {
       console.log("[useAuth] Fetching user profile...");
-      const response = await fetch("/auth/profile");
+      const response = await fetch("/api/user/profile");
       console.log("[useAuth] Profile response status:", response.status);
 
       if (response.ok) {
         const data = (await response.json()) as Auth0ProfileResponse;
         console.log("[useAuth] Profile data:", data);
 
-        if (data.sub && data.email) {
+        if (data.id && data.email) {
           const userData = {
-            id: data.sub,
+            id: data.id, // データベースIDを使用
             email: data.email,
             name: data.name,
             picture: data.picture,

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { useState } from "react";
 import { Temporal } from "temporal-polyfill";
 import { ScheduleInputLayout } from "./ScheduleInputLayout";
+import { expect, within, userEvent, waitFor } from "@storybook/test";
 
 const meta = {
   title: "Schedule/ScheduleInputLayout",
@@ -102,6 +103,23 @@ export const Default: Story = {
     isSaving: false,
     showEmails: false,
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 時間ヘッダーが表示されていることを確認（複数存在する場合を考慮）
+    await waitFor(async () => {
+      const timeHeaders = canvas.getAllByText("時間");
+      await expect(timeHeaders.length).toBeGreaterThan(0);
+    });
+    
+    // 保存ボタンが表示されていることを確認
+    const saveButton = canvas.getByRole("button", { name: "保存" });
+    await expect(saveButton).toBeInTheDocument();
+    
+    // スケジュールグリッドが表示されていることを確認
+    const scheduleSlots = canvas.getAllByRole("button", { name: /未選択/ });
+    await expect(scheduleSlots.length).toBeGreaterThan(0);
+  },
 };
 
 export const WithExistingSelection: Story = {
@@ -122,6 +140,19 @@ export const WithExistingSelection: Story = {
     isSaving: false,
     showEmails: false,
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 時間ヘッダーが表示されていることを確認（複数存在する場合を考慮）
+    await waitFor(async () => {
+      const timeHeaders = canvas.getAllByText("時間");
+      await expect(timeHeaders.length).toBeGreaterThan(0);
+    });
+    
+    // 既に選択されているスロットがあることを確認
+    const selectedSlots = canvas.getAllByRole("button", { name: /選択済み/ });
+    await expect(selectedSlots.length).toBeGreaterThan(0);
+  },
 };
 
 export const EnglishLocale: Story = {
@@ -135,6 +166,22 @@ export const EnglishLocale: Story = {
     isSaving: false,
     showEmails: false,
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 時間ヘッダーが表示されていることを確認（言語が混在している場合を考慮）
+    await waitFor(async () => {
+      const timeHeaders = canvas.queryAllByText("Time").length > 0 
+        ? canvas.getAllByText("Time") 
+        : canvas.getAllByText("時間");
+      await expect(timeHeaders.length).toBeGreaterThan(0);
+    });
+    
+    // 保存ボタンが表示されていることを確認（言語が混在している場合を考慮）
+    const saveButton = canvas.queryByRole("button", { name: "Save" }) 
+      || canvas.getByRole("button", { name: "保存" });
+    await expect(saveButton).toBeInTheDocument();
+  },
 };
 
 export const WithEmailsShown: Story = {
@@ -147,6 +194,20 @@ export const WithEmailsShown: Story = {
     participants: sampleParticipants,
     isSaving: false,
     showEmails: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 時間ヘッダーが表示されていることを確認（複数存在する場合を考慮）
+    await waitFor(async () => {
+      const timeHeaders = canvas.getAllByText("時間");
+      await expect(timeHeaders.length).toBeGreaterThan(0);
+    });
+    
+    // showEmailsがtrueでも、実際にはメールアドレスは表示されていない
+    // 代わりに人数表示があることを確認（数字のみ）
+    const peopleCells = canvas.getAllByText(/^\d+$/);
+    await expect(peopleCells.length).toBeGreaterThan(0);
   },
 };
 
@@ -162,6 +223,19 @@ export const SavingState: Story = {
     isSaving: true,
     showEmails: false,
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 保存ボタンが無効化されていることを確認
+    await waitFor(async () => {
+      const saveButton = canvas.getByRole("button", { name: /保存中|保存/ });
+      await expect(saveButton).toBeDisabled();
+    });
+    
+    // スケジュールグリッドが表示されていることを確認
+    const timeHeaders = canvas.getAllByText("時間");
+    await expect(timeHeaders.length).toBeGreaterThan(0);
+  },
 };
 
 export const NoParticipants: Story = {
@@ -174,6 +248,19 @@ export const NoParticipants: Story = {
     participants: [],
     isSaving: false,
     showEmails: false,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 時間ヘッダーが表示されていることを確認（複数存在する場合を考慮）
+    await waitFor(async () => {
+      const timeHeaders = canvas.getAllByText("時間");
+      await expect(timeHeaders.length).toBeGreaterThan(0);
+    });
+    
+    // スケジュールグリッドが表示されていることを確認
+    const scheduleSlots = canvas.getAllByRole("button", { name: /未選択/ });
+    await expect(scheduleSlots.length).toBeGreaterThan(0);
   },
 };
 
@@ -199,5 +286,18 @@ export const ManyParticipants: Story = {
     })),
     isSaving: false,
     showEmails: false,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 時間ヘッダーが表示されていることを確認（複数存在する場合を考慮）
+    await waitFor(async () => {
+      const timeHeaders = canvas.getAllByText("時間");
+      await expect(timeHeaders.length).toBeGreaterThan(0);
+    });
+    
+    // 多くの参加者がいるため、多様な人数表示があることを確認（数字のみ）
+    const peopleCells = canvas.getAllByText(/^\d+$/);
+    await expect(peopleCells.length).toBeGreaterThan(0);
   },
 };

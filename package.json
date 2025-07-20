@@ -29,11 +29,11 @@
   },
   "imports": {
     "#app/actions/schedule": {
-      "storybook": "./src/app/actions/schedule.mock.ts",
+      "storybook": "./src/app/actions/_unsafe_/schedule.mock.ts",
       "default": "./src/app/actions/schedule.ts"
     },
     "#app/actions/event": {
-      "storybook": "./src/app/actions/event.mock.ts",
+      "storybook": "./src/app/actions/_unsafe_/event.mock.ts",
       "default": "./src/app/actions/event.ts"
     }
   },

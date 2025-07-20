@@ -3,6 +3,7 @@ import { Grid, Card, Text, Group, Badge, Stack } from "@mantine/core";
 import { IconClock } from "@tabler/icons-react";
 import { Temporal } from "temporal-polyfill";
 import { EventResultDateSection } from "./EventResultDateSection";
+import { expect, within, waitFor } from "@storybook/test";
 
 const meta = {
   title: "Events/EventResultDateSection",
@@ -57,6 +58,26 @@ export const Default: Story = {
     locale: "ja",
     children: <SampleTimeSlots />,
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 日付が表示されていることを確認（2025年1月20日）
+    await waitFor(async () => {
+      const dateText = canvas.getByText(/2025年1月20日/);
+      await expect(dateText).toBeInTheDocument();
+    });
+    
+    // 時間スロットが表示されていることを確認
+    const timeSlots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
+    for (const time of timeSlots) {
+      const timeElement = canvas.getByText(time);
+      await expect(timeElement).toBeInTheDocument();
+    }
+    
+    // 参加者数バッジが表示されていることを確認
+    const badges = canvas.getAllByText("3");
+    await expect(badges.length).toBeGreaterThan(0);
+  },
 };
 
 export const EnglishLocale: Story = {
@@ -66,6 +87,19 @@ export const EnglishLocale: Story = {
     ).toZonedDateTimeISO("UTC"),
     locale: "en",
     children: <SampleTimeSlots />,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 英語形式で日付が表示されていることを確認
+    await waitFor(async () => {
+      const dateText = canvas.getByText(/January 20, 2025/);
+      await expect(dateText).toBeInTheDocument();
+    });
+    
+    // 時間スロットが表示されていることを確認
+    const timeSlot = canvas.getByText("09:00");
+    await expect(timeSlot).toBeInTheDocument();
   },
 };
 
@@ -77,6 +111,19 @@ export const TokyoTimezone: Story = {
     locale: "ja",
     children: <SampleTimeSlots />,
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 東京タイムゾーンでの日付が表示されていることを確認
+    await waitFor(async () => {
+      const dateText = canvas.getByText(/2025年1月20日/);
+      await expect(dateText).toBeInTheDocument();
+    });
+    
+    // 時間スロットが表示されていることを確認
+    const timeSlot = canvas.getByText("09:00");
+    await expect(timeSlot).toBeInTheDocument();
+  },
 };
 
 export const NewYorkTimezone: Story = {
@@ -87,6 +134,19 @@ export const NewYorkTimezone: Story = {
     locale: "en",
     children: <SampleTimeSlots />,
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // ニューヨークタイムゾーンでの日付が表示されていることを確認
+    await waitFor(async () => {
+      const dateText = canvas.getByText(/January 20, 2025/);
+      await expect(dateText).toBeInTheDocument();
+    });
+    
+    // 時間スロットが表示されていることを確認
+    const timeSlot = canvas.getByText("09:00");
+    await expect(timeSlot).toBeInTheDocument();
+  },
 };
 
 export const DateOnlyFormat: Story = {
@@ -94,6 +154,19 @@ export const DateOnlyFormat: Story = {
     zonedDateTime: Temporal.PlainDate.from("2025-01-20").toZonedDateTime("UTC"),
     locale: "ja",
     children: <SampleTimeSlots />,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 日付が表示されていることを確認
+    await waitFor(async () => {
+      const dateText = canvas.getByText(/2025年1月20日/);
+      await expect(dateText).toBeInTheDocument();
+    });
+    
+    // 時間スロットが表示されていることを確認
+    const timeSlot = canvas.getByText("09:00");
+    await expect(timeSlot).toBeInTheDocument();
   },
 };
 
@@ -110,6 +183,19 @@ export const EmptySlots: Story = {
         この日は参加可能な時間帯がありません
       </Text>
     ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 日付が表示されていることを確認
+    await waitFor(async () => {
+      const dateText = canvas.getByText(/2025年1月20日/);
+      await expect(dateText).toBeInTheDocument();
+    });
+    
+    // 空スロットのメッセージが表示されていることを確認
+    const emptyMessage = canvas.getByText("この日は参加可能な時間帯がありません");
+    await expect(emptyMessage).toBeInTheDocument();
   },
 };
 
@@ -137,5 +223,24 @@ export const ManySlots: Story = {
         ))}
       </Grid>
     ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 日付が表示されていることを確認
+    await waitFor(async () => {
+      const dateText = canvas.getByText(/2025年1月20日/);
+      await expect(dateText).toBeInTheDocument();
+    });
+    
+    // 24時間分のスロットが表示されていることを確認
+    const firstSlot = canvas.getByText("00:00");
+    const lastSlot = canvas.getByText("23:00");
+    await expect(firstSlot).toBeInTheDocument();
+    await expect(lastSlot).toBeInTheDocument();
+    
+    // 人数バッジが表示されていることを確認
+    const peopleBadges = canvas.getAllByText(/人/);
+    await expect(peopleBadges.length).toBe(24);
   },
 };

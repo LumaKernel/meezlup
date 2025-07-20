@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Card } from "./Card";
 import { Button } from "./Button";
+import { expect, within } from "@storybook/test";
 
 const meta = {
   title: "UI/Card",
@@ -36,6 +37,13 @@ export const Default: Story = {
   args: {
     children: "これはカードの内容です。",
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // カードが表示されていることを確認
+    const cardContent = canvas.getByText("これはカードの内容です。");
+    await expect(cardContent).toBeInTheDocument();
+  },
 };
 
 // ヘッダー付きカード
@@ -43,6 +51,17 @@ export const WithHeader: Story = {
   args: {
     header: <h3 className="text-lg font-bold">カードタイトル</h3>,
     children: "これはカードの内容です。ヘッダーが表示されています。",
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // ヘッダーが表示されていることを確認
+    const header = canvas.getByRole("heading", { name: "カードタイトル" });
+    await expect(header).toBeInTheDocument();
+    
+    // コンテンツが表示されていることを確認
+    const content = canvas.getByText("これはカードの内容です。ヘッダーが表示されています。");
+    await expect(content).toBeInTheDocument();
   },
 };
 
@@ -58,6 +77,19 @@ export const WithFooter: Story = {
         </Button>
       </div>
     ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // コンテンツが表示されていることを確認
+    const content = canvas.getByText("これはカードの内容です。");
+    await expect(content).toBeInTheDocument();
+    
+    // フッターのボタンが表示されていることを確認
+    const cancelButton = canvas.getByRole("button", { name: "キャンセル" });
+    const saveButton = canvas.getByRole("button", { name: "保存" });
+    await expect(cancelButton).toBeInTheDocument();
+    await expect(saveButton).toBeInTheDocument();
   },
 };
 
@@ -84,6 +116,25 @@ export const FullCard: Story = {
       </div>
     ),
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // ヘッダーが表示されていることを確認
+    const header = canvas.getByRole("heading", { name: "イベント詳細" });
+    await expect(header).toBeInTheDocument();
+    
+    // イベント情報が表示されていることを確認
+    await expect(canvas.getByText("イベント名: 忘年会")).toBeInTheDocument();
+    await expect(canvas.getByText("日時: 2024年12月20日")).toBeInTheDocument();
+    await expect(canvas.getByText("場所: 東京駅周辺")).toBeInTheDocument();
+    await expect(canvas.getByText("参加者: 10名")).toBeInTheDocument();
+    
+    // フッターのボタンが表示されていることを確認
+    const detailButton = canvas.getByRole("button", { name: "詳細を見る" });
+    const joinButton = canvas.getByRole("button", { name: "参加する" });
+    await expect(detailButton).toBeInTheDocument();
+    await expect(joinButton).toBeInTheDocument();
+  },
 };
 
 // 影のバリエーション
@@ -107,6 +158,15 @@ export const Shadows: Story = {
       </Card>
     </div>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // 各影のバリエーションが表示されていることを確認
+    await expect(canvas.getByText("XS影")).toBeInTheDocument();
+    await expect(canvas.getByText("小さい影")).toBeInTheDocument();
+    await expect(canvas.getByText("中くらいの影")).toBeInTheDocument();
+    await expect(canvas.getByText("大きい影")).toBeInTheDocument();
+  },
 };
 
 // ボーダー付きカード
@@ -114,5 +174,12 @@ export const WithBorder: Story = {
   args: {
     withBorder: true,
     children: "ボーダーが適用されたカード",
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    
+    // カードのコンテンツが表示されていることを確認
+    const content = canvas.getByText("ボーダーが適用されたカード");
+    await expect(content).toBeInTheDocument();
   },
 };
