@@ -63,10 +63,10 @@ export const Default: Story = {
     // 最初のスロットをクリック
     const firstSlot = slots[0];
     await userEvent.click(firstSlot);
-    
+
     // 選択されたことを確認（アクセシビリティ名の変更で判定）
-    await waitFor(() => {
-      expect(firstSlot).toHaveAccessibleName(/選択済み/);
+    await waitFor(async () => {
+      await expect(firstSlot).toHaveAccessibleName(/選択済み/);
     });
   },
 };

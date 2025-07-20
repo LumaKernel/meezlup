@@ -59,7 +59,9 @@ export const FilledFormJapanese: Story = {
     const canvas = within(canvasElement);
 
     // フォームが表示されるまで待つ
-    const titleInput = await canvas.findByRole("textbox", { name: "イベント名" });
+    const titleInput = await canvas.findByRole("textbox", {
+      name: "イベント名",
+    });
 
     // フォームに入力する
     await userEvent.clear(titleInput);

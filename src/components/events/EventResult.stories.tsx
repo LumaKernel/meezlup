@@ -161,19 +161,19 @@ export const ManyParticipants: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // イベント名が表示されていることを確認
     await waitFor(async () => {
       const eventName = canvas.getByText("週末の飲み会");
       await expect(eventName).toBeInTheDocument();
     });
-    
+
     // 参加者数が表示されていることを確認
     await waitFor(async () => {
       // メインの「5 人」表示
       const participantCount5 = canvas.getByText("5 人");
       await expect(participantCount5).toBeInTheDocument();
-      
+
       // ヒートマップ内の「3」表示
       const participantCount3 = canvas.getByText("3");
       await expect(participantCount3).toBeInTheDocument();
@@ -202,13 +202,13 @@ export const FewParticipants: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // イベント名が表示されていることを確認
     await waitFor(async () => {
       const eventName = canvas.getByText("週末の飲み会");
       await expect(eventName).toBeInTheDocument();
     });
-    
+
     // 参加者数が表示されていることを確認（「2 人」のスペースを含む）
     await waitFor(async () => {
       const participantCount = canvas.getByText("2 人");
@@ -238,16 +238,17 @@ export const NoParticipants: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // イベント名またはエラーメッセージが表示されていることを確認
     await waitFor(async () => {
       const eventName = canvas.queryByText("週末の飲み会");
       const errorMessage = canvas.queryByRole("alert");
-      
+
       if (eventName) {
         await expect(eventName).toBeInTheDocument();
         // 参加者がいないメッセージを確認
-        const noParticipantsMessage = canvas.queryByText(/まだ参加者がいません/);
+        const noParticipantsMessage =
+          canvas.queryByText(/まだ参加者がいません/);
         if (noParticipantsMessage) {
           await expect(noParticipantsMessage).toBeInTheDocument();
         }
@@ -285,17 +286,17 @@ export const EnglishLocale: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // 英語のイベント名が表示されていることを確認
     await waitFor(async () => {
       const eventName = canvas.getByText("Weekend Meetup");
       await expect(eventName).toBeInTheDocument();
     });
-    
+
     // 英語の説明が表示されていることを確認
     const description = canvas.getByText(/Let's have a weekend meetup/);
     await expect(description).toBeInTheDocument();
-    
+
     // 英語のイベント名が表示されていることを確認
     // 「people」ラベルは表示されない場合があるため、イベント名のみを確認
   },
@@ -325,13 +326,13 @@ export const WithoutEmailAccess: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // イベント名が表示されていることを確認
     await waitFor(async () => {
       const eventName = canvas.getByText("週末の飲み会");
       await expect(eventName).toBeInTheDocument();
     });
-    
+
     // 参加者数が表示されていることを確認（「5 人」のスペースを含む）
     await waitFor(async () => {
       const participantCount = canvas.getByText("5 人");
@@ -360,12 +361,12 @@ export const Loading: Story = {
     },
   },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    
+    const _canvas = within(canvasElement);
+
     // コンポーネントがレンダリングされていることを確認
     await waitFor(async () => {
       // ローディング状態では何かしらのコンテンツが表示されているはず
-      const rootElement = canvasElement.querySelector('div');
+      const rootElement = canvasElement.querySelector("div");
       await expect(rootElement).toBeInTheDocument();
     });
   },
@@ -392,13 +393,13 @@ export const Error: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // エラーアラートが表示されていることを確認
     await waitFor(async () => {
       const errorAlert = canvas.getByRole("alert");
       await expect(errorAlert).toBeInTheDocument();
     });
-    
+
     // エラータイトルが表示されていることを確認
     const errorTitle = canvas.getByText("エラー");
     await expect(errorTitle).toBeInTheDocument();
@@ -427,12 +428,12 @@ export const LongPeriodResults: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // 長期間のイベント名またはエラーメッセージが表示されていることを確認
     await waitFor(async () => {
       const eventName = canvas.queryByText("1ヶ月の長期プロジェクト");
       const errorMessage = canvas.queryByRole("alert");
-      
+
       if (eventName) {
         await expect(eventName).toBeInTheDocument();
       } else if (errorMessage) {
@@ -462,12 +463,12 @@ export const MobileView: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // モバイルでもイベント名またはエラーメッセージが表示されていることを確認
     await waitFor(async () => {
       const eventName = canvas.queryByText("週末の飲み会");
       const errorMessage = canvas.queryByRole("alert");
-      
+
       if (eventName) {
         await expect(eventName).toBeInTheDocument();
       } else if (errorMessage) {
@@ -497,12 +498,12 @@ export const TabletView: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // タブレットでもイベント名またはエラーメッセージが表示されていることを確認
     await waitFor(async () => {
       const eventName = canvas.queryByText("週末の飲み会");
       const errorMessage = canvas.queryByRole("alert");
-      
+
       if (eventName) {
         await expect(eventName).toBeInTheDocument();
       } else if (errorMessage) {

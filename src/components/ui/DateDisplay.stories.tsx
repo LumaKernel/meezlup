@@ -55,7 +55,7 @@ export const Default: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // 日付が表示されていることを確認（2025年1月20日）
     const dateText = canvas.getByText(/2025年1月20日/);
     await expect(dateText).toBeInTheDocument();
@@ -71,12 +71,14 @@ export const WithRelativeText: Story = {
     showRelative: true,
   },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    
+    const _canvas = within(canvasElement);
+
     // 相対日付が表示されていることを確認（日付とアイコンが表示されている）
     await waitFor(async () => {
       // canvasElement自体から直接要素を検索
-      const dateElements = canvasElement.querySelectorAll('.tabler-icon-calendar');
+      const dateElements = canvasElement.querySelectorAll(
+        ".tabler-icon-calendar",
+      );
       await expect(dateElements.length).toBeGreaterThan(0);
     });
   },
@@ -91,12 +93,14 @@ export const TomorrowWithRelative: Story = {
     showRelative: true,
   },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    
+    const _canvas = within(canvasElement);
+
     // 相対日付が表示されていることを確認（日付とアイコンが表示されている）
     await waitFor(async () => {
       // canvasElement自体から直接要素を検索
-      const dateElements = canvasElement.querySelectorAll('.tabler-icon-calendar');
+      const dateElements = canvasElement.querySelectorAll(
+        ".tabler-icon-calendar",
+      );
       await expect(dateElements.length).toBeGreaterThan(0);
     });
   },
@@ -111,12 +115,14 @@ export const YesterdayWithRelative: Story = {
     showRelative: true,
   },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    
+    const _canvas = within(canvasElement);
+
     // 相対日付が表示されていることを確認（日付とアイコンが表示されている）
     await waitFor(async () => {
       // canvasElement自体から直接要素を検索
-      const dateElements = canvasElement.querySelectorAll('.tabler-icon-calendar');
+      const dateElements = canvasElement.querySelectorAll(
+        ".tabler-icon-calendar",
+      );
       await expect(dateElements.length).toBeGreaterThan(0);
     });
   },
@@ -131,7 +137,7 @@ export const WithIcon: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // 日付が表示されていることを確認
     const dateText = canvas.getByText(/2025年1月20日/);
     await expect(dateText).toBeInTheDocument();
@@ -147,7 +153,7 @@ export const EnglishLocale: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // 英語形式で日付が表示されていることを確認
     const dateText = canvas.getByText(/January 20, 2025/);
     await expect(dateText).toBeInTheDocument();
@@ -168,7 +174,7 @@ export const ShortFormat: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // 短縮形式で日付が表示されていることを確認
     await expect(canvas.getByText(/2025年/)).toBeInTheDocument();
     await expect(canvas.getByText(/1月/)).toBeInTheDocument();
@@ -190,7 +196,7 @@ export const NumericFormat: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // 数値形式で日付が表示されていることを確認
     const dateText = canvas.getByText(/2025\/1\/20/);
     await expect(dateText).toBeInTheDocument();
@@ -214,7 +220,7 @@ export const WithTime: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // 日付と時刻が表示されていることを確認
     await expect(canvas.getByText(/2025年1月/)).toBeInTheDocument();
     // 時刻も表示されているが、具体的な形式はタイムゾーンに依存する
@@ -239,7 +245,7 @@ export const TokyoTimezone: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // 東京タイムゾーンでの日時が表示されていることを確認
     await expect(canvas.getByText(/2025年1月/)).toBeInTheDocument();
     await expect(canvas.getByText(/JST/)).toBeInTheDocument();
@@ -257,7 +263,7 @@ export const FutureDate: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // 未来の日付が表示されていることを確認（年とアイコンが表示されている）
     const futureYearPattern = /20\d{2}年/; // 20XX年のパターン
     await expect(canvas.getByText(futureYearPattern)).toBeInTheDocument();
@@ -275,7 +281,7 @@ export const PastDate: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    
+
     // 過去の日付が表示されていることを確認（年とアイコンが表示されている）
     const pastYearPattern = /20\d{2}年/; // 20XX年のパターン
     await expect(canvas.getByText(pastYearPattern)).toBeInTheDocument();
