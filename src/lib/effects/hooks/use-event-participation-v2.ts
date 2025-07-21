@@ -29,7 +29,6 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
   const [selectedSlots, setSelectedSlots] = useState<ReadonlySet<string>>(
     new Set(),
   );
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [participantInfo, setParticipantInfo] = useState<StoredParticipantInfo>(
     {
       name: "",
@@ -48,13 +47,6 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
         );
 
         if (Option.isSome(storedInfo)) {
-          // 保存された選択時間枠も復元
-          if (
-            storedInfo.value.selectedSlots &&
-            storedInfo.value.selectedSlots.length > 0
-          ) {
-            setSelectedSlots(new Set(storedInfo.value.selectedSlots));
-          }
           return storedInfo.value;
         }
 
@@ -129,20 +121,16 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
       processAggregations(aggregations, user, isCurrentUserSlot),
       Effect.runSync,
     );
+
     return result;
   }, [aggregations, user, isCurrentUserSlot]);
 
-  // 初回のみ選択済みスロットを設定（ローカルストレージから復元されていない場合）
+  // 初回のみ選択済みスロットを設定
   useReactEffect(() => {
-    if (
-      isInitialLoad &&
-      currentUserSlots.size > 0 &&
-      selectedSlots.size === 0
-    ) {
+    if (currentUserSlots.size > 0 && selectedSlots.size === 0) {
       setSelectedSlots(currentUserSlots);
     }
-    setIsInitialLoad(false);
-  }, [currentUserSlots, isInitialLoad]); // selectedSlotsは依存配列に含めない
+  }, [currentUserSlots]); // selectedSlotsは依存配列に含めない（初回のみ実行）
 
   // 参加者情報の保存
   const saveParticipantInfo = async (scheduleId?: string) => {
@@ -152,33 +140,12 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
         yield* localStorageService.setParticipantInfo(event.id, {
           ...participantInfo,
           scheduleId,
-          selectedSlots: Array.from(selectedSlots),
         });
       }),
       Effect.provide(LocalStorageServiceLive),
       Runtime.runPromise(runtime),
     );
   };
-
-  // 選択した時間枠の保存
-  useReactEffect(() => {
-    if (!isInitialLoad && !user) {
-      // 非認証ユーザーの場合のみ、選択した時間枠を保存
-      pipe(
-        Effect.gen(function* () {
-          const localStorageService = yield* LocalStorageService;
-          yield* localStorageService.setSelectedSlots(
-            event.id,
-            Array.from(selectedSlots),
-          );
-        }),
-        Effect.provide(LocalStorageServiceLive),
-        Runtime.runPromise(runtime),
-      ).catch((error: unknown) => {
-        console.error("Failed to save selected slots:", error);
-      });
-    }
-  }, [selectedSlots, isInitialLoad, event.id, user]);
 
   // フォーム送信のミューテーション
   const submitMutation = useMutation({

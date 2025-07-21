@@ -449,7 +449,7 @@ export const UnauthenticatedWithLocalStorageData: Story = {
     docs: {
       description: {
         story:
-          "非認証ユーザーが過去に入力した情報（名前、メール、選択した時間枠）がLocalStorageから自動的に復元される。",
+          "非認証ユーザーが過去に入力した情報（名前、メール）がLocalStorageから自動的に復元される。",
       },
     },
   },
@@ -459,18 +459,6 @@ export const UnauthenticatedWithLocalStorageData: Story = {
     localStorage.setItem("event-event123-name", "山田太郎");
     localStorage.setItem("event-event123-email", "yamada@example.com");
     localStorage.setItem("event-event123-scheduleId", "schedule123");
-
-    // 選択した時間枠も保存
-    const today = new Date().toISOString().split("T")[0];
-    const selectedSlots = [
-      `${today satisfies string}_09:00`,
-      `${today satisfies string}_09:30`,
-      `${today satisfies string}_10:00`,
-    ];
-    localStorage.setItem(
-      "event-event123-selectedSlots",
-      JSON.stringify(selectedSlots),
-    );
 
     // 過去のデータを含むレスポンスをモック
     const mockPastData: Array<TimeSlotAggregation> = [
@@ -564,7 +552,7 @@ export const UnauthenticatedSaveToLocalStorage: Story = {
     docs: {
       description: {
         story:
-          "非認証ユーザーが情報を入力・時間枠を選択すると、自動的にLocalStorageに保存される。",
+          "非認証ユーザーが情報を入力すると、自動的にLocalStorageに保存される。",
       },
     },
   },
@@ -598,8 +586,7 @@ export const UnauthenticatedSaveToLocalStorage: Story = {
 
     // 入力後、少し待機してLocalStorageへの保存を確認
     await waitFor(async () => {
-      // 注：実際の実装では、選択した時間枠もLocalStorageに保存されることを確認
-      // 現時点では名前とメールの入力のみをテスト
+      // 注：選択した時間枠はデータベースに保存される（LocalStorageには保存されない）
       await expect(nameInput).toHaveValue("鈴木次郎");
       await expect(emailInput).toHaveValue("suzuki@example.com");
     });

@@ -15,7 +15,6 @@ export const StoredParticipantInfo = Schema.Struct({
   name: Schema.String,
   email: Schema.String,
   scheduleId: Schema.optional(Schema.String),
-  selectedSlots: Schema.optional(Schema.Array(Schema.String)),
 });
 
 export type StoredParticipantInfo = Schema.Schema.Type<
@@ -46,17 +45,6 @@ export interface LocalStorageService {
   readonly setScheduleId: (
     eventId: string,
     scheduleId: string,
-  ) => Effect.Effect<void, never, LocalStorageService>;
-  readonly getSelectedSlots: (
-    eventId: string,
-  ) => Effect.Effect<
-    Option.Option<ReadonlyArray<string>>,
-    never,
-    LocalStorageService
-  >;
-  readonly setSelectedSlots: (
-    eventId: string,
-    slots: ReadonlyArray<string>,
   ) => Effect.Effect<void, never, LocalStorageService>;
 }
 
@@ -109,26 +97,10 @@ const LocalStorageServiceImpl = LocalStorageService.of({
         return Option.none();
       }
 
-      const selectedSlotsJson = yield* service.get({
-        eventId,
-        key: "selectedSlots",
-      });
-      const selectedSlots = Option.match(selectedSlotsJson, {
-        onSome: (json) => {
-          try {
-            return JSON.parse(json) as ReadonlyArray<string>;
-          } catch {
-            return undefined;
-          }
-        },
-        onNone: () => undefined,
-      });
-
       return Option.some({
         name: Option.getOrElse(name, () => ""),
         email: Option.getOrElse(email, () => ""),
         scheduleId: Option.getOrElse(scheduleId, () => undefined),
-        selectedSlots,
       });
     }),
 
@@ -142,13 +114,6 @@ const LocalStorageServiceImpl = LocalStorageService.of({
       if (info.scheduleId) {
         yield* service.set({ eventId, key: "scheduleId" }, info.scheduleId);
       }
-
-      if (info.selectedSlots && info.selectedSlots.length > 0) {
-        yield* service.set(
-          { eventId, key: "selectedSlots" },
-          JSON.stringify(info.selectedSlots),
-        );
-      }
     }),
 
   getScheduleId: (eventId) =>
@@ -161,32 +126,6 @@ const LocalStorageServiceImpl = LocalStorageService.of({
     Effect.gen(function* () {
       const service = yield* LocalStorageService;
       yield* service.set({ eventId, key: "scheduleId" }, scheduleId);
-    }),
-
-  getSelectedSlots: (eventId) =>
-    Effect.gen(function* () {
-      const service = yield* LocalStorageService;
-      const json = yield* service.get({ eventId, key: "selectedSlots" });
-
-      return Option.match(json, {
-        onSome: (value) => {
-          try {
-            return Option.some(JSON.parse(value) as ReadonlyArray<string>);
-          } catch {
-            return Option.none();
-          }
-        },
-        onNone: () => Option.none(),
-      });
-    }),
-
-  setSelectedSlots: (eventId, slots) =>
-    Effect.gen(function* () {
-      const service = yield* LocalStorageService;
-      yield* service.set(
-        { eventId, key: "selectedSlots" },
-        JSON.stringify(slots),
-      );
     }),
 });
 

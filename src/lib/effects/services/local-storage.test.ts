@@ -56,7 +56,6 @@ describe("LocalStorageService", () => {
         name: "山田太郎",
         email: "yamada@example.com",
         scheduleId: "schedule123",
-        selectedSlots: ["2025-01-20_09:00", "2025-01-20_10:00"],
       };
 
       const program = Effect.gen(function* () {
@@ -78,16 +77,11 @@ describe("LocalStorageService", () => {
         name: "",
         email: "",
         scheduleId: undefined,
-        selectedSlots: undefined,
       }));
 
       expect(info.name).toBe("山田太郎");
       expect(info.email).toBe("yamada@example.com");
       expect(info.scheduleId).toBe("schedule123");
-      expect(info.selectedSlots).toEqual([
-        "2025-01-20_09:00",
-        "2025-01-20_10:00",
-      ]);
     });
 
     it("部分的な参加者情報も保存できる", async () => {
@@ -95,7 +89,6 @@ describe("LocalStorageService", () => {
         name: "鈴木次郎",
         email: "suzuki@example.com",
         scheduleId: undefined,
-        selectedSlots: undefined,
       };
 
       const program = Effect.gen(function* () {
@@ -113,56 +106,11 @@ describe("LocalStorageService", () => {
         name: "",
         email: "",
         scheduleId: undefined,
-        selectedSlots: undefined,
       }));
 
       expect(info.name).toBe("鈴木次郎");
       expect(info.email).toBe("suzuki@example.com");
       expect(info.scheduleId).toBeUndefined();
-      expect(info.selectedSlots).toBeUndefined();
-    });
-  });
-
-  describe("選択した時間枠の保存と取得", () => {
-    it("選択した時間枠を保存して取得できる", async () => {
-      const slots = [
-        "2025-01-20_09:00",
-        "2025-01-20_10:00",
-        "2025-01-20_11:00",
-      ];
-
-      const program = Effect.gen(function* () {
-        const service = yield* LocalStorageService;
-
-        // 時間枠を保存
-        yield* service.setSelectedSlots("event3", slots);
-
-        // 時間枠を取得
-        return yield* service.getSelectedSlots("event3");
-      });
-
-      const result = await Runtime.runPromise(runtime)(
-        Effect.provide(program, LocalStorageServiceLive),
-      );
-
-      expect(Option.isSome(result)).toBe(true);
-      expect(Option.getOrElse(result, () => [])).toEqual(slots);
-    });
-
-    it("無効なJSON形式の場合はNoneを返す", async () => {
-      // 直接LocalStorageに無効なJSONを設定
-      localStorage.setItem("event-event4-selectedSlots", "invalid json");
-
-      const program = Effect.gen(function* () {
-        const service = yield* LocalStorageService;
-        return yield* service.getSelectedSlots("event4");
-      });
-
-      const result = await Runtime.runPromise(runtime)(
-        Effect.provide(program, LocalStorageServiceLive),
-      );
-
-      expect(Option.isNone(result)).toBe(true);
     });
   });
 

@@ -18,7 +18,7 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:prod": "npm run prisma:setup-env && prisma migrate deploy",
     "prisma:migrate": "node scripts/migrate.js",
-    "prisma:studio": "prisma studio --port 5835",
+    "prisma:studio": "prisma studio --port 5835 --browser none",
     "db:up": "docker-compose up -d postgres",
     "db:down": "docker-compose down",
     "db:migrate:test": "DATABASE_URL=\"postgresql://meetzup:meetzup_dev@localhost:5432/meetzup\" npm run prisma:migrate",

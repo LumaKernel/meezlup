@@ -1,37 +1,53 @@
-# /participate画面の過去入力表示機能の実装完了
+# 参加可能時間の表示問題
+
+## 問題
+保存した参加可能時間が再アクセス時に表示されない
+
+## 根本原因
+- 初期の誤解：LocalStorageに選択時間枠を保存すべきと誤解していた
+- 正しい理解：選択時間枠はデータベースに保存されており、LocalStorageには非認証ユーザーの基本情報（名前、メール、scheduleId）のみを保存すべき
 
 ## 実装内容
-- LocalStorageサービスを拡張して選択した時間枠(selectedSlots)も保存・復元するようにした
-- useEventParticipationV2 hookを更新して適切に時間枠を保存・復元するようにした
-- Storybookストーリーを追加して仕様を定義
-- LocalStorageサービスのユニットテストを追加
+1. 不要なLocalStorage実装を削除
+   - selectedSlotsの保存・復元機能を削除
+   - 関連するテストとストーリーを更新
+
+2. デバッグログを追加
+   - データベースからのデータ取得フローを確認するためのログを追加
+   - isCurrentUserSlot関数の動作確認
+   - processAggregationsの結果確認
 
 ## 懸念事項
 
-### 1. ScheduleGridコンポーネントとの統合テスト
-- 現在のStorybookテストでは時間枠の選択UIの操作をテストできていない
-- ScheduleGridコンポーネントのplay関数でのインタラクションテストが複雑
-- TODO: 時間枠選択のE2Eテストを追加することを検討
+### 1. selectedSlotsの初期化条件
+- `selectedSlots.size === 0`という条件が厳しすぎる可能性
+- useEffectの依存配列からselectedSlotsを除外しているが、これが問題を引き起こしている可能性
+- TODO: 条件の見直しが必要
 
-### 2. 認証ユーザーとのデータ同期
-- 現在は非認証ユーザーのみLocalStorageに時間枠を保存
-- 認証ユーザーの場合、サーバー側のデータとLocalStorageの同期は行っていない
-- TODO: 認証ユーザーがログアウト→ログインした場合のデータ復元を検討
+### 2. scheduleIdの同期タイミング
+- LocalStorageからscheduleIdを読み込むタイミングと、aggregationsを取得するタイミングの競合
+- 非認証ユーザーの場合、scheduleIdがない状態でaggregationsを処理している可能性
+- TODO: タイミングの同期を確保する仕組みが必要
 
-### 3. LocalStorageのデータ整合性
-- 複数のタブで同じイベントを開いた場合の動作は未テスト
-- LocalStorageの容量制限への対処は未実装
-- TODO: storage eventを利用したタブ間同期を検討
+### 3. processAggregations関数の動作
+- src/lib/effects/hooks/time-slot-aggregation.tsの実装を確認する必要がある
+- isCurrentUserSlot関数に正しいパラメータが渡されているか確認が必要
 
-### 4. 選択した時間枠の有効性チェック
-- 保存された時間枠がイベントの日程範囲外になった場合の処理は未実装
-- TODO: 無効な時間枠を自動的にフィルタリングする機能を追加
+### 4. デバッグログの削除
+- 本番環境ではデバッグログを削除する必要がある
+- TODO: 環境変数でデバッグモードを制御する仕組みの実装
 
-### 5. パフォーマンス
-- 選択した時間枠が変更されるたびにLocalStorageに保存している
-- 大量の時間枠を選択した場合のパフォーマンスは未検証
-- TODO: デバウンスやスロットリングの実装を検討
+### 5. テストの追加
+- データベースからのデータ復元をテストするストーリーが必要
+- E2Eテストでの確認が必要
 
-### 6. データ移行
-- LocalStorageのデータ構造を変更した場合の移行処理は未実装
-- TODO: バージョニングとデータ移行の仕組みを検討
+### 6. React Query キャッシュの影響
+- aggregationsのキャッシュが古い可能性
+- TODO: 適切なキャッシュ無効化戦略の実装
+
+## 次のステップ
+1. ブラウザのコンソールでデバッグログを確認
+2. processAggregations関数の実装を確認
+3. selectedSlotsの初期化条件を見直し
+4. scheduleIdの読み込みタイミングを最適化
+5. React Queryのキャッシュ戦略を確認
