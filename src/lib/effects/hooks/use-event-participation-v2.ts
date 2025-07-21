@@ -173,6 +173,7 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
         eventId: event.id,
         participantName: !user ? participantInfo.name : undefined,
         participantEmail: !user ? participantInfo.email : undefined,
+        scheduleId: !user ? participantInfo.scheduleId : undefined,
         availableSlots,
       });
 

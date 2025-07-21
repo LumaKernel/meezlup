@@ -4,6 +4,7 @@ import { Effect, Schema, Option } from "effect";
 import {
   type CreateScheduleInput,
   type UpdateScheduleInput,
+  type Schedule,
   NonEmptyString,
   EventId,
   UserId,
@@ -102,6 +103,7 @@ const SubmitAvailabilitySchema = Schema.Struct({
   eventId: Schema.String, // EventIdに変換する前の文字列
   participantName: Schema.optional(Schema.String),
   participantEmail: Schema.optional(Schema.String),
+  scheduleId: Schema.optional(Schema.String), // 非認証ユーザーの既存スケジュールID
   availableSlots: Schema.Array(
     Schema.Struct({
       date: Schema.String, // PlainDateの文字列表現 (YYYY-MM-DD)
@@ -158,17 +160,33 @@ export const submitAvailability = async (input: unknown) => {
     const scheduleService = yield* ScheduleService;
 
     // 既存のスケジュールを確認
-    const existingScheduleResult = yield* Effect.either(
-      scheduleService.findByEventAndUser(
-        Schema.decodeUnknownSync(EventId)(validatedData.eventId),
-        userId,
-      ),
-    );
+    let existingSchedule: Option.Option<Schedule> = Option.none();
 
-    const existingSchedule =
-      existingScheduleResult._tag === "Right"
-        ? Option.some(existingScheduleResult.right)
-        : Option.none();
+    // 非認証ユーザーでscheduleIdが提供されている場合
+    if (!authState.isAuthenticated && validatedData.scheduleId) {
+      const scheduleResult = yield* Effect.either(
+        scheduleService.findById(validatedData.scheduleId),
+      );
+      if (scheduleResult._tag === "Right") {
+        // スケジュールがイベントに属していることを確認
+        if (scheduleResult.right.eventId === validatedData.eventId) {
+          existingSchedule = Option.some(scheduleResult.right);
+        }
+      }
+    } else {
+      // 通常のユーザーIDベースの検索
+      const existingScheduleResult = yield* Effect.either(
+        scheduleService.findByEventAndUser(
+          Schema.decodeUnknownSync(EventId)(validatedData.eventId),
+          userId,
+        ),
+      );
+
+      existingSchedule =
+        existingScheduleResult._tag === "Right"
+          ? Option.some(existingScheduleResult.right)
+          : Option.none();
+    }
 
     // Availabilityのデータを構築
     // PlainTimeから分単位の時刻に変換
@@ -184,7 +202,7 @@ export const submitAvailability = async (input: unknown) => {
       };
     });
 
-    if (Option.isSome(existingSchedule) && existingSchedule.value) {
+    if (Option.isSome(existingSchedule)) {
       // 既存のスケジュールを更新
       const schedule = yield* scheduleService.update({
         id: existingSchedule.value.id,
