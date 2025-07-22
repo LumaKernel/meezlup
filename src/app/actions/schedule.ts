@@ -1,10 +1,12 @@
 "use server";
 
 import { Effect, Schema } from "effect";
+import type {
+  CreateScheduleInput,
+  UpdateScheduleInput,
+  Schedule,
+} from "@/lib/effects";
 import {
-  type CreateScheduleInput,
-  type UpdateScheduleInput,
-  type Schedule,
   NonEmptyString,
   EventId,
   UserId,
