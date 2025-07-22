@@ -44,9 +44,11 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
     },
   );
   const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showSavedIndicator, setShowSavedIndicator] = useState(false);
   const lastSubmittedSlotsRef = useRef<ReadonlySet<string>>(new Set());
-  const hasUnsavedChangesRef = useRef(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const savedIndicatorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // LocalStorageから参加者情報を読み込む
   useReactEffect(() => {
@@ -160,7 +162,7 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
 
   // フォーム送信のミューテーション
   const submitMutation = useMutation<{ scheduleId: string }, Error, boolean>({
-    mutationFn: async (_isAutoSave = false) => {
+    mutationFn: async (isAutoSave = false) => {
       // バリデーション
       if (selectedSlots.size === 0) {
         throw new Error(t("participate.selectTimeSlot"));
@@ -200,7 +202,7 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
       return result.data as { scheduleId: string };
     },
     onSuccess: (data, isAutoSave) => {
-      hasUnsavedChangesRef.current = false;
+      setHasUnsavedChanges(false);
       lastSubmittedSlotsRef.current = new Set(selectedSlots);
 
       if (!isAutoSave) {
@@ -223,9 +225,25 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
         });
       }
     },
-    onSettled: (_data, _error, isAutoSave) => {
+    onSettled: (data, error, isAutoSave) => {
       if (isAutoSave) {
         setIsAutoSaving(false);
+
+        // 保存成功時に一時的に「保存済み」を表示
+        if (error == null) {
+          setShowSavedIndicator(true);
+
+          // 既存のタイマーをクリア
+          if (savedIndicatorTimeoutRef.current) {
+            clearTimeout(savedIndicatorTimeoutRef.current);
+          }
+
+          // 3秒後に「保存済み」を非表示
+          savedIndicatorTimeoutRef.current = setTimeout(() => {
+            setShowSavedIndicator(false);
+            savedIndicatorTimeoutRef.current = null;
+          }, 3000);
+        }
       }
     },
   });
@@ -258,7 +276,7 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
     }
 
     setIsAutoSaving(true);
-    hasUnsavedChangesRef.current = true;
+    setHasUnsavedChanges(true);
     submitMutation.mutate(true);
   }, [selectedSlots, user, participantInfo, submitMutation]);
 
@@ -283,8 +301,18 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
       return;
     }
 
-    // 変更があった場合、自動保存をスケジュール
-    scheduleAutoSave();
+    // 変更を検出
+    const slotsChanged =
+      selectedSlots.size !== lastSubmittedSlotsRef.current.size ||
+      [...selectedSlots].some(
+        (slot) => !lastSubmittedSlotsRef.current.has(slot),
+      );
+
+    if (slotsChanged) {
+      setHasUnsavedChanges(true);
+      setShowSavedIndicator(false); // 変更があったら「保存済み」を非表示
+      scheduleAutoSave();
+    }
   }, [selectedSlots, scheduleAutoSave, currentUserSlots.size]);
 
   // アンマウント時のクリーンアップ
@@ -293,17 +321,16 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
+      if (savedIndicatorTimeoutRef.current) {
+        clearTimeout(savedIndicatorTimeoutRef.current);
+      }
     };
   }, []);
 
   // ページ離脱時の警告
   useReactEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (
-        hasUnsavedChangesRef.current ||
-        isAutoSaving ||
-        submitMutation.isPending
-      ) {
+      if (hasUnsavedChanges || isAutoSaving || submitMutation.isPending) {
         e.preventDefault();
         return "";
       }
@@ -313,7 +340,7 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isAutoSaving, submitMutation.isPending]);
+  }, [isAutoSaving, submitMutation.isPending, hasUnsavedChanges]);
 
   return {
     participants: participants as Array<Participant>,
@@ -326,8 +353,9 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
       submitMutation.mutate(false);
     },
     isLoading,
-    isPending: submitMutation.isPending && !isAutoSaving,
     isAutoSaving,
+    hasUnsavedChanges,
+    showSavedIndicator,
     error: error?.message || submitMutation.error?.message || null,
   };
 }

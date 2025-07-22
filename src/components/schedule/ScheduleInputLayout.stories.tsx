@@ -14,6 +14,7 @@ const meta = {
     currentUserSlots: { table: { disable: true } },
     onSlotsChange: { table: { disable: true } },
     isAutoSaving: { table: { disable: true } },
+    showSavedIndicator: { table: { disable: true } },
   },
 } satisfies Meta<typeof ScheduleInputLayout>;
 
@@ -62,11 +63,18 @@ const sampleParticipants = [
 function ScheduleInputLayoutWrapper(
   args: Omit<
     Parameters<typeof ScheduleInputLayout>[0],
-    "currentUserSlots" | "onSlotsChange" | "isAutoSaving"
-  > & { currentUserSlots?: ReadonlySet<string>; isAutoSaving?: boolean },
+    | "currentUserSlots"
+    | "onSlotsChange"
+    | "isAutoSaving"
+    | "showSavedIndicator"
+  > & {
+    readonly currentUserSlots?: ReadonlySet<string>;
+    readonly isAutoSaving?: boolean;
+    readonly showSavedIndicator?: boolean;
+  },
 ) {
   const [currentUserSlots, setCurrentUserSlots] = useState<ReadonlySet<string>>(
-    args.currentUserSlots || new Set(),
+    args.currentUserSlots ?? new Set(),
   );
 
   return (
@@ -81,7 +89,8 @@ function ScheduleInputLayoutWrapper(
         {...args}
         currentUserSlots={currentUserSlots}
         onSlotsChange={setCurrentUserSlots}
-        isAutoSaving={args.isAutoSaving || false}
+        isAutoSaving={args.isAutoSaving ?? false}
+        showSavedIndicator={args.showSavedIndicator ?? false}
       />
     </div>
   );

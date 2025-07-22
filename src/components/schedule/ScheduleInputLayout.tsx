@@ -34,6 +34,7 @@ interface ScheduleInputLayoutProps {
   readonly participants: ReadonlyArray<Participant>;
   readonly onSlotsChange: (slots: ReadonlySet<string>) => void;
   readonly isAutoSaving: boolean;
+  readonly showSavedIndicator: boolean;
   readonly showEmails: boolean;
 }
 
@@ -45,6 +46,7 @@ export function ScheduleInputLayout({
   onSlotsChange,
   participants,
   showEmails,
+  showSavedIndicator,
   timeSlotDuration,
 }: ScheduleInputLayoutProps) {
   const { t } = useTranslation("schedule");
@@ -96,7 +98,7 @@ export function ScheduleInputLayout({
                       {t("input.saving")}
                     </Text>
                   </>
-                ) : currentUserSlots.size > 0 ? (
+                ) : showSavedIndicator ? (
                   <>
                     <IconCheck size={16} color="var(--mantine-color-green-6)" />
                     <Text size="sm" c="dimmed">

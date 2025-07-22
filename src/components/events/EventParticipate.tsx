@@ -37,11 +37,11 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
     handleSubmit,
     isAutoSaving,
     isLoading,
-    // isPending, // 未使用
     participantInfo,
     participants,
     selectedSlots,
     setSelectedSlots,
+    showSavedIndicator,
     updateParticipantInfo,
   } = useEventParticipationV2(event, locale);
 
@@ -149,6 +149,7 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
           participants={participants}
           onSlotsChange={setSelectedSlots}
           isAutoSaving={isAutoSaving}
+          showSavedIndicator={showSavedIndicator}
           showEmails={event.creatorCanSeeEmails}
         />
       </Stack>
