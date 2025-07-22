@@ -10,8 +10,9 @@ import {
   Button,
   Group,
   Paper,
+  Loader,
 } from "@mantine/core";
-import { IconCalendarEvent, IconUsers } from "@tabler/icons-react";
+import { IconCalendarEvent, IconUsers, IconCheck } from "@tabler/icons-react";
 import { type Temporal } from "temporal-polyfill";
 import { useTranslation } from "react-i18next";
 import { ScheduleGrid } from "./ScheduleGrid";
@@ -32,8 +33,7 @@ interface ScheduleInputLayoutProps {
   readonly currentUserSlots: ReadonlySet<string>;
   readonly participants: ReadonlyArray<Participant>;
   readonly onSlotsChange: (slots: ReadonlySet<string>) => void;
-  readonly onSave: () => void;
-  readonly isSaving: boolean;
+  readonly isAutoSaving: boolean;
   readonly showEmails: boolean;
 }
 
@@ -41,8 +41,7 @@ export function ScheduleInputLayout({
   currentUserSlots,
   dateRangeEnd,
   dateRangeStart,
-  isSaving,
-  onSave,
+  isAutoSaving,
   onSlotsChange,
   participants,
   showEmails,
@@ -89,13 +88,23 @@ export function ScheduleInputLayout({
                 <IconCalendarEvent size={20} />
                 <Title order={3}>{t("input.selectAvailableTimes")}</Title>
               </Group>
-              <Button
-                onClick={onSave}
-                loading={isSaving}
-                disabled={currentUserSlots.size === 0}
-              >
-                {t("input.save")}
-              </Button>
+              <Group gap="xs">
+                {isAutoSaving ? (
+                  <>
+                    <Loader size="xs" />
+                    <Text size="sm" c="dimmed">
+                      {t("input.saving")}
+                    </Text>
+                  </>
+                ) : currentUserSlots.size > 0 ? (
+                  <>
+                    <IconCheck size={16} color="var(--mantine-color-green-6)" />
+                    <Text size="sm" c="dimmed">
+                      {t("input.saved")}
+                    </Text>
+                  </>
+                ) : null}
+              </Group>
             </Group>
 
             {showParticipantList && focusedParticipants.length > 0 ? (

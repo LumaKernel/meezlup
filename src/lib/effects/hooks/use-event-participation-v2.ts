@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect as useReactEffect, useMemo } from "react";
+import {
+  useState,
+  useEffect as useReactEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import { Effect, Option, pipe, Runtime } from "effect";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { notifications } from "@mantine/notifications";
@@ -18,6 +24,7 @@ import {
   LocalStorageServiceLive,
 } from "@/lib/effects/services";
 import { processAggregations, type Participant } from "./time-slot-aggregation";
+// throttle関数のインポートを削除
 
 // ランタイムを作成（実際のプロジェクトではプロバイダーから取得すべき）
 const runtime = Runtime.defaultRuntime;
@@ -36,6 +43,10 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
       scheduleId: undefined,
     },
   );
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const lastSubmittedSlotsRef = useRef<ReadonlySet<string>>(new Set());
+  const hasUnsavedChangesRef = useRef(false);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // LocalStorageから参加者情報を読み込む
   useReactEffect(() => {
@@ -148,8 +159,8 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
   };
 
   // フォーム送信のミューテーション
-  const submitMutation = useMutation({
-    mutationFn: async () => {
+  const submitMutation = useMutation<{ scheduleId: string }, Error, boolean>({
+    mutationFn: async (_isAutoSave = false) => {
       // バリデーション
       if (selectedSlots.size === 0) {
         throw new Error(t("participate.selectTimeSlot"));
@@ -186,24 +197,36 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
         await saveParticipantInfo(result.data.scheduleId);
       }
 
-      return result.data;
+      return result.data as { scheduleId: string };
     },
-    onSuccess: () => {
-      notifications.show({
-        title: t("participate.success"),
-        message: t("participate.submitted"),
-        color: "green",
-      });
-      router.push(
-        `/${locale satisfies string}/events/${event.id satisfies string}/result`,
-      );
+    onSuccess: (data, isAutoSave) => {
+      hasUnsavedChangesRef.current = false;
+      lastSubmittedSlotsRef.current = new Set(selectedSlots);
+
+      if (!isAutoSave) {
+        notifications.show({
+          title: t("participate.success"),
+          message: t("participate.submitted"),
+          color: "green",
+        });
+        router.push(
+          `/${locale satisfies string}/events/${event.id satisfies string}/result`,
+        );
+      }
     },
-    onError: (error: Error) => {
-      notifications.show({
-        title: t("participate.error"),
-        message: error.message,
-        color: "red",
-      });
+    onError: (error: Error, isAutoSave) => {
+      if (!isAutoSave) {
+        notifications.show({
+          title: t("participate.error"),
+          message: error.message,
+          color: "red",
+        });
+      }
+    },
+    onSettled: (_data, _error, isAutoSave) => {
+      if (isAutoSave) {
+        setIsAutoSaving(false);
+      }
     },
   });
 
@@ -211,6 +234,86 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
   const updateParticipantInfo = (updates: Partial<StoredParticipantInfo>) => {
     setParticipantInfo((prev) => ({ ...prev, ...updates }));
   };
+
+  // 自動保存の実行関数
+  const performAutoSave = useCallback(() => {
+    // バリデーション
+    if (selectedSlots.size === 0) {
+      return;
+    }
+
+    if (!user && (!participantInfo.name || !participantInfo.email)) {
+      return;
+    }
+
+    // 変更がない場合はスキップ
+    const slotsChanged =
+      selectedSlots.size !== lastSubmittedSlotsRef.current.size ||
+      [...selectedSlots].some(
+        (slot) => !lastSubmittedSlotsRef.current.has(slot),
+      );
+
+    if (!slotsChanged) {
+      return;
+    }
+
+    setIsAutoSaving(true);
+    hasUnsavedChangesRef.current = true;
+    submitMutation.mutate(true);
+  }, [selectedSlots, user, participantInfo, submitMutation]);
+
+  // Effect.tsスタイルのdebounce実装
+  const scheduleAutoSave = useCallback(() => {
+    // 既存のタイマーをキャンセル
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // 新しいタイマーを設定（3秒のdebounce）
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      performAutoSave();
+      autoSaveTimeoutRef.current = null;
+    }, 3000);
+  }, [performAutoSave]);
+
+  // 選択スロットが変更されたときの自動保存スケジューリング
+  useReactEffect(() => {
+    // 初回ロード時はスキップ
+    if (currentUserSlots.size > 0 && selectedSlots.size === 0) {
+      return;
+    }
+
+    // 変更があった場合、自動保存をスケジュール
+    scheduleAutoSave();
+  }, [selectedSlots, scheduleAutoSave, currentUserSlots.size]);
+
+  // アンマウント時のクリーンアップ
+  useReactEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // ページ離脱時の警告
+  useReactEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (
+        hasUnsavedChangesRef.current ||
+        isAutoSaving ||
+        submitMutation.isPending
+      ) {
+        e.preventDefault();
+        return "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isAutoSaving, submitMutation.isPending]);
 
   return {
     participants: participants as Array<Participant>,
@@ -220,10 +323,11 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
     updateParticipantInfo,
     handleSubmit: (e: React.FormEvent) => {
       e.preventDefault();
-      submitMutation.mutate();
+      submitMutation.mutate(false);
     },
     isLoading,
-    isPending: submitMutation.isPending,
+    isPending: submitMutation.isPending && !isAutoSaving,
+    isAutoSaving,
     error: error?.message || submitMutation.error?.message || null,
   };
 }

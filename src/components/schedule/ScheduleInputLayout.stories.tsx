@@ -13,7 +13,7 @@ const meta = {
   argTypes: {
     currentUserSlots: { table: { disable: true } },
     onSlotsChange: { table: { disable: true } },
-    onSave: { table: { disable: true } },
+    isAutoSaving: { table: { disable: true } },
   },
 } satisfies Meta<typeof ScheduleInputLayout>;
 
@@ -62,8 +62,8 @@ const sampleParticipants = [
 function ScheduleInputLayoutWrapper(
   args: Omit<
     Parameters<typeof ScheduleInputLayout>[0],
-    "currentUserSlots" | "onSlotsChange" | "onSave"
-  > & { currentUserSlots?: ReadonlySet<string> },
+    "currentUserSlots" | "onSlotsChange" | "isAutoSaving"
+  > & { currentUserSlots?: ReadonlySet<string>; isAutoSaving?: boolean },
 ) {
   const [currentUserSlots, setCurrentUserSlots] = useState<ReadonlySet<string>>(
     args.currentUserSlots || new Set(),
@@ -81,12 +81,7 @@ function ScheduleInputLayoutWrapper(
         {...args}
         currentUserSlots={currentUserSlots}
         onSlotsChange={setCurrentUserSlots}
-        onSave={() => {
-          console.log("Saving slots:", Array.from(currentUserSlots));
-          alert(
-            `保存しました: ${currentUserSlots.size satisfies number}個のスロット`,
-          );
-        }}
+        isAutoSaving={args.isAutoSaving || false}
       />
     </div>
   );
@@ -100,7 +95,7 @@ export const Default: Story = {
     dateRangeEnd: Temporal.PlainDate.from("2025-01-26"),
     timeSlotDuration: 30,
     participants: sampleParticipants,
-    isSaving: false,
+    isAutoSaving: false,
     showEmails: false,
   },
   play: async ({ canvasElement }) => {
@@ -137,7 +132,7 @@ export const WithExistingSelection: Story = {
       "2025-01-22_14:30:00",
     ]),
     participants: sampleParticipants,
-    isSaving: false,
+    isAutoSaving: false,
     showEmails: false,
   },
   play: async ({ canvasElement }) => {
@@ -163,7 +158,7 @@ export const EnglishLocale: Story = {
     dateRangeEnd: Temporal.PlainDate.from("2025-01-26"),
     timeSlotDuration: 30,
     participants: sampleParticipants,
-    isSaving: false,
+    isAutoSaving: false,
     showEmails: false,
   },
   play: async ({ canvasElement }) => {
@@ -194,7 +189,7 @@ export const WithEmailsShown: Story = {
     dateRangeEnd: Temporal.PlainDate.from("2025-01-26"),
     timeSlotDuration: 30,
     participants: sampleParticipants,
-    isSaving: false,
+    isAutoSaving: false,
     showEmails: true,
   },
   play: async ({ canvasElement }) => {
@@ -222,7 +217,7 @@ export const SavingState: Story = {
     timeSlotDuration: 30,
     currentUserSlots: new Set(["2025-01-20_10:00:00"]),
     participants: sampleParticipants,
-    isSaving: true,
+    isAutoSaving: true,
     showEmails: false,
   },
   play: async ({ canvasElement }) => {
@@ -248,7 +243,7 @@ export const NoParticipants: Story = {
     dateRangeEnd: Temporal.PlainDate.from("2025-01-26"),
     timeSlotDuration: 30,
     participants: [],
-    isSaving: false,
+    isAutoSaving: false,
     showEmails: false,
   },
   play: async ({ canvasElement }) => {
@@ -286,7 +281,7 @@ export const ManyParticipants: Story = {
         }),
       ),
     })),
-    isSaving: false,
+    isAutoSaving: false,
     showEmails: false,
   },
   play: async ({ canvasElement }) => {

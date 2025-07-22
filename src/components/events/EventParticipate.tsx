@@ -35,8 +35,9 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
   const {
     error,
     handleSubmit,
+    isAutoSaving,
     isLoading,
-    isPending,
+    // isPending, // 未使用
     participantInfo,
     participants,
     selectedSlots,
@@ -62,12 +63,7 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
   const endZonedDateTime = endInstant.toZonedDateTimeISO("UTC");
   const dateRangeEnd = endZonedDateTime.toPlainDate();
 
-  const handleSave = () => {
-    const form = document.getElementById("participate-form");
-    if (form instanceof HTMLFormElement) {
-      form.requestSubmit();
-    }
-  };
+  // 手動保存機能を削除（自動保存に変更）
 
   return (
     <Stack gap="xl">
@@ -152,8 +148,7 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
           currentUserSlots={selectedSlots}
           participants={participants}
           onSlotsChange={setSelectedSlots}
-          onSave={handleSave}
-          isSaving={isPending}
+          isAutoSaving={isAutoSaving}
           showEmails={event.creatorCanSeeEmails}
         />
       </Stack>
