@@ -1,6 +1,6 @@
 "use server";
 
-import { Effect, Schema, Option } from "effect";
+import { Effect, Schema } from "effect";
 import {
   type CreateScheduleInput,
   type UpdateScheduleInput,
@@ -160,7 +160,7 @@ export const submitAvailability = async (input: unknown) => {
     const scheduleService = yield* ScheduleService;
 
     // 既存のスケジュールを確認
-    let existingSchedule: Option.Option<Schedule> = Option.none();
+    let existingSchedule: Schedule | null = null;
 
     // 非認証ユーザーでscheduleIdが提供されている場合
     if (!authState.isAuthenticated && validatedData.scheduleId) {
@@ -170,7 +170,7 @@ export const submitAvailability = async (input: unknown) => {
       if (scheduleResult._tag === "Right") {
         // スケジュールがイベントに属していることを確認
         if (scheduleResult.right.eventId === validatedData.eventId) {
-          existingSchedule = Option.some(scheduleResult.right);
+          existingSchedule = scheduleResult.right;
         }
       }
     } else {
@@ -182,10 +182,9 @@ export const submitAvailability = async (input: unknown) => {
         ),
       );
 
-      existingSchedule =
-        existingScheduleResult._tag === "Right"
-          ? Option.some(existingScheduleResult.right)
-          : Option.none();
+      if (existingScheduleResult._tag === "Right") {
+        existingSchedule = existingScheduleResult.right;
+      }
     }
 
     // Availabilityのデータを構築
@@ -202,10 +201,10 @@ export const submitAvailability = async (input: unknown) => {
       };
     });
 
-    if (Option.isSome(existingSchedule)) {
+    if (existingSchedule !== null) {
       // 既存のスケジュールを更新
       const schedule = yield* scheduleService.update({
-        id: existingSchedule.value.id,
+        id: existingSchedule.id,
         availabilities,
       });
       return { scheduleId: schedule.id };

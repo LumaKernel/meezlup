@@ -96,6 +96,52 @@ const mockManyParticipants: Array<TimeSlotAggregation> = [
   },
   {
     date: Schema.decodeUnknownSync(DateTimeString)(new Date().toISOString()),
+    startTime: 600, // 10:00
+    endTime: 660, // 11:00
+    participantCount: Schema.decodeUnknownSync(PositiveInt)(4),
+    participants: [
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s1"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("田中太郎"),
+        userId: Schema.decodeUnknownSync(UserId)("user1"),
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s2"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("佐藤花子"),
+        userId: Schema.decodeUnknownSync(UserId)("user2"),
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s4"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("山田次郎"),
+        userId: Schema.decodeUnknownSync(UserId)("user4"),
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s5"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("高橋三郎"),
+        userId: Schema.decodeUnknownSync(UserId)("user5"),
+      },
+    ],
+  },
+  {
+    date: Schema.decodeUnknownSync(DateTimeString)(new Date().toISOString()),
+    startTime: 660, // 11:00
+    endTime: 720, // 12:00
+    participantCount: Schema.decodeUnknownSync(PositiveInt)(2),
+    participants: [
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s2"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("佐藤花子"),
+        userId: Schema.decodeUnknownSync(UserId)("user2"),
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s3"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("鈴木一郎"),
+        userId: null,
+      },
+    ],
+  },
+  {
+    date: Schema.decodeUnknownSync(DateTimeString)(new Date().toISOString()),
     startTime: 840, // 14:00
     endTime: 900, // 15:00
     participantCount: Schema.decodeUnknownSync(PositiveInt)(3),
@@ -114,6 +160,54 @@ const mockManyParticipants: Array<TimeSlotAggregation> = [
         scheduleId: Schema.decodeUnknownSync(ScheduleId)("s3"),
         displayName: Schema.decodeUnknownSync(NonEmptyString)("鈴木一郎"),
         userId: null,
+      },
+    ],
+  },
+  {
+    date: Schema.decodeUnknownSync(DateTimeString)(new Date().toISOString()),
+    startTime: 900, // 15:00
+    endTime: 960, // 16:00
+    participantCount: Schema.decodeUnknownSync(PositiveInt)(1),
+    participants: [
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s5"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("高橋三郎"),
+        userId: Schema.decodeUnknownSync(UserId)("user5"),
+      },
+    ],
+  },
+  {
+    date: Schema.decodeUnknownSync(DateTimeString)(
+      new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    ), // 翌日
+    startTime: 600, // 10:00
+    endTime: 660, // 11:00
+    participantCount: Schema.decodeUnknownSync(PositiveInt)(5),
+    participants: [
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s1"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("田中太郎"),
+        userId: Schema.decodeUnknownSync(UserId)("user1"),
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s2"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("佐藤花子"),
+        userId: Schema.decodeUnknownSync(UserId)("user2"),
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s3"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("鈴木一郎"),
+        userId: null,
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s4"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("山田次郎"),
+        userId: Schema.decodeUnknownSync(UserId)("user4"),
+      },
+      {
+        scheduleId: Schema.decodeUnknownSync(ScheduleId)("s5"),
+        displayName: Schema.decodeUnknownSync(NonEmptyString)("高橋三郎"),
+        userId: Schema.decodeUnknownSync(UserId)("user5"),
       },
     ],
   },
