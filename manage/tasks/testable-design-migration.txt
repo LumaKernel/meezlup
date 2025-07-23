@@ -1,0 +1,332 @@
+# テスタブル設計への移行プラン
+
+## 1. 現状の問題点の整理
+
+### 1.1 モックの過剰使用
+- next/navigationのuseRouter、useParamsをvi.mockでモック
+- Server Actionsをvi.mockでモック
+- react-i18nextやjs-cookieなどの外部ライブラリをモック
+- Reactの基本機能（use、startTransition）までモック
+
+### 1.2 テストの脆弱性
+- モックの設定に依存したテスト
+- 実装の内部構造に強く結合
+- リファクタリング時にテストが壊れやすい
+- act warningが頻発
+
+### 1.3 責務の混在
+- コンポーネントが直接Server Actionsを呼び出し
+- ナビゲーション、状態管理、UIが密結合
+- ビジネスロジックとUIロジックの分離不足
+
+### 1.4 非同期処理の課題
+- Server Actionsの非同期処理がコンポーネントに埋め込まれている
+- エラーハンドリングとローディング状態の管理が散在
+- テスト時のタイミング制御が困難
+
+## 2. 解決アプローチの提案
+
+### 2.1 依存性注入（DI）パターンの導入
+
+#### 2.1.1 ナビゲーション抽象化
+```typescript
+// NavigationProviderの作成
+interface NavigationContext {
+  push: (path: string) => void;
+  back: () => void;
+  replace: (path: string) => void;
+  refresh: () => void;
+}
+
+// コンポーネントでの使用
+const navigation = useNavigation();
+navigation.push(`/${locale}/events/${eventId}`);
+```
+
+#### 2.1.2 Server Actions抽象化
+```typescript
+// ActionsProviderの作成
+interface ActionsContext {
+  event: {
+    create: (input: CreateEventInput) => Promise<ActionResponse<Event>>;
+    update: (input: UpdateEventInput) => Promise<ActionResponse<Event>>;
+  };
+  schedule: {
+    submit: (input: SubmitInput) => Promise<ActionResponse<Schedule>>;
+  };
+}
+
+// コンポーネントでの使用
+const actions = useActions();
+const result = await actions.event.create(formData);
+```
+
+### 2.2 責務分離の徹底
+
+#### 2.2.1 Presentational/Container分離
+- UI専用のPresentationalコンポーネント
+- ロジック担当のContainerコンポーネント
+- カスタムフックへのロジック抽出
+
+#### 2.2.2 ビジネスロジックの分離
+```typescript
+// カスタムフックへの抽出
+function useEventCreation() {
+  const [state, setState] = useState<EventCreationState>();
+  const actions = useActions();
+  const navigation = useNavigation();
+  
+  const createEvent = async (data: CreateEventForm) => {
+    setState({ type: 'loading' });
+    const result = await actions.event.create(data);
+    if (result.success) {
+      setState({ type: 'success', data: result.data });
+      navigation.push(`/events/${result.data.id}`);
+    } else {
+      setState({ type: 'error', error: result.error });
+    }
+  };
+  
+  return { state, createEvent };
+}
+```
+
+### 2.3 テスタブルな設計パターン
+
+#### 2.3.1 Provider Pattern
+```typescript
+// テスト用のProvider
+const TestProviders = ({ children, overrides = {} }) => (
+  <NavigationProvider value={overrides.navigation || mockNavigation}>
+    <ActionsProvider value={overrides.actions || mockActions}>
+      <I18nProvider>
+        {children}
+      </I18nProvider>
+    </ActionsProvider>
+  </NavigationProvider>
+);
+```
+
+#### 2.3.2 Factory Pattern
+```typescript
+// テストデータファクトリ
+const EventFactory = {
+  create: (overrides = {}): Event => ({
+    id: "event123",
+    name: "テストイベント",
+    ...overrides
+  })
+};
+```
+
+## 3. 段階的な移行戦略
+
+### 3.1 優先順位
+
+#### 高優先度（最初に対応）
+1. **EventCreateForm** - Server Actionsとナビゲーションの両方を使用
+2. **EventParticipate** - 複雑な状態管理とServer Actions
+3. **AuthGuard/LoginButton** - 認証フローの抽象化
+
+#### 中優先度
+4. **LanguageSwitcher** - ナビゲーションとi18nの抽象化
+5. **ScheduleInputLayout** - 複雑な状態管理
+
+#### 低優先度
+6. **純粋なUIコンポーネント** - Button、Card、DateDisplay等
+
+### 3.2 新規開発での適用
+
+1. 新規コンポーネントは必ずDIパターンで実装
+2. Presentational/Container分離を徹底
+3. ビジネスロジックはカスタムフックに
+4. テストファーストで開発
+
+### 3.3 既存コードの改善順序
+
+1. **Phase 1: 基盤整備**（1-2週間）
+   - Provider/Contextの作成
+   - テストユーティリティの整備
+   - ファクトリパターンの導入
+
+2. **Phase 2: 高優先度コンポーネント**（2-3週間）
+   - EventCreateFormのリファクタリング
+   - EventParticipateのリファクタリング
+   - 認証関連コンポーネントのリファクタリング
+
+3. **Phase 3: 中優先度コンポーネント**（1-2週間）
+   - LanguageSwitcherのリファクタリング
+   - ScheduleInputLayoutのリファクタリング
+
+4. **Phase 4: 統合とクリーンアップ**（1週間）
+   - 古いモックの削除
+   - ドキュメント更新
+   - ベストプラクティスの文書化
+
+## 4. 具体的なタスク
+
+### Task 1: 基盤Provider/Contextの作成
+**作業内容:**
+- NavigationProviderの実装
+- ActionsProviderの実装
+- TestProvidersユーティリティの作成
+
+**ファイル:**
+- `src/lib/providers/navigation.tsx`
+- `src/lib/providers/actions.tsx`
+- `src/test/providers.tsx`
+
+**推定作業量:** 1日
+
+### Task 2: テストユーティリティとファクトリの整備
+**作業内容:**
+- テストデータファクトリの作成
+- カスタムレンダラーの更新
+- テストヘルパー関数の追加
+
+**ファイル:**
+- `src/test/factories/event.ts`
+- `src/test/factories/schedule.ts`
+- `src/test/factories/user.ts`
+- `src/test/utils.tsx` (更新)
+
+**推定作業量:** 1日
+
+### Task 3: EventCreateFormのリファクタリング
+**作業内容:**
+- useEventCreationフックの作成
+- Presentationalコンポーネントへの分離
+- Containerコンポーネントの作成
+- テストの書き直し（モックなし）
+
+**ファイル:**
+- `src/components/events/EventCreateForm.tsx` (分割)
+- `src/components/events/EventCreateFormPresentation.tsx` (新規)
+- `src/components/events/EventCreateFormContainer.tsx` (新規)
+- `src/lib/hooks/use-event-creation.ts` (新規)
+- `src/components/events/EventCreateForm.test.tsx` (更新)
+
+**推定作業量:** 2日
+
+### Task 4: EventParticipateのリファクタリング
+**作業内容:**
+- useEventParticipationフックの改善
+- 状態管理の抽出
+- Presentational/Container分離
+- テストの書き直し
+
+**ファイル:**
+- `src/components/events/EventParticipate.tsx` (分割)
+- `src/components/events/EventParticipatePresentation.tsx` (新規)
+- `src/components/events/EventParticipateContainer.tsx` (新規)
+- `src/lib/hooks/use-event-participation.ts` (更新)
+- `src/components/events/EventParticipate.test.tsx` (更新)
+
+**推定作業量:** 2日
+
+### Task 5: 認証関連コンポーネントのリファクタリング
+**作業内容:**
+- AuthProviderの作成
+- useAuthの改善
+- LoginButton/AuthGuardの更新
+- テストの書き直し
+
+**ファイル:**
+- `src/lib/providers/auth.tsx` (新規)
+- `src/lib/auth/hooks.ts` (更新)
+- `src/components/auth/LoginButton.tsx` (更新)
+- `src/components/auth/AuthGuard.tsx` (更新)
+- 関連テストファイル
+
+**推定作業量:** 1.5日
+
+### Task 6: LanguageSwitcherのリファクタリング
+**作業内容:**
+- useLanguageSwitchフックの作成
+- ナビゲーション抽象化の適用
+- テストの書き直し
+
+**ファイル:**
+- `src/components/ui/LanguageSwitcher.tsx` (更新)
+- `src/lib/hooks/use-language-switch.ts` (新規)
+- `src/components/ui/LanguageSwitcher.test.tsx` (更新)
+
+**推定作業量:** 0.5日
+
+### Task 7: ScheduleInputLayoutのリファクタリング
+**作業内容:**
+- 状態管理の抽出
+- サブコンポーネントへの分割
+- テストの追加
+
+**ファイル:**
+- `src/components/schedule/ScheduleInputLayout.tsx` (更新)
+- `src/lib/hooks/use-schedule-input.ts` (新規)
+- `src/components/schedule/ScheduleInputLayout.test.tsx` (新規)
+
+**推定作業量:** 1日
+
+### Task 8: ドキュメント作成とクリーンアップ
+**作業内容:**
+- テスト戦略ドキュメントの作成
+- ベストプラクティスガイドの作成
+- 古いモックコードの削除
+- CLAUDE.mdの更新
+
+**ファイル:**
+- `manage/docs/testing-strategy.md` (新規)
+- `manage/docs/testable-design-guide.md` (新規)
+- `CLAUDE.md` (更新)
+
+**推定作業量:** 1日
+
+## 5. 成功基準
+
+1. **モックの削減**
+   - vi.mockの使用を90%以上削減
+   - 外部ライブラリのモックを排除
+
+2. **テストの安定性**
+   - act warningの完全排除
+   - リファクタリング耐性の向上
+
+3. **コードの品質**
+   - 責務の明確な分離
+   - 再利用可能なコンポーネント
+   - 型安全性の維持
+
+4. **開発効率**
+   - 新規機能のテスト作成時間50%削減
+   - デバッグ時間の削減
+
+## 6. リスクと対策
+
+### リスク1: 大規模な変更による不具合
+**対策:** 
+- 段階的な移行
+- 既存テストを残しながら新テストを追加
+- 各フェーズでの動作確認
+
+### リスク2: チーム内の学習コスト
+**対策:**
+- ペアプログラミングでの知識共有
+- ドキュメントの充実
+- サンプルコードの提供
+
+### リスク3: パフォーマンスへの影響
+**対策:**
+- Providerの最適化
+- メモ化の適切な使用
+- パフォーマンステストの実施
+
+## 7. 次のステップ
+
+1. このプランのレビューと承認
+2. Task 1-2の基盤整備から開始
+3. 週次でのプログレスレビュー
+4. 必要に応じたプランの調整
+
+---
+
+作成日: 2025-01-23
+作成者: Claude

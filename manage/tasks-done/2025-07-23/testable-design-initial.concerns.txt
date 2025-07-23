@@ -1,0 +1,94 @@
+# テスタブル設計への初期移行作業の懸念事項
+
+## 作業日: 2025-07-23
+
+## 実施内容
+1. vi.mockを使わないテスタブルな設計への移行プラン作成
+2. MSWベースのテストへの部分的な移行
+   - AuthGuard.test.tsx
+   - LoginButton.test.tsx
+   - EventResult.test.tsx
+   - UserProfile.test.tsx
+   - useAuth.test.tsx
+3. 翻訳キーの修正とテストプロバイダーの改善
+4. 型エラーとリントエラーの修正
+
+## 残っている課題と懸念事項
+
+### 1. next/navigationのモック問題
+- useRouterやuseParamsの完全な統合テストが困難
+- 現状: vi.mockを部分的に使用せざるを得ない
+- 解決案: NavigationProviderの実装が必要（Task 001）
+
+### 2. Server Actionsのテスト
+- EventCreateForm、EventParticipateでServer Actionsのモックが必要
+- 現状: vi.mockに依存
+- 解決案: ActionsProviderの実装が必要（Task 001）
+
+### 3. 非同期処理とタイミング問題
+- MSWでの認証状態取得のタイミングが不安定
+- act warningが一部で発生
+- 解決案: 適切なwaitForとテストヘルパーの実装（Task 002）
+
+### 4. テストの失敗状況
+- 現在: 24個失敗 / 51個成功（成功率: 68%）
+- 主な失敗箇所:
+  - EventCreateForm（6個）
+  - EventParticipate（6個）
+  - LanguageSwitcher（3個）
+  - 認証関連（9個）
+
+### 5. コード中のTODOコメント
+以下の箇所で追加の作業が必要：
+- [ ] EventCreateFormのServer Actions抽象化
+- [ ] EventParticipateの自動保存ロジック改善
+- [ ] LanguageSwitcherのナビゲーション抽象化
+- [ ] 認証フローの完全な抽象化
+
+### 6. パフォーマンスへの影響
+- Providerの追加によるレンダリング性能への影響が未測定
+- Context値の変更による不要な再レンダリングの可能性
+- 解決案: メモ化とパフォーマンステストの実施
+
+### 7. 既存コードとの互換性
+- 段階的移行のため、新旧の実装が混在
+- 一貫性のないテストパターン
+- 解決案: 移行完了後の統一的なリファクタリング
+
+## 推奨される次のアクション
+
+1. **Task 001の実装を最優先**
+   - NavigationProviderとActionsProviderの作成
+   - これにより多くのモック問題が解決
+
+2. **Task 002でテスト基盤を整備**
+   - ファクトリパターンとヘルパー関数
+   - 一貫性のあるテスト記述
+
+3. **高優先度コンポーネントから順次移行**
+   - EventCreateForm（Task 003）
+   - EventParticipate（Task 004）
+   - 認証関連（Task 005）
+
+4. **週次レビューの実施**
+   - 進捗確認
+   - 問題の早期発見
+   - 方針の調整
+
+## 学んだこと
+
+1. **完全なモック排除は段階的に**
+   - 一度にすべてを変更するのは現実的でない
+   - 基盤から整備していく必要がある
+
+2. **MSWの有効性と限界**
+   - HTTPレベルのモックには最適
+   - しかし、ブラウザAPIやNext.js固有機能には限界
+
+3. **設計の重要性**
+   - テスタブルな設計は最初から考慮すべき
+   - 後からの変更はコストが高い
+
+---
+記録者: Claude
+作成日: 2025-07-23

@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MantineProvider } from "@mantine/core";
 import { I18nextProvider , initReactI18next } from "react-i18next";
 import i18n from "i18next";
+import { NavigationProvider, ActionsProvider } from "@/lib/providers";
+import type { NavigationContext, ActionsContext } from "@/lib/providers";
 
 // テスト用のi18n設定
 const testI18n = i18n.createInstance();
@@ -223,4 +225,81 @@ export function AllTheProviders({ children }: { children: ReactNode }) {
       </I18nextProvider>
     </QueryClientProvider>
   );
+}
+
+// テスト用のプロバイダーオプション
+export interface TestProviderOptions {
+  readonly navigation?: Partial<NavigationContext>;
+  readonly actions?: {
+    readonly event?: Partial<ActionsContext["event"]>;
+    readonly schedule?: Partial<ActionsContext["schedule"]>;
+  };
+  readonly auth?: {
+    readonly user?: { readonly id: string; readonly name?: string; readonly email?: string } | null;
+    readonly isAuthenticated?: boolean;
+    readonly isLoading?: boolean;
+    readonly error?: Error | null;
+    readonly login?: (returnTo?: string) => void;
+    readonly logout?: (returnTo?: string) => void;
+  };
+}
+
+// カスタマイズ可能なプロバイダーラッパー
+export function renderWithProviders(
+  ui: React.ReactElement,
+  options: TestProviderOptions = {}
+) {
+  const queryClient = createTestQueryClient();
+  
+  // デフォルトのナビゲーション値
+  const defaultNavigation: NavigationContext = {
+    push: () => {},
+    replace: () => {},
+    back: () => {},
+    refresh: () => {},
+    params: {},
+    ...options.navigation,
+  };
+  
+  // デフォルトのアクション値
+  const defaultEventActions = {
+    create: () => Promise.resolve({ success: true as const, data: {} as never }),
+    update: () => Promise.resolve({ success: true as const, data: {} as never }),
+    delete: () => Promise.resolve({ success: true as const, data: { deleted: true } }),
+    get: () => Promise.resolve({ success: true as const, data: {} as never }),
+  };
+  
+  const defaultScheduleActions = {
+    create: () => Promise.resolve({ success: true as const, data: {} as never }),
+    update: () => Promise.resolve({ success: true as const, data: {} as never }),
+    submit: () => Promise.resolve({ success: true as const, data: { scheduleId: "schedule123" as never } }),
+    getAggregated: () => Promise.resolve({ success: true as const, data: [] }),
+    getByEvent: () => Promise.resolve({ success: true as const, data: [] }),
+    getByEventAndUser: () => Promise.resolve({ success: true as const, data: null }),
+    delete: () => Promise.resolve({ success: true as const, data: { deleted: true } }),
+  };
+  
+  const defaultActions: ActionsContext = {
+    event: { ...defaultEventActions, ...options.actions?.event },
+    schedule: { ...defaultScheduleActions, ...options.actions?.schedule },
+  };
+  
+  const Wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      <I18nextProvider i18n={testI18n}>
+        <MantineProvider>
+          <NavigationProvider value={defaultNavigation}>
+            <ActionsProvider value={defaultActions}>
+              {children}
+            </ActionsProvider>
+          </NavigationProvider>
+        </MantineProvider>
+      </I18nextProvider>
+    </QueryClientProvider>
+  );
+  
+  // @testing-library/reactのrenderをインポートしてラップ
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports
+  const { render } = require("@testing-library/react") as typeof import("@testing-library/react");
+  return render(ui, { wrapper: Wrapper });
 }

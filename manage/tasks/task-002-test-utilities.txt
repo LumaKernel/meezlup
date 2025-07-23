@@ -1,0 +1,218 @@
+# Task 002: テストユーティリティとファクトリの整備
+
+## 概要
+テスタブルな設計を支えるテストユーティリティとデータファクトリを整備する。
+これにより、テストデータの作成とコンポーネントのレンダリングが簡潔になる。
+
+## 作業内容
+
+### 1. テストデータファクトリの作成
+- Event、Schedule、User等の主要エンティティのファクトリ関数
+- Effect.tsのSchemaと整合性を保つ
+- 部分的なオーバーライドが可能
+
+### 2. カスタムレンダラーの更新
+- NavigationProviderとActionsProviderを含むAllTheProvidersの更新
+- オーバーライド可能なレンダラー関数
+
+### 3. テストヘルパー関数の追加
+- 非同期処理を待つヘルパー
+- 認証状態をセットアップするヘルパー
+- MSWハンドラーのヘルパー
+
+## 実装詳細
+
+### EventFactory（src/test/factories/event.ts）
+```typescript
+import { Schema } from "effect";
+import { Event, EventId, NonEmptyString, DateTimeString, UserId } from "@/lib/effects";
+
+export const EventFactory = {
+  create: (overrides: Partial<Event> = {}): Event => ({
+    id: Schema.decodeUnknownSync(EventId)("event123"),
+    name: Schema.decodeUnknownSync(NonEmptyString)("テストイベント"),
+    description: "テストイベントの説明",
+    dateRangeStart: Schema.decodeUnknownSync(DateTimeString)("2024-03-01T00:00:00.000Z"),
+    dateRangeEnd: Schema.decodeUnknownSync(DateTimeString)("2024-03-03T00:00:00.000Z"),
+    timeSlotDuration: 30,
+    deadline: null,
+    creatorId: Schema.decodeUnknownSync(UserId)("user123"),
+    participantRestrictionType: "none",
+    allowedDomains: [],
+    allowedEmails: [],
+    creatorCanSeeEmails: true,
+    participantsCanSeeEach: true,
+    createdAt: Schema.decodeUnknownSync(DateTimeString)("2024-01-01T00:00:00.000Z"),
+    updatedAt: Schema.decodeUnknownSync(DateTimeString)("2024-01-01T00:00:00.000Z"),
+    isLinkOnly: false,
+    ...overrides,
+  }),
+  
+  withPrivacy: (overrides: Partial<Event> = {}): Event => 
+    EventFactory.create({
+      creatorCanSeeEmails: false,
+      participantsCanSeeEach: false,
+      ...overrides,
+    }),
+  
+  withDeadline: (deadline: string, overrides: Partial<Event> = {}): Event =>
+    EventFactory.create({
+      deadline: Schema.decodeUnknownSync(DateTimeString)(deadline),
+      ...overrides,
+    }),
+};
+```
+
+### UserFactory（src/test/factories/user.ts）
+```typescript
+import { Schema } from "effect";
+import { User, UserId, NonEmptyString } from "@/lib/effects";
+
+export const UserFactory = {
+  create: (overrides: Partial<User> = {}): User => ({
+    id: Schema.decodeUnknownSync(UserId)("user123"),
+    email: "test@example.com",
+    name: Schema.decodeUnknownSync(NonEmptyString)("テストユーザー"),
+    auth0Id: "auth0|123456",
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    ...overrides,
+  }),
+  
+  anonymous: (): null => null,
+  
+  auth0User: (overrides: Partial<any> = {}) => ({
+    id: "user123",
+    sub: "auth0|123456",
+    email: "test@example.com",
+    name: "テストユーザー",
+    picture: "https://example.com/avatar.jpg",
+    nickname: "testuser",
+    email_verified: true,
+    ...overrides,
+  }),
+};
+```
+
+### 更新されたTestProviders（src/test/providers.tsx）
+```typescript
+import { NavigationProvider } from "@/lib/providers/navigation";
+import { ActionsProvider } from "@/lib/providers/actions";
+
+interface TestProvidersOptions {
+  navigation?: Partial<NavigationContext>;
+  actions?: Partial<ActionsContext>;
+  user?: User | null;
+  locale?: string;
+}
+
+export function AllTheProviders({ 
+  children, 
+  options = {} 
+}: { 
+  children: React.ReactNode;
+  options?: TestProvidersOptions;
+}) {
+  const queryClient = createTestQueryClient();
+  
+  // デフォルトのモック実装
+  const mockNavigation: NavigationContext = {
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    refresh: vi.fn(),
+    params: { locale: options.locale || "ja" },
+    ...options.navigation,
+  };
+  
+  const mockActions: ActionsContext = {
+    event: {
+      create: vi.fn().mockResolvedValue({ success: true, data: EventFactory.create() }),
+      update: vi.fn().mockResolvedValue({ success: true, data: EventFactory.create() }),
+    },
+    schedule: {
+      submit: vi.fn().mockResolvedValue({ success: true, data: { scheduleId: "schedule123" } }),
+      getAggregated: vi.fn().mockResolvedValue({ success: true, data: [] }),
+    },
+    ...options.actions,
+  };
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <NavigationProvider value={mockNavigation}>
+        <ActionsProvider value={mockActions}>
+          <I18nextProvider i18n={testI18n}>
+            <MantineProvider>
+              {children}
+            </MantineProvider>
+          </I18nextProvider>
+        </ActionsProvider>
+      </NavigationProvider>
+    </QueryClientProvider>
+  );
+}
+
+// カスタムレンダー関数
+export function renderWithProviders(
+  ui: ReactElement,
+  options: TestProvidersOptions = {}
+) {
+  return render(ui, {
+    wrapper: ({ children }) => (
+      <AllTheProviders options={options}>{children}</AllTheProviders>
+    ),
+  });
+}
+```
+
+### テストヘルパー（src/test/helpers.ts）
+```typescript
+import { server } from "./mocks/server";
+import { http, HttpResponse } from "msw";
+
+export const setupAuth = (user: User | null = UserFactory.create()) => {
+  server.use(
+    http.get("/api/user/profile", () => {
+      if (user) {
+        return HttpResponse.json(UserFactory.auth0User(user));
+      }
+      return new HttpResponse(null, { status: 401 });
+    })
+  );
+};
+
+export const setupEventEndpoint = (event: Event) => {
+  server.use(
+    http.get(`/api/events/:id`, () => {
+      return HttpResponse.json({ success: true, data: event });
+    })
+  );
+};
+
+export const waitForLoadingToFinish = () => 
+  waitFor(() => {
+    expect(screen.queryByTestId("loading-spinner")).not.toBeInTheDocument();
+  });
+```
+
+## 受け入れ条件
+- [ ] Event、Schedule、Userファクトリが実装されている
+- [ ] AllTheProvidersがNavigationProvider/ActionsProviderを含む
+- [ ] renderWithProvidersがオプションを受け取れる
+- [ ] テストヘルパー関数が動作する
+- [ ] TypeScriptの型が正しく定義されている
+
+## 推定作業量
+1日
+
+## 依存関係
+- Task 001（Provider/Contextの作成）
+
+## 影響範囲
+- すべてのテストファイルで利用可能
+- 既存のテストには影響なし
+
+## 備考
+- Effect.tsのSchemaとの整合性を保つ
+- ファクトリは拡張可能な設計にする
+- 頻繁に使うパターンをヘルパー化

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { server } from "@/test/mocks/server";
 import { http, HttpResponse } from "msw";
@@ -22,7 +22,7 @@ function TestAuthGuard({
   const originalPushState = window.history.pushState.bind(window.history);
   window.history.pushState = (...args: Parameters<typeof window.history.pushState>) => {
     navigationHistory.push(args[2] as string);
-    return originalPushState(...args);
+    originalPushState(...args);
   };
 
   return (

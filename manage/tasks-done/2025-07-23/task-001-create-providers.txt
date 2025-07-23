@@ -1,0 +1,148 @@
+# Task 001: 基盤Provider/Contextの作成
+
+## 概要
+vi.mockを使わないテスタブルな設計の基盤となる、NavigationProviderとActionsProviderを作成する。
+これにより、コンポーネントが直接next/navigationやServer Actionsに依存しない設計を実現する。
+
+## 作業内容
+
+### 1. NavigationProviderの実装
+- ナビゲーション機能を抽象化したContextを作成
+- 本番環境ではnext/navigationを使用
+- テスト環境ではモック実装を注入可能に
+
+### 2. ActionsProviderの実装
+- Server Actionsを抽象化したContextを作成
+- 本番環境では実際のServer Actionsを使用
+- テスト環境ではモック実装を注入可能に
+
+### 3. TestProvidersユーティリティの更新
+- 既存のAllTheProvidersにNavigationProviderとActionsProviderを統合
+- オーバーライド可能な設計
+
+## 実装詳細
+
+### NavigationProvider（src/lib/providers/navigation.tsx）
+```typescript
+import { createContext, useContext } from "react";
+import { useRouter as useNextRouter, useParams as useNextParams } from "next/navigation";
+
+export interface NavigationContext {
+  push: (path: string) => void;
+  replace: (path: string) => void;
+  back: () => void;
+  refresh: () => void;
+  params: Record<string, string>;
+}
+
+const NavigationContext = createContext<NavigationContext | undefined>(undefined);
+
+export function NavigationProvider({ 
+  children, 
+  value 
+}: { 
+  children: React.ReactNode;
+  value?: NavigationContext;
+}) {
+  const router = useNextRouter();
+  const params = useNextParams();
+  
+  const defaultValue: NavigationContext = {
+    push: (path) => router.push(path),
+    replace: (path) => router.replace(path),
+    back: () => router.back(),
+    refresh: () => router.refresh(),
+    params: params as Record<string, string>,
+  };
+  
+  return (
+    <NavigationContext.Provider value={value || defaultValue}>
+      {children}
+    </NavigationContext.Provider>
+  );
+}
+
+export function useNavigation() {
+  const context = useContext(NavigationContext);
+  if (!context) {
+    throw new Error("useNavigation must be used within NavigationProvider");
+  }
+  return context;
+}
+```
+
+### ActionsProvider（src/lib/providers/actions.tsx）
+```typescript
+import { createContext, useContext } from "react";
+import { createEventAction, updateEventAction } from "@/app/actions/event";
+import { submitAvailability, getAggregatedTimeSlots } from "@/app/actions/schedule";
+
+export interface ActionsContext {
+  event: {
+    create: typeof createEventAction;
+    update: typeof updateEventAction;
+  };
+  schedule: {
+    submit: typeof submitAvailability;
+    getAggregated: typeof getAggregatedTimeSlots;
+  };
+}
+
+const ActionsContext = createContext<ActionsContext | undefined>(undefined);
+
+export function ActionsProvider({ 
+  children, 
+  value 
+}: { 
+  children: React.ReactNode;
+  value?: ActionsContext;
+}) {
+  const defaultValue: ActionsContext = {
+    event: {
+      create: createEventAction,
+      update: updateEventAction,
+    },
+    schedule: {
+      submit: submitAvailability,
+      getAggregated: getAggregatedTimeSlots,
+    },
+  };
+  
+  return (
+    <ActionsContext.Provider value={value || defaultValue}>
+      {children}
+    </ActionsContext.Provider>
+  );
+}
+
+export function useActions() {
+  const context = useContext(ActionsContext);
+  if (!context) {
+    throw new Error("useActions must be used within ActionsProvider");
+  }
+  return context;
+}
+```
+
+## 受け入れ条件
+- [ ] NavigationProviderが実装されている
+- [ ] ActionsProviderが実装されている
+- [ ] useNavigation/useActionsフックが動作する
+- [ ] テスト環境で値をオーバーライドできる
+- [ ] TypeScriptの型が正しく定義されている
+- [ ] エラーハンドリングが適切
+
+## 推定作業量
+1日
+
+## 依存関係
+なし（基盤タスクのため）
+
+## 影響範囲
+- 今後のすべてのコンポーネントリファクタリングがこのProviderに依存
+- 既存コンポーネントには影響なし（段階的移行のため）
+
+## 備考
+- 最初は最小限の実装から始める
+- 必要に応じて機能を追加していく
+- 既存のコードに影響を与えないよう注意

@@ -1,0 +1,367 @@
+# Task 003: EventCreateFormのリファクタリング
+
+## 概要
+EventCreateFormをテスタブルな設計にリファクタリングする。
+ビジネスロジックをカスタムフックに抽出し、PresentationalとContainerに分離する。
+
+## 作業内容
+
+### 1. useEventCreationフックの作成
+- フォーム状態管理
+- バリデーションロジック
+- Server Action呼び出し
+- ナビゲーション処理
+
+### 2. Presentationalコンポーネントの作成
+- 純粋なUIコンポーネント
+- propsで全ての状態を受け取る
+- イベントハンドラーをpropsで受け取る
+
+### 3. Containerコンポーネントの作成
+- useEventCreationフックを使用
+- Presentationalコンポーネントに値を渡す
+
+### 4. テストの書き直し
+- Presentationalコンポーネントの単体テスト
+- useEventCreationフックのテスト
+- 統合テスト（MSW使用）
+
+## 実装詳細
+
+### useEventCreationフック（src/lib/hooks/use-event-creation.ts）
+```typescript
+import { useState, useCallback } from "react";
+import { useActions } from "@/lib/providers/actions";
+import { useNavigation } from "@/lib/providers/navigation";
+import { useTranslation } from "react-i18next";
+import type { CreateEventForm } from "@/lib/effects/services/event/create-event-schema";
+
+interface EventCreationState {
+  isSubmitting: boolean;
+  error: string | null;
+  fieldErrors: Record<string, string>;
+}
+
+export function useEventCreation(locale: string) {
+  const { t } = useTranslation("event");
+  const actions = useActions();
+  const navigation = useNavigation();
+  
+  const [state, setState] = useState<EventCreationState>({
+    isSubmitting: false,
+    error: null,
+    fieldErrors: {},
+  });
+  
+  const [formData, setFormData] = useState<Partial<CreateEventForm>>({
+    name: "",
+    description: "",
+    timeSlotDuration: 30,
+    permission: "link-only",
+    dateRange: undefined,
+  });
+  
+  const updateField = useCallback(<K extends keyof CreateEventForm>(
+    field: K,
+    value: CreateEventForm[K]
+  ) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // フィールドエラーをクリア
+    setState(prev => ({
+      ...prev,
+      fieldErrors: { ...prev.fieldErrors, [field]: undefined },
+    }));
+  }, []);
+  
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    
+    if (!formData.name?.trim()) {
+      errors.name = t("create.errors.nameRequired");
+    }
+    
+    if (!formData.dateRange || formData.dateRange.length !== 2) {
+      errors.dateRange = t("create.errors.dateRangeRequired");
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setState(prev => ({ ...prev, fieldErrors: errors }));
+      return false;
+    }
+    
+    return true;
+  };
+  
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    setState(prev => ({ ...prev, isSubmitting: true, error: null }));
+    
+    try {
+      const result = await actions.event.create(formData as CreateEventForm);
+      
+      if (result.success) {
+        navigation.push(`/${locale}/events/${result.data.eventId}`);
+      } else {
+        setState(prev => ({
+          ...prev,
+          isSubmitting: false,
+          error: result.error || t("create.error"),
+        }));
+      }
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        isSubmitting: false,
+        error: t("create.error"),
+      }));
+    }
+  }, [formData, actions, navigation, locale, t]);
+  
+  return {
+    formData,
+    updateField,
+    handleSubmit,
+    isSubmitting: state.isSubmitting,
+    error: state.error,
+    fieldErrors: state.fieldErrors,
+  };
+}
+```
+
+### Presentationalコンポーネント（src/components/events/EventCreateFormPresentation.tsx）
+```typescript
+import {
+  TextInput,
+  Textarea,
+  Select,
+  Button,
+  Stack,
+  Group,
+  Title,
+  Paper,
+  Alert,
+} from "@mantine/core";
+import { DatePickerInput } from "@mantine/dates";
+import type { CreateEventForm } from "@/lib/effects/services/event/create-event-schema";
+
+interface EventCreateFormPresentationProps {
+  readonly formData: Partial<CreateEventForm>;
+  readonly onFieldChange: <K extends keyof CreateEventForm>(
+    field: K,
+    value: CreateEventForm[K]
+  ) => void;
+  readonly onSubmit: (e: React.FormEvent) => void;
+  readonly isSubmitting: boolean;
+  readonly error: string | null;
+  readonly fieldErrors: Record<string, string>;
+  readonly t: (key: string) => string;
+}
+
+export function EventCreateFormPresentation({
+  formData,
+  onFieldChange,
+  onSubmit,
+  isSubmitting,
+  error,
+  fieldErrors,
+  t,
+}: EventCreateFormPresentationProps) {
+  return (
+    <Paper shadow="sm" p="lg">
+      <Title order={2} mb="lg">
+        {t("create.title")}
+      </Title>
+      
+      {error && (
+        <Alert color="red" mb="md">
+          {error}
+        </Alert>
+      )}
+      
+      <form onSubmit={onSubmit}>
+        <Stack gap="md">
+          <TextInput
+            label={t("create.field.name")}
+            placeholder={t("create.field.namePlaceholder")}
+            value={formData.name || ""}
+            onChange={(e) => onFieldChange("name", e.target.value)}
+            error={fieldErrors.name}
+            required
+            disabled={isSubmitting}
+          />
+          
+          <Textarea
+            label={t("create.field.description")}
+            placeholder={t("create.field.descriptionPlaceholder")}
+            value={formData.description || ""}
+            onChange={(e) => onFieldChange("description", e.target.value)}
+            error={fieldErrors.description}
+            disabled={isSubmitting}
+            rows={4}
+          />
+          
+          <DatePickerInput
+            type="range"
+            label={t("create.field.dateRange")}
+            description={t("create.field.dateRangeDescription")}
+            value={formData.dateRange}
+            onChange={(value) => onFieldChange("dateRange", value)}
+            error={fieldErrors.dateRange}
+            required
+            disabled={isSubmitting}
+          />
+          
+          <Select
+            label={t("create.field.timeSlotDuration")}
+            value={formData.timeSlotDuration?.toString()}
+            onChange={(value) => 
+              onFieldChange("timeSlotDuration", value ? parseInt(value) : 30)
+            }
+            data={[
+              { value: "15", label: t("create.15minutes") },
+              { value: "30", label: t("create.30minutes") },
+              { value: "60", label: t("create.1hour") },
+            ]}
+            disabled={isSubmitting}
+          />
+          
+          <Group justify="flex-end">
+            <Button
+              type="submit"
+              loading={isSubmitting}
+              disabled={isSubmitting}
+            >
+              {t("create.submit")}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </Paper>
+  );
+}
+```
+
+### Containerコンポーネント（src/components/events/EventCreateFormContainer.tsx）
+```typescript
+import { use } from "react";
+import { useTranslation } from "react-i18next";
+import { useEventCreation } from "@/lib/hooks/use-event-creation";
+import { EventCreateFormPresentation } from "./EventCreateFormPresentation";
+
+interface EventCreateFormContainerProps {
+  readonly params: Promise<{ locale: string }>;
+}
+
+export function EventCreateFormContainer({ params }: EventCreateFormContainerProps) {
+  const { locale } = use(params);
+  const { t } = useTranslation("event");
+  const eventCreation = useEventCreation(locale);
+  
+  return (
+    <EventCreateFormPresentation
+      {...eventCreation}
+      t={t}
+    />
+  );
+}
+```
+
+### 更新されたテスト（src/components/events/EventCreateForm.test.tsx）
+```typescript
+import { describe, it, expect, vi } from "vitest";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { renderWithProviders } from "@/test/providers";
+import { EventFactory } from "@/test/factories/event";
+import { EventCreateFormContainer } from "./EventCreateFormContainer";
+import { EventCreateFormPresentation } from "./EventCreateFormPresentation";
+
+describe("EventCreateFormPresentation", () => {
+  const defaultProps = {
+    formData: { name: "", description: "", timeSlotDuration: 30 },
+    onFieldChange: vi.fn(),
+    onSubmit: vi.fn(),
+    isSubmitting: false,
+    error: null,
+    fieldErrors: {},
+    t: (key: string) => key,
+  };
+  
+  it("必須フィールドをレンダリングする", () => {
+    render(<EventCreateFormPresentation {...defaultProps} />);
+    
+    expect(screen.getByLabelText("create.field.name")).toBeInTheDocument();
+    expect(screen.getByLabelText("create.field.description")).toBeInTheDocument();
+    expect(screen.getByLabelText("create.field.dateRange")).toBeInTheDocument();
+  });
+  
+  it("フィールド変更時にonFieldChangeを呼ぶ", async () => {
+    const user = userEvent.setup();
+    render(<EventCreateFormPresentation {...defaultProps} />);
+    
+    await user.type(screen.getByLabelText("create.field.name"), "新しいイベント");
+    
+    expect(defaultProps.onFieldChange).toHaveBeenCalledWith("name", "新");
+  });
+});
+
+describe("EventCreateFormContainer（統合テスト）", () => {
+  it("フォームを正常に送信する", async () => {
+    const user = userEvent.setup();
+    const mockEvent = EventFactory.create();
+    const mockPush = vi.fn();
+    
+    const { container } = renderWithProviders(
+      <EventCreateFormContainer params={Promise.resolve({ locale: "ja" })} />,
+      {
+        navigation: { push: mockPush },
+        actions: {
+          event: {
+            create: vi.fn().mockResolvedValue({ 
+              success: true, 
+              data: { eventId: mockEvent.id } 
+            }),
+          },
+        },
+      }
+    );
+    
+    // フォームに入力
+    await user.type(screen.getByLabelText("イベント名"), "テストイベント");
+    await user.click(screen.getByRole("button", { name: "イベントを作成" }));
+    
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith("/ja/events/event123");
+    });
+  });
+});
+```
+
+## 受け入れ条件
+- [ ] useEventCreationフックが実装されている
+- [ ] Presentationalコンポーネントが純粋なUIコンポーネント
+- [ ] Containerコンポーネントがロジックを持つ
+- [ ] vi.mockを使わないテストが書かれている
+- [ ] 既存の機能が維持されている
+- [ ] TypeScriptの型が正しい
+
+## 推定作業量
+2日
+
+## 依存関係
+- Task 001（Provider/Contextの作成）
+- Task 002（テストユーティリティ）
+
+## 影響範囲
+- EventCreateFormコンポーネント
+- イベント作成機能のテスト
+
+## 備考
+- 段階的にリファクタリング
+- 既存のAPIとの互換性を保つ
+- ストーリーブックも更新する
