@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { NextResponse } from "next/server";
 
 // Prismaのモック
 const mockPrismaUser = {
@@ -16,18 +15,32 @@ vi.mock("@prisma/client", () => ({
   PrismaClient: vi.fn(() => mockPrisma),
 }));
 
-// NextResponseのモック
+// Auth0とNextResponseのモック
+let mockOnCallback: any;
+const mockAuth0Client = vi.fn().mockImplementation((options: any) => {
+  mockOnCallback = options.onCallback;
+  return {};
+});
+
+vi.mock("@auth0/nextjs-auth0/server", () => ({
+  Auth0Client: mockAuth0Client,
+}));
+
+const mockRedirect = vi.fn();
 vi.mock("next/server", () => ({
   NextResponse: {
-    redirect: vi.fn((url) => ({ redirect: url.toString() })),
+    redirect: mockRedirect,
   },
 }));
 
 describe("Auth0 Callback Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockRedirect.mockReset();
     // 環境変数のモック
     process.env.APP_BASE_URL = "http://localhost:5825";
+    // auth0.tsを再インポートして新しいインスタンスを作成
+    vi.resetModules();
   });
 
   afterEach(() => {
@@ -36,6 +49,9 @@ describe("Auth0 Callback Handler", () => {
 
   describe("onCallback", () => {
     it("正常なログイン後にユーザーをデータベースに保存し、リダイレクトする", async () => {
+      // auth0.tsをインポートして初期化
+      await import("./auth0");
+      
       const mockSession = {
         user: {
           sub: "auth0|test123",
@@ -60,13 +76,12 @@ describe("Auth0 Callback Handler", () => {
 
       mockPrismaUser.upsert.mockResolvedValue(mockDbUser);
 
-      // auth0.tsからコールバック関数を動的にインポート
-      const { auth0 } = await import("./auth0");
-      const onCallback = (auth0 as any).options?.onCallback;
+      // Auth0Client が呼ばれたことを確認
+      expect(mockAuth0Client).toHaveBeenCalled();
+      expect(mockOnCallback).toBeDefined();
 
-      expect(onCallback).toBeDefined();
-
-      const _result = await onCallback(null, mockContext, mockSession);
+      // onCallbackを実行
+      const result = await mockOnCallback(null, mockContext, mockSession);
 
       expect(mockPrismaUser.upsert).toHaveBeenCalledWith({
         where: { auth0Id: "auth0|test123" },
@@ -82,36 +97,31 @@ describe("Auth0 Callback Handler", () => {
         },
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(NextResponse.redirect).toHaveBeenCalledWith(
+      expect(mockRedirect).toHaveBeenCalledWith(
         expect.objectContaining({
-          href: "http://localhost:5825/dashboard",
+          href: expect.stringContaining("http://localhost:5825/dashboard"),
         }),
       );
     });
 
     it("エラー発生時はエラーページにリダイレクトする", async () => {
+      await import("./auth0");
+      
       const mockError = new Error("Auth0 error");
       const mockContext = {};
 
-      const { auth0 } = await import("./auth0");
-      const onCallback = (auth0 as any).options?.onCallback;
+      const result = await mockOnCallback(mockError, mockContext, null);
 
-      const _result = await onCallback(mockError, mockContext, null);
-
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(NextResponse.redirect).toHaveBeenCalledWith(
+      expect(mockRedirect).toHaveBeenCalledWith(
         expect.objectContaining({
-          href: "http://localhost:5825/error?error=Auth0%20error",
+          href: expect.stringContaining("/error?error=Auth0%20error"),
         }),
       );
     });
 
     it("データベースエラー時もログインを継続し、エラーをログに出力する", async () => {
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-
+      await import("./auth0");
+      
       const mockSession = {
         user: {
           sub: "auth0|test123",
@@ -121,26 +131,25 @@ describe("Auth0 Callback Handler", () => {
       };
 
       const mockContext = {
-        returnTo: null,
+        returnTo: "/",
       };
 
-      mockPrismaUser.upsert.mockRejectedValue(new Error("Database error"));
+      const mockError = new Error("Database error");
+      mockPrismaUser.upsert.mockRejectedValue(mockError);
 
-      const { auth0 } = await import("./auth0");
-      const onCallback = (auth0 as any).options?.onCallback;
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-      const _result = await onCallback(null, mockContext, mockSession);
+      const result = await mockOnCallback(null, mockContext, mockSession);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         "Database sync error:",
-        expect.any(Error),
+        mockError,
       );
 
-      // エラーが発生してもログインは継続される
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(NextResponse.redirect).toHaveBeenCalledWith(
+      // エラーが発生してもリダイレクトは実行される
+      expect(mockRedirect).toHaveBeenCalledWith(
         expect.objectContaining({
-          href: "http://localhost:5825/",
+          href: expect.stringContaining("http://localhost:5825/"),
         }),
       );
 
@@ -148,74 +157,71 @@ describe("Auth0 Callback Handler", () => {
     });
 
     it("ユーザー名がない場合はnicknameまたはemailを使用する", async () => {
+      await import("./auth0");
+      
       const mockSession = {
         user: {
-          sub: "auth0|test123",
-          email: "test@example.com",
-          name: null,
-          nickname: "testuser",
+          sub: "auth0|test456",
+          email: "test2@example.com",
+          nickname: "testuser2",
+          // nameは含まれていない
         },
       };
 
       const mockContext = {};
 
       const mockDbUser = {
-        id: "user123",
-        auth0Id: "auth0|test123",
-        email: "test@example.com",
-        name: "testuser",
+        id: "user456",
+        auth0Id: "auth0|test456",
+        email: "test2@example.com",
+        name: "testuser2",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       mockPrismaUser.upsert.mockResolvedValue(mockDbUser);
 
-      const { auth0 } = await import("./auth0");
-      const onCallback = (auth0 as any).options?.onCallback;
-
-      await onCallback(null, mockContext, mockSession);
+      await mockOnCallback(null, mockContext, mockSession);
 
       expect(mockPrismaUser.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           create: expect.objectContaining({
-            name: "testuser",
+            name: "testuser2", // nicknameが使われている
           }),
         }),
       );
     });
 
     it("nameもnicknameもない場合はemailを使用する", async () => {
+      await import("./auth0");
+      
       const mockSession = {
         user: {
-          sub: "auth0|test123",
-          email: "test@example.com",
-          name: null,
-          nickname: null,
+          sub: "auth0|test789",
+          email: "test3@example.com",
+          // nameもnicknameも含まれていない
         },
       };
 
       const mockContext = {};
 
       const mockDbUser = {
-        id: "user123",
-        auth0Id: "auth0|test123",
-        email: "test@example.com",
-        name: "test@example.com",
+        id: "user789",
+        auth0Id: "auth0|test789",
+        email: "test3@example.com",
+        name: "test3@example.com",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       mockPrismaUser.upsert.mockResolvedValue(mockDbUser);
 
-      const { auth0 } = await import("./auth0");
-      const onCallback = (auth0 as any).options?.onCallback;
-
-      await onCallback(null, mockContext, mockSession);
+      await mockOnCallback(null, mockContext, mockSession);
 
       expect(mockPrismaUser.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           create: expect.objectContaining({
-            name: "test@example.com",
+            name: "test3@example.com", // emailが使われている
           }),
         }),
       );

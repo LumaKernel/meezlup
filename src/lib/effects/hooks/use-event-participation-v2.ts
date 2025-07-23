@@ -162,7 +162,7 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
 
   // フォーム送信のミューテーション
   const submitMutation = useMutation<{ scheduleId: string }, Error, boolean>({
-    mutationFn: async (isAutoSave = false) => {
+    mutationFn: async (_isAutoSave = false) => {
       // バリデーション
       if (selectedSlots.size === 0) {
         throw new Error(t("participate.selectTimeSlot"));

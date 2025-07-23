@@ -313,7 +313,7 @@ describe("AuthService", () => {
             updateArgs = args;
             return Promise.resolve(mockUpdatedDbUser);
           },
-          findUnique: () => Promise.reject(new Error("Should not be called")),
+          findUnique: () => Promise.resolve(mockUpdatedDbUser),
         },
         $disconnect: () => Promise.resolve(),
       });
@@ -343,6 +343,16 @@ describe("AuthService", () => {
 
   describe("getCurrentAuthState", () => {
     it.effect("認証済みユーザーの状態を正常に返す", () => {
+      const mockDbUser = {
+        id: "user123",
+        auth0Id: "auth0|test123",
+        email: "test@example.com",
+        name: "Test User",
+        createdAt: new Date("2024-01-01T00:00:00Z"),
+        updatedAt: new Date("2024-01-01T00:00:00Z"),
+        preferredLanguage: null,
+      };
+
       const Auth0TestLayer = Layer.succeed(Auth0Client, {
         getSession: () => Promise.resolve(testSession),
       });
@@ -352,7 +362,7 @@ describe("AuthService", () => {
           upsert: () => Promise.reject(new Error("Should not be called")),
           create: () => Promise.reject(new Error("Should not be called")),
           update: () => Promise.reject(new Error("Should not be called")),
-          findUnique: () => Promise.reject(new Error("Should not be called")),
+          findUnique: () => Promise.resolve(mockDbUser),
         },
         $disconnect: () => Promise.resolve(),
       });
@@ -432,6 +442,16 @@ describe("AuthService", () => {
 
   describe("getAuthenticatedUser", () => {
     it.effect("認証済みユーザーの場合はユーザー情報を返す", () => {
+      const mockDbUser = {
+        id: "user123",
+        auth0Id: "auth0|test123",
+        email: "test@example.com",
+        name: "Test User",
+        createdAt: new Date("2024-01-01T00:00:00Z"),
+        updatedAt: new Date("2024-01-01T00:00:00Z"),
+        preferredLanguage: null,
+      };
+
       const Auth0TestLayer = Layer.succeed(Auth0Client, {
         getSession: () => Promise.resolve(testSession),
       });
@@ -441,7 +461,7 @@ describe("AuthService", () => {
           upsert: () => Promise.reject(new Error("Should not be called")),
           create: () => Promise.reject(new Error("Should not be called")),
           update: () => Promise.reject(new Error("Should not be called")),
-          findUnique: () => Promise.reject(new Error("Should not be called")),
+          findUnique: () => Promise.resolve(mockDbUser),
         },
         $disconnect: () => Promise.resolve(),
       });

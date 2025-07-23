@@ -78,6 +78,7 @@
     "@eslint/compat": "^1.3.1",
     "@eslint/eslintrc": "^3",
     "@luma-dev/eslint-plugin-luma-ts": "^1.2.1",
+    "@mswjs/data": "^0.16.2",
     "@storybook/addon-docs": "^8.6.14",
     "@storybook/addon-essentials": "^8.6.14",
     "@storybook/addon-interactions": "^8.6.14",

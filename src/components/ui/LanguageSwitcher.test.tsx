@@ -7,6 +7,7 @@ import type { MockAppRouterInstance } from "@/test/mocks/types";
 // モック
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),
+  useParams: vi.fn(() => ({ locale: "ja" })),
 }));
 
 const mockCookieSet = vi.fn();

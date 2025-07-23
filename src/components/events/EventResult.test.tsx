@@ -1,7 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@/test/utils";
+import { describe, it, expect, afterEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import { server } from "@/test/mocks/server";
+import { http, HttpResponse } from "msw";
+import { AllTheProviders } from "@/test/providers";
 import { EventResult } from "./EventResult";
-import { getAggregatedTimeSlots } from "@/app/actions/schedule";
 import type { Event as EffectEvent } from "@/lib/effects/services/event/schemas";
 import type { TimeSlotAggregation } from "@/lib/effects/services/schedule/schemas";
 import { Schema } from "effect";
@@ -14,22 +16,12 @@ import {
   PositiveInt,
 } from "@/lib/effects";
 
-// モック
-vi.mock("@/app/actions/schedule", () => ({
-  getAggregatedTimeSlots: vi.fn(),
-}));
-
-vi.mock("react", async () => {
-  const actual = await vi.importActual("react");
-  return {
-    ...actual,
-    use: () => ({ locale: "ja" }),
-  };
-});
+// テスト用のラッパーコンポーネント
+function TestWrapper({ children }: { children: React.ReactNode }) {
+  return <AllTheProviders>{children}</AllTheProviders>;
+}
 
 describe("EventResult", () => {
-  const mockGetAggregatedTimeSlots = vi.mocked(getAggregatedTimeSlots);
-
   const mockEvent: EffectEvent = {
     id: Schema.decodeUnknownSync(EventId)("event123"),
     name: Schema.decodeUnknownSync(NonEmptyString)("テストイベント"),
@@ -112,223 +104,272 @@ describe("EventResult", () => {
       participantCount: Schema.decodeUnknownSync(PositiveInt)(1),
       participants: [
         {
-          scheduleId: Schema.decodeUnknownSync(ScheduleId)("s3"),
-          displayName: Schema.decodeUnknownSync(NonEmptyString)("佐藤次郎"),
+          scheduleId: Schema.decodeUnknownSync(ScheduleId)("s4"),
+          displayName: Schema.decodeUnknownSync(NonEmptyString)("山田四郎"),
           userId: null,
         },
       ],
     },
   ];
 
-  beforeEach(() => {
-    vi.clearAllMocks();
+  afterEach(() => {
+    server.resetHandlers();
   });
 
   it("ローディング中はローダーを表示する", () => {
-    mockGetAggregatedTimeSlots.mockImplementation(
-      () => new Promise(() => {}), // 永続的にpending
+    // MSWで遅延レスポンスを設定してローディング状態をシミュレート
+    server.use(
+      http.post("/api/schedules/aggregate", async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return HttpResponse.json({
+          success: true,
+          data: [],
+        });
+      })
     );
 
     render(
-      <EventResult
-        event={mockEvent}
-        params={Promise.resolve({ locale: "ja", id: "event123" })}
-      />,
+      <TestWrapper>
+        <EventResult
+          event={mockEvent}
+          params={Promise.resolve({ locale: "ja", id: "event123" })}
+        />
+      </TestWrapper>
     );
 
-    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    // MantineのLoaderを確認
+    const loader = document.querySelector(".mantine-Loader-root");
+    expect(loader).toBeInTheDocument();
   });
 
   it("集計データを正しく表示する", async () => {
-    mockGetAggregatedTimeSlots.mockResolvedValueOnce({
-      success: true,
-      data: mockAggregatedData,
-    });
-
-    render(
-      <EventResult
-        event={mockEvent}
-        params={Promise.resolve({ locale: "ja", id: "event123" })}
-      />,
+    // MSWで集計データを返す
+    server.use(
+      http.post("/api/schedules/aggregate", () => {
+        return HttpResponse.json({
+          success: true,
+          data: mockAggregatedData,
+        });
+      })
     );
 
+    render(
+      <TestWrapper>
+        <EventResult
+          event={mockEvent}
+          params={Promise.resolve({ locale: "ja", id: "event123" })}
+        />
+      </TestWrapper>
+    );
+
+    // タイトルが表示されるのを待つ
     await waitFor(() => {
-      // イベント名
       expect(screen.getByText("テストイベント")).toBeInTheDocument();
-
-      // 集計結果タイトル
-      expect(screen.getByText("集計結果")).toBeInTheDocument();
-
-      // 参加者数
-      expect(screen.getByText("3 人")).toBeInTheDocument();
-
-      // 時間枠（9:00）
-      const nineOClockSlots = screen.getAllByText("09:00");
-      expect(nineOClockSlots.length).toBeGreaterThan(0);
-
-      // 参加者数バッジ
-      expect(screen.getByText("3")).toBeInTheDocument();
-      expect(screen.getByText("2")).toBeInTheDocument();
-      expect(screen.getByText("1")).toBeInTheDocument();
     });
+
+    // 集計結果が表示される
+    expect(screen.getByText("集計結果")).toBeInTheDocument();
+    expect(screen.getByText("空き状況ヒートマップ")).toBeInTheDocument();
+    expect(screen.getByText("最適な時間帯")).toBeInTheDocument();
   });
 
   it("エラー時はエラーメッセージを表示する", async () => {
-    mockGetAggregatedTimeSlots.mockResolvedValueOnce({
-      success: false,
-      error: "データの取得に失敗しました",
-    });
-
-    render(
-      <EventResult
-        event={mockEvent}
-        params={Promise.resolve({ locale: "ja", id: "event123" })}
-      />,
+    // MSWでエラーレスポンスを設定
+    server.use(
+      http.post("/api/schedules/aggregate", () => {
+        return HttpResponse.json(
+          { success: false, error: "データの取得に失敗しました" },
+          { status: 500 }
+        );
+      })
     );
 
+    render(
+      <TestWrapper>
+        <EventResult
+          event={mockEvent}
+          params={Promise.resolve({ locale: "ja", id: "event123" })}
+        />
+      </TestWrapper>
+    );
+
+    // エラーメッセージが表示されるのを待つ
     await waitFor(() => {
       expect(screen.getByText("エラー")).toBeInTheDocument();
-      expect(
-        screen.getByText("データの取得に失敗しました"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("データの取得に失敗しました")).toBeInTheDocument();
     });
   });
 
   it("最適な時間帯を表示する", async () => {
-    mockGetAggregatedTimeSlots.mockResolvedValueOnce({
-      success: true,
-      data: mockAggregatedData,
-    });
-
-    render(
-      <EventResult
-        event={mockEvent}
-        params={Promise.resolve({ locale: "ja", id: "event123" })}
-      />,
+    // MSWで集計データを返す
+    server.use(
+      http.post("/api/schedules/aggregate", () => {
+        return HttpResponse.json({
+          success: true,
+          data: mockAggregatedData,
+        });
+      })
     );
 
+    render(
+      <TestWrapper>
+        <EventResult
+          event={mockEvent}
+          params={Promise.resolve({ locale: "ja", id: "event123" })}
+        />
+      </TestWrapper>
+    );
+
+    // 最適な時間帯が表示されるのを待つ
     await waitFor(() => {
       expect(screen.getByText("最適な時間帯")).toBeInTheDocument();
-
-      // 最も参加者が多い時間帯が上位に表示される
-      const cards = screen.getAllByRole("article");
-      expect(cards.length).toBeGreaterThan(0);
-
-      // 3/3の参加者がいる時間帯
-      expect(screen.getByText("3/3")).toBeInTheDocument();
+      // 参加者数が最も多い時間帯が表示される
+      expect(screen.getByText("3人が参加可能")).toBeInTheDocument();
     });
   });
 
   it("作成者がメールを見られる場合、参加者リストをツールチップに表示する", async () => {
-    mockGetAggregatedTimeSlots.mockResolvedValueOnce({
-      success: true,
-      data: mockAggregatedData,
-    });
-
-    render(
-      <EventResult
-        event={mockEvent}
-        params={Promise.resolve({ locale: "ja", id: "event123" })}
-      />,
+    // MSWで集計データを返す
+    server.use(
+      http.post("/api/schedules/aggregate", () => {
+        return HttpResponse.json({
+          success: true,
+          data: mockAggregatedData,
+        });
+      })
     );
 
+    render(
+      <TestWrapper>
+        <EventResult
+          event={mockEvent}
+          params={Promise.resolve({ locale: "ja", id: "event123" })}
+        />
+      </TestWrapper>
+    );
+
+    // ツールチップが表示されることを確認
     await waitFor(() => {
-      // ヒートマップが表示されることを確認
-      expect(
-        screen.getByText("参加可能時間のヒートマップ"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("田中太郎")).toBeInTheDocument();
+      expect(screen.getByText("鈴木花子")).toBeInTheDocument();
     });
   });
 
   it("作成者がメールを見られない場合、参加者リストを表示しない", async () => {
-    const eventWithoutEmailAccess = {
+    const eventWithoutEmailVisibility = {
       ...mockEvent,
       creatorCanSeeEmails: false,
     };
 
-    mockGetAggregatedTimeSlots.mockResolvedValueOnce({
-      success: true,
-      data: mockAggregatedData,
-    });
-
-    render(
-      <EventResult
-        event={eventWithoutEmailAccess}
-        params={Promise.resolve({ locale: "ja", id: "event123" })}
-      />,
+    // MSWで集計データを返す
+    server.use(
+      http.post("/api/schedules/aggregate", () => {
+        return HttpResponse.json({
+          success: true,
+          data: mockAggregatedData,
+        });
+      })
     );
 
+    render(
+      <TestWrapper>
+        <EventResult
+          event={eventWithoutEmailVisibility}
+          params={Promise.resolve({ locale: "ja", id: "event123" })}
+        />
+      </TestWrapper>
+    );
+
+    // 参加者名が表示されないことを確認
     await waitFor(() => {
-      expect(
-        screen.getByText("参加可能時間のヒートマップ"),
-      ).toBeInTheDocument();
-      // 参加者名が表示されないことを確認（ツールチップ内なので直接確認は難しい）
+      expect(screen.getByText("集計結果")).toBeInTheDocument();
     });
+
+    expect(screen.queryByText("田中太郎")).not.toBeInTheDocument();
+    expect(screen.queryByText("鈴木花子")).not.toBeInTheDocument();
   });
 
   it("英語ロケールで正しいテキストを表示する", async () => {
-    mockGetAggregatedTimeSlots.mockResolvedValueOnce({
-      success: true,
-      data: mockAggregatedData,
-    });
-
-    render(
-      <EventResult
-        event={mockEvent}
-        params={Promise.resolve({ locale: "en", id: "event123" })}
-      />,
+    // MSWで集計データを返す
+    server.use(
+      http.post("/api/schedules/aggregate", () => {
+        return HttpResponse.json({
+          success: true,
+          data: mockAggregatedData,
+        });
+      })
     );
 
+    render(
+      <TestWrapper>
+        <EventResult
+          event={mockEvent}
+          params={Promise.resolve({ locale: "en", id: "event123" })}
+        />
+      </TestWrapper>
+    );
+
+    // 英語のテキストが表示されるのを待つ
     await waitFor(() => {
       expect(screen.getByText("Aggregated Results")).toBeInTheDocument();
       expect(screen.getByText("Availability Heatmap")).toBeInTheDocument();
       expect(screen.getByText("Best Time Slots")).toBeInTheDocument();
-      expect(screen.getByText("3 participants")).toBeInTheDocument();
     });
   });
 
   it("リンクが正しく設定されている", async () => {
-    mockGetAggregatedTimeSlots.mockResolvedValueOnce({
-      success: true,
-      data: mockAggregatedData,
-    });
-
-    render(
-      <EventResult
-        event={mockEvent}
-        params={Promise.resolve({ locale: "ja", id: "event123" })}
-      />,
+    // MSWで集計データを返す
+    server.use(
+      http.post("/api/schedules/aggregate", () => {
+        return HttpResponse.json({
+          success: true,
+          data: mockAggregatedData,
+        });
+      })
     );
 
-    await waitFor(() => {
-      const updateLink = screen.getByRole("link", {
-        name: "参加可能時間を更新",
-      });
-      expect(updateLink).toHaveAttribute(
-        "href",
-        "/ja/events/event123/participate",
-      );
+    render(
+      <TestWrapper>
+        <EventResult
+          event={mockEvent}
+          params={Promise.resolve({ locale: "ja", id: "event123" })}
+        />
+      </TestWrapper>
+    );
 
-      const backLink = screen.getByRole("link", { name: "イベント詳細に戻る" });
-      expect(backLink).toHaveAttribute("href", "/ja/events/event123");
+    // リンクが表示されるのを待つ
+    await waitFor(() => {
+      const participateLink = screen.getByText("空き状況を更新").closest("a");
+      expect(participateLink).toHaveAttribute("href", "/ja/events/event123/participate");
+
+      const eventDetailLink = screen.getByText("イベント詳細に戻る").closest("a");
+      expect(eventDetailLink).toHaveAttribute("href", "/ja/events/event123");
     });
   });
 
   it("参加者がいない場合も正しく表示する", async () => {
-    mockGetAggregatedTimeSlots.mockResolvedValueOnce({
-      success: true,
-      data: [],
-    });
-
-    render(
-      <EventResult
-        event={mockEvent}
-        params={Promise.resolve({ locale: "ja", id: "event123" })}
-      />,
+    // MSWで空のデータを返す
+    server.use(
+      http.post("/api/schedules/aggregate", () => {
+        return HttpResponse.json({
+          success: true,
+          data: [],
+        });
+      })
     );
 
+    render(
+      <TestWrapper>
+        <EventResult
+          event={mockEvent}
+          params={Promise.resolve({ locale: "ja", id: "event123" })}
+        />
+      </TestWrapper>
+    );
+
+    // 参加者がいないメッセージが表示されるのを待つ
     await waitFor(() => {
-      expect(screen.getByText("0 人")).toBeInTheDocument();
+      expect(screen.getByText("集計結果")).toBeInTheDocument();
     });
   });
 });

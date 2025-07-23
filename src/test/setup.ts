@@ -1,24 +1,30 @@
-import { vi } from "vitest";
+import { beforeAll, afterEach, afterAll } from "vitest";
 import "@testing-library/jest-dom";
+import { server } from "./mocks/server";
 
-// window.matchMediaのモック
+// MSWのセットアップ
+beforeAll(() => { server.listen({ onUnhandledRequest: "error" }); });
+afterEach(() => { server.resetHandlers(); });
+afterAll(() => { server.close(); });
+
+// window.matchMediaの実装（モックではなく実装）
 Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: vi.fn().mockImplementation((query: string) => ({
+  value: (query: string) => ({
     matches: false,
     media: query,
     onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
+    addListener: () => {}, // deprecated
+    removeListener: () => {}, // deprecated
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }),
 });
 
-// ResizeObserverのモック
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+// ResizeObserverの実装（モックではなく実装）
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
