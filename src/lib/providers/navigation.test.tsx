@@ -9,10 +9,10 @@ function TestComponent() {
   
   return (
     <div>
-      <button onClick={() => navigation.push("/test")}>Push</button>
-      <button onClick={() => navigation.replace("/test")}>Replace</button>
-      <button onClick={() => navigation.back()}>Back</button>
-      <button onClick={() => navigation.refresh()}>Refresh</button>
+      <button onClick={() => { navigation.push("/test"); }}>Push</button>
+      <button onClick={() => { navigation.replace("/test"); }}>Replace</button>
+      <button onClick={() => { navigation.back(); }}>Back</button>
+      <button onClick={() => { navigation.refresh(); }}>Refresh</button>
       <div data-testid="params">{JSON.stringify(navigation.params)}</div>
     </div>
   );

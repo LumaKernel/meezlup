@@ -5,6 +5,7 @@ import { I18nextProvider , initReactI18next } from "react-i18next";
 import i18n from "i18next";
 import { NavigationProvider, ActionsProvider } from "@/lib/providers";
 import type { NavigationContext, ActionsContext } from "@/lib/providers";
+import { EventFactory, ScheduleFactory } from "./factories";
 
 // テスト用のi18n設定
 const testI18n = i18n.createInstance();
@@ -263,19 +264,19 @@ export function renderWithProviders(
   
   // デフォルトのアクション値
   const defaultEventActions = {
-    create: () => Promise.resolve({ success: true as const, data: {} as never }),
-    update: () => Promise.resolve({ success: true as const, data: {} as never }),
+    create: () => Promise.resolve({ success: true as const, data: EventFactory.create() }),
+    update: () => Promise.resolve({ success: true as const, data: EventFactory.create() }),
     delete: () => Promise.resolve({ success: true as const, data: { deleted: true } }),
-    get: () => Promise.resolve({ success: true as const, data: {} as never }),
+    get: () => Promise.resolve({ success: true as const, data: EventFactory.create() }),
   };
   
   const defaultScheduleActions = {
-    create: () => Promise.resolve({ success: true as const, data: {} as never }),
-    update: () => Promise.resolve({ success: true as const, data: {} as never }),
+    create: () => Promise.resolve({ success: true as const, data: ScheduleFactory.create() }),
+    update: () => Promise.resolve({ success: true as const, data: ScheduleFactory.create() }),
     submit: () => Promise.resolve({ success: true as const, data: { scheduleId: "schedule123" as never } }),
     getAggregated: () => Promise.resolve({ success: true as const, data: [] }),
     getByEvent: () => Promise.resolve({ success: true as const, data: [] }),
-    getByEventAndUser: () => Promise.resolve({ success: true as const, data: null }),
+    getByEventAndUser: () => Promise.resolve({ success: true as const, data: ScheduleFactory.create() }),
     delete: () => Promise.resolve({ success: true as const, data: { deleted: true } }),
   };
   

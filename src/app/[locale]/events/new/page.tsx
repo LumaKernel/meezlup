@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { EventCreateForm } from "@/components/events/EventCreateForm";
+import { EventCreateFormContainer } from "@/components/events/EventCreateFormContainer";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { Container } from "@mantine/core";
 
@@ -34,7 +34,7 @@ function CreateEventPageContent({ params }: Props) {
   return (
     <AuthGuard>
       <Container size="md" py="lg">
-        <EventCreateForm params={params} />
+        <EventCreateFormContainer params={params} />
       </Container>
     </AuthGuard>
   );

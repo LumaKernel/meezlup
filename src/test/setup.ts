@@ -1,6 +1,9 @@
-import { beforeAll, afterEach, afterAll } from "vitest";
+import { beforeAll, afterEach, afterAll, vi } from "vitest";
 import "@testing-library/jest-dom";
 import { server } from "./mocks/server";
+
+// server-onlyモジュールのモック
+vi.mock("server-only", () => ({}));
 
 // MSWのセットアップ
 beforeAll(() => { server.listen({ onUnhandledRequest: "error" }); });

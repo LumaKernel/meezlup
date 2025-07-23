@@ -12,7 +12,7 @@ vi.mockを使わないテスタブルな設計への移行を実現するため�
 ## タスク一覧と優先順位
 
 ### Phase 1: 基盤整備（推定2日）
-- [x] Task 001: 基盤Provider/Contextの作成（1日）
+- [x] Task 001: 基盤Provider/Contextの作成（1日）✅ 2025-07-23完了
   - NavigationProvider、ActionsProviderの実装
   - 依存性注入の基盤作り
   
@@ -68,10 +68,15 @@ Task 002 (テストユーティリティ)
 ```
 
 ## 進捗トラッキング
-- [ ] Phase 1 完了
+- [ ] Phase 1 完了（50% - Task 001完了、Task 002未着手）
 - [ ] Phase 2 完了
 - [ ] Phase 3 完了
 - [ ] Phase 4 完了
+
+### 2025-07-23 進捗更新
+- Task 001完了: NavigationProvider、ActionsProvider、ServerActionsProviderを実装
+- renderWithProvidersテストヘルパーを作成
+- 現在のテスト成功率: 33/46 (71.7%)
 
 ## 成功指標
 1. **定量的指標**
@@ -102,6 +107,19 @@ Task 002 (テストユーティリティ)
 2. 週次進捗レビューの設定
 3. チームへの共有とフィードバック収集
 
+## 現在の課題と対策
+1. **server-onlyモジュールエラー**
+   - 多くのテストでserver-onlyインポートエラーが発生
+   - Task 002でモックセットアップを整備予定
+
+2. **act warning**
+   - EventParticipateなどで発生
+   - 適切なwaitForユーティリティが必要
+
+3. **vi.mock依存**
+   - まだ多くのテストがvi.mockに依存
+   - 段階的な移行が必要
+
 ---
 作成日: 2025-01-23
-最終更新: 2025-01-23
+最終更新: 2025-07-23

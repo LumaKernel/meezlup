@@ -6,19 +6,19 @@ import { createContext, useContext } from "react";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface ActionsContext {
   readonly event: {
-    readonly create: (...args: any[]) => Promise<any>;
-    readonly update: (...args: any[]) => Promise<any>;
-    readonly delete: (...args: any[]) => Promise<any>;
-    readonly get: (...args: any[]) => Promise<any>;
+    readonly create: (...args: Array<any>) => Promise<any>;
+    readonly update: (...args: Array<any>) => Promise<any>;
+    readonly delete: (...args: Array<any>) => Promise<any>;
+    readonly get: (...args: Array<any>) => Promise<any>;
   };
   readonly schedule: {
-    readonly create: (...args: any[]) => Promise<any>;
-    readonly update: (...args: any[]) => Promise<any>;
-    readonly submit: (...args: any[]) => Promise<any>;
-    readonly getAggregated: (...args: any[]) => Promise<any>;
-    readonly getByEvent: (...args: any[]) => Promise<any>;
-    readonly getByEventAndUser: (...args: any[]) => Promise<any>;
-    readonly delete: (...args: any[]) => Promise<any>;
+    readonly create: (...args: Array<any>) => Promise<any>;
+    readonly update: (...args: Array<any>) => Promise<any>;
+    readonly submit: (...args: Array<any>) => Promise<any>;
+    readonly getAggregated: (...args: Array<any>) => Promise<any>;
+    readonly getByEvent: (...args: Array<any>) => Promise<any>;
+    readonly getByEventAndUser: (...args: Array<any>) => Promise<any>;
+    readonly delete: (...args: Array<any>) => Promise<any>;
   };
 }
 

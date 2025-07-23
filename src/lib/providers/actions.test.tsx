@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderWithProviders } from "@/test/providers";
 import { useActions } from "./actions";
+import { consumePromise } from "@/lib/utils/promise";
 
 // テスト用コンポーネント
 function TestComponent() {
@@ -8,10 +9,10 @@ function TestComponent() {
   
   return (
     <div>
-      <button onClick={() => actions.event.create({ name: "Test Event" })}>
+      <button onClick={() => { consumePromise(actions.event.create({ name: "Test Event" })); }}>
         Create Event
       </button>
-      <button onClick={() => actions.schedule.submit({ eventId: "123" })}>
+      <button onClick={() => { consumePromise(actions.schedule.submit({ eventId: "123" })); }}>
         Submit Schedule
       </button>
     </div>
@@ -19,7 +20,7 @@ function TestComponent() {
 }
 
 describe("ActionsProvider", () => {
-  it("カスタムアクション関数を提供できる", async () => {
+  it("カスタムアクション関数を提供できる", () => {
     const mockCreateEvent = vi.fn().mockResolvedValue({
       success: true,
       data: { id: "event123" },

@@ -1,0 +1,65 @@
+# Task 003: EventCreateFormのリファクタリング - 懸念事項
+
+## 作業日: 2025-07-23
+
+## やり残したこと・懸念事項
+
+### 1. Container統合テストの制限
+- EventCreateFormContainerの統合テストで、非同期のparamsによりコンポーネントが正しくレンダリングされない問題
+- waitForを使用しても解決できず、実際のフォーム操作テストが限定的
+- TODO: React 19のuse()フックとテストライブラリの互換性を調査
+
+### 2. 日付入力のテスト
+- DatePickerInputのモックが必要
+- 実際の日付選択動作をテストできていない
+- TODO: @mantine/datesのDatePickerInputに対するテスト方法を確立
+
+### 3. router.backのテスト
+- Next.jsのuseRouterをモックせずにテストする方法が未確立
+- キャンセルボタンのナビゲーション動作を完全にテストできていない
+- TODO: Next.js App RouterとのインテグレーションテストパターンをMSWで確立
+
+### 4. ESLintエラーの残存
+他のファイルにESLintエラーが多数残っているが、今回のタスク範囲外：
+- src/lib/auth0.test.ts: unsafe assignment関連
+- src/test/providers.tsx: floating promises
+- src/test/factories.test.ts: 未使用のimport
+
+### 5. エラーハンドリングの改善余地
+- createEventActionのエラーレスポンスの型が`any`
+- より詳細なエラー型定義が必要
+- TODO: Server Actionのエラー型を厳密に定義
+
+### 6. ローディング状態のUX改善
+- 現在は送信ボタンのローディング状態のみ
+- フォーム全体のローディングオーバーレイなどの検討
+- TODO: より良いローディングUXの実装
+
+### 7. フォームバリデーションの拡張
+- クライアント側バリデーションは基本的なもののみ
+- Effect.tsのSchemaを活用したより高度なバリデーション実装の余地
+- TODO: create-event-schemaのSchemaを直接使用したバリデーション
+
+### 8. i18nテスト環境の改善
+- テストでのi18n設定が最小限
+- より包括的な翻訳テストが必要
+- TODO: テスト用i18n設定の共通化と充実
+
+### 9. Storybook play functionのPromise警告
+- Interactive storyのplay関数で floating-promises 警告
+- await/catchの適切な処理が必要
+- TODO: Storybook play functionのベストプラクティス確立
+
+### 10. パフォーマンス最適化の余地
+- updateFieldが各フィールド変更でバリデーションを実行
+- debounceやメモ化の検討余地
+- TODO: React.useCallbackの適用範囲拡大
+
+## 推奨事項
+1. Container統合テストの改善を優先的に対応
+2. 共通のテストパターンをドキュメント化
+3. ESLintルールの見直しまたは既存エラーの計画的解消
+
+---
+記録者: Claude
+作成日: 2025-07-23

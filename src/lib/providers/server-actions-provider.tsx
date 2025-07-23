@@ -1,6 +1,6 @@
 import { ActionsProvider } from "./actions";
 import type { ActionsContext } from "./actions";
-import { createEvent, updateEvent, deleteEvent, getEvent } from "@/app/actions/event";
+import { createEventAction, updateEvent, deleteEvent, getEvent } from "@/app/actions/event";
 import { 
   createSchedule, 
   updateSchedule, 
@@ -15,7 +15,7 @@ import {
 export function ServerActionsProvider({ children }: { children: React.ReactNode }) {
   const actions: ActionsContext = {
     event: {
-      create: createEvent,
+      create: createEventAction,
       update: updateEvent,
       delete: deleteEvent,
       get: getEvent,
