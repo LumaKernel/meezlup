@@ -9,18 +9,20 @@ import { AuthGuard } from "./AuthGuard";
 let navigationHistory: Array<string> = [];
 
 // AuthGuard用のテストコンポーネント
-function TestAuthGuard({ 
-  children, 
+function TestAuthGuard({
+  children,
   fallback,
-  redirectTo 
-}: { 
+  redirectTo,
+}: {
   children: React.ReactNode;
   fallback?: React.ReactNode;
   redirectTo?: string;
 }) {
   // router.pushを検知するための仕組み
   const originalPushState = window.history.pushState.bind(window.history);
-  window.history.pushState = (...args: Parameters<typeof window.history.pushState>) => {
+  window.history.pushState = (
+    ...args: Parameters<typeof window.history.pushState>
+  ) => {
     navigationHistory.push(args[2] as string);
     originalPushState(...args);
   };
@@ -42,7 +44,7 @@ describe("AuthGuard", () => {
   beforeEach(() => {
     navigationHistory = [];
     // locationを書き換え可能にする
-    Object.defineProperty(window, 'location', {
+    Object.defineProperty(window, "location", {
       value: {
         ...originalLocation,
         pathname: "/",
@@ -53,7 +55,7 @@ describe("AuthGuard", () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(window, 'location', {
+    Object.defineProperty(window, "location", {
       value: originalLocation,
       writable: true,
       configurable: true,
@@ -66,15 +68,15 @@ describe("AuthGuard", () => {
     // MSWで遅延レスポンスを設定してローディング状態をシミュレート
     server.use(
       http.get("/api/user/profile", async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return new HttpResponse(null, { status: 401 });
-      })
+      }),
     );
 
     render(
       <TestAuthGuard>
         <div>保護されたコンテンツ</div>
-      </TestAuthGuard>
+      </TestAuthGuard>,
     );
 
     // ローディング中の確認
@@ -96,13 +98,13 @@ describe("AuthGuard", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return HttpResponse.json(mockUser);
-      })
+      }),
     );
 
     render(
       <TestAuthGuard>
         <div>保護されたコンテンツ</div>
-      </TestAuthGuard>
+      </TestAuthGuard>,
     );
 
     // 認証後のコンテンツが表示されるのを待つ
@@ -118,13 +120,13 @@ describe("AuthGuard", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return new HttpResponse(null, { status: 401 });
-      })
+      }),
     );
 
     render(
       <TestAuthGuard>
         <div>保護されたコンテンツ</div>
-      </TestAuthGuard>
+      </TestAuthGuard>,
     );
 
     // 認証が必要メッセージが表示されるのを待つ
@@ -140,7 +142,7 @@ describe("AuthGuard", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return new HttpResponse(null, { status: 401 });
-      })
+      }),
     );
 
     const CustomFallback = () => <div>カスタムフォールバック</div>;
@@ -148,7 +150,7 @@ describe("AuthGuard", () => {
     render(
       <TestAuthGuard fallback={<CustomFallback />}>
         <div>保護されたコンテンツ</div>
-      </TestAuthGuard>
+      </TestAuthGuard>,
     );
 
     // カスタムフォールバックが表示されるのを待つ
@@ -173,7 +175,7 @@ describe("AuthGuard", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return HttpResponse.json(mockUser);
-      })
+      }),
     );
 
     render(
@@ -181,7 +183,7 @@ describe("AuthGuard", () => {
         <div>コンテンツ1</div>
         <div>コンテンツ2</div>
         <div>コンテンツ3</div>
-      </TestAuthGuard>
+      </TestAuthGuard>,
     );
 
     // すべてのコンテンツが表示されるのを待つ

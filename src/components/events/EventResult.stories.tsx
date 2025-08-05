@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- Storybookのモック関数使用のため */
 import type { Meta, StoryObj } from "@storybook/react";
 import { EventResult } from "./EventResult";
 import type { Event as EffectEvent } from "@/lib/effects/services/event/schemas";
@@ -13,11 +12,42 @@ import {
   ScheduleId,
   PositiveInt,
 } from "@/lib/effects";
-import * as scheduleActions from "#app/actions/schedule";
+import React from "react";
+import { ActionsProvider } from "@/lib/providers/actions";
+import type { ActionsContext } from "@/lib/providers/actions";
 
-// TypeScript用の型アサーション（Storybookではモック関数として扱われる）
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- TypeScriptがpackage.jsonのimportsフィールドを認識しないため
-const mockScheduleActions = scheduleActions as any;
+// モックアクションプロバイダーの作成
+const createMockActions = (
+  mockGetAggregated: () => Promise<{
+    success: boolean;
+    data: Array<TimeSlotAggregation>;
+  }>,
+): ActionsContext => ({
+  event: {
+    create: () =>
+      Promise.resolve({ success: false as const, error: "Not implemented" }),
+    update: () =>
+      Promise.resolve({ success: false as const, error: "Not implemented" }),
+    delete: () =>
+      Promise.resolve({ success: false as const, error: "Not implemented" }),
+    get: () =>
+      Promise.resolve({ success: false as const, error: "Not implemented" }),
+  },
+  schedule: {
+    create: () =>
+      Promise.resolve({ success: false as const, error: "Not implemented" }),
+    update: () =>
+      Promise.resolve({ success: false as const, error: "Not implemented" }),
+    submit: () =>
+      Promise.resolve({ success: false as const, error: "Not implemented" }),
+    getAggregated: mockGetAggregated as any,
+    getByEvent: () => Promise.resolve({ success: true as const, data: [] }),
+    getByEventAndUser: () =>
+      Promise.resolve({ success: false as const, error: "Not found" }),
+    delete: () =>
+      Promise.resolve({ success: false as const, error: "Not implemented" }),
+  },
+});
 
 const meta = {
   title: "Events/EventResult",
@@ -29,6 +59,24 @@ const meta = {
     },
   },
   tags: ["autodocs"],
+  decorators: [
+    (Story, context) => {
+      // Storyごとのモックアクションを取得
+      const mockGetAggregated = context.parameters.mockGetAggregated
+        ? (context.parameters.mockGetAggregated as () => Promise<{
+            success: boolean;
+            data: Array<TimeSlotAggregation>;
+          }>)
+        : () => Promise.resolve({ success: true, data: [] });
+      const mockActions = createMockActions(mockGetAggregated);
+
+      return (
+        <ActionsProvider value={mockActions}>
+          <Story />
+        </ActionsProvider>
+      );
+    },
+  ],
 } satisfies Meta<typeof EventResult>;
 
 export default meta;
@@ -240,13 +288,12 @@ export const ManyParticipants: Story = {
     event: mockEvent,
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
-  beforeEach: () => {
-    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
-      success: true,
-      data: mockManyParticipants,
-    });
-  },
   parameters: {
+    mockGetAggregated: () =>
+      Promise.resolve({
+        success: true,
+        data: mockManyParticipants,
+      }),
     docs: {
       description: {
         story: "多くの参加者がいる場合の表示例です。",
@@ -281,13 +328,12 @@ export const FewParticipants: Story = {
     event: mockEvent,
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
-  beforeEach: () => {
-    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
-      success: true,
-      data: mockFewParticipants,
-    });
-  },
   parameters: {
+    mockGetAggregated: () =>
+      Promise.resolve({
+        success: true,
+        data: mockFewParticipants,
+      }),
     docs: {
       description: {
         story: "少数の参加者がいる場合の表示例です。",
@@ -317,13 +363,12 @@ export const NoParticipants: Story = {
     event: mockEvent,
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
-  beforeEach: () => {
-    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
-      success: true,
-      data: [],
-    });
-  },
   parameters: {
+    mockGetAggregated: () =>
+      Promise.resolve({
+        success: true,
+        data: [],
+      }),
     docs: {
       description: {
         story: "参加者がいない場合の表示例です。",
@@ -365,13 +410,12 @@ export const EnglishLocale: Story = {
     },
     params: Promise.resolve({ locale: "en", id: "event123" }),
   },
-  beforeEach: () => {
-    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
-      success: true,
-      data: mockFewParticipants,
-    });
-  },
   parameters: {
+    mockGetAggregated: () =>
+      Promise.resolve({
+        success: true,
+        data: mockFewParticipants,
+      }),
     docs: {
       description: {
         story: "英語表示での表示例です。",
@@ -405,13 +449,12 @@ export const WithoutEmailAccess: Story = {
     },
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
-  beforeEach: () => {
-    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
-      success: true,
-      data: mockManyParticipants,
-    });
-  },
   parameters: {
+    mockGetAggregated: () =>
+      Promise.resolve({
+        success: true,
+        data: mockManyParticipants,
+      }),
     docs: {
       description: {
         story: "メールアドレスが非表示の場合の表示例です。",
@@ -441,13 +484,8 @@ export const Loading: Story = {
     event: mockEvent,
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
-  beforeEach: () => {
-    // ローディング状態をシミュレートするために遅延を追加
-    mockScheduleActions.getAggregatedTimeSlots.mockImplementation(
-      () => new Promise(() => {}), // 永久にpending
-    );
-  },
   parameters: {
+    mockGetAggregated: () => new Promise(() => {}), // 永久にpending
     docs: {
       description: {
         story: "データ読み込み中の表示例です。",
@@ -472,13 +510,12 @@ export const Error: Story = {
     event: mockEvent,
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
-  beforeEach: () => {
-    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
-      success: false,
-      error: "データの取得に失敗しました",
-    });
-  },
   parameters: {
+    mockGetAggregated: () =>
+      Promise.resolve({
+        success: false,
+        error: "データの取得に失敗しました",
+      }),
     docs: {
       description: {
         story: "エラーが発生した場合の表示例です。",
@@ -513,10 +550,14 @@ export const LongPeriodResults: Story = {
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
   parameters: {
+    mockGetAggregated: () =>
+      Promise.resolve({
+        success: true,
+        data: mockManyParticipants,
+      }),
     docs: {
       description: {
-        story:
-          "長期間のイベントで多数の結果がある場合の表示例です。実際の動作では、Server Actionからデータを取得します。",
+        story: "長期間のイベントで多数の結果がある場合の表示例です。",
       },
     },
   },
@@ -545,13 +586,17 @@ export const MobileView: Story = {
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
   parameters: {
+    mockGetAggregated: () =>
+      Promise.resolve({
+        success: true,
+        data: mockManyParticipants,
+      }),
     viewport: {
       defaultViewport: "mobile1",
     },
     docs: {
       description: {
-        story:
-          "モバイル端末での表示例です。実際の動作では、Server Actionからデータを取得します。",
+        story: "モバイル端末での表示例です。",
       },
     },
   },
@@ -580,13 +625,17 @@ export const TabletView: Story = {
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
   parameters: {
+    mockGetAggregated: () =>
+      Promise.resolve({
+        success: true,
+        data: mockManyParticipants,
+      }),
     viewport: {
       defaultViewport: "tablet",
     },
     docs: {
       description: {
-        story:
-          "タブレット端末での表示例です。実際の動作では、Server Actionからデータを取得します。",
+        story: "タブレット端末での表示例です。",
       },
     },
   },

@@ -120,12 +120,12 @@ describe("EventResult", () => {
     // MSWで遅延レスポンスを設定してローディング状態をシミュレート
     server.use(
       http.post("/api/schedules/aggregate", async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return HttpResponse.json({
           success: true,
           data: [],
         });
-      })
+      }),
     );
 
     render(
@@ -134,7 +134,7 @@ describe("EventResult", () => {
           event={mockEvent}
           params={Promise.resolve({ locale: "ja", id: "event123" })}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // MantineのLoaderを確認
@@ -150,7 +150,7 @@ describe("EventResult", () => {
           success: true,
           data: mockAggregatedData,
         });
-      })
+      }),
     );
 
     render(
@@ -159,7 +159,7 @@ describe("EventResult", () => {
           event={mockEvent}
           params={Promise.resolve({ locale: "ja", id: "event123" })}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // タイトルが表示されるのを待つ
@@ -179,9 +179,9 @@ describe("EventResult", () => {
       http.post("/api/schedules/aggregate", () => {
         return HttpResponse.json(
           { success: false, error: "データの取得に失敗しました" },
-          { status: 500 }
+          { status: 500 },
         );
-      })
+      }),
     );
 
     render(
@@ -190,13 +190,15 @@ describe("EventResult", () => {
           event={mockEvent}
           params={Promise.resolve({ locale: "ja", id: "event123" })}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // エラーメッセージが表示されるのを待つ
     await waitFor(() => {
       expect(screen.getByText("エラー")).toBeInTheDocument();
-      expect(screen.getByText("データの取得に失敗しました")).toBeInTheDocument();
+      expect(
+        screen.getByText("データの取得に失敗しました"),
+      ).toBeInTheDocument();
     });
   });
 
@@ -208,7 +210,7 @@ describe("EventResult", () => {
           success: true,
           data: mockAggregatedData,
         });
-      })
+      }),
     );
 
     render(
@@ -217,7 +219,7 @@ describe("EventResult", () => {
           event={mockEvent}
           params={Promise.resolve({ locale: "ja", id: "event123" })}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // 最適な時間帯が表示されるのを待つ
@@ -236,7 +238,7 @@ describe("EventResult", () => {
           success: true,
           data: mockAggregatedData,
         });
-      })
+      }),
     );
 
     render(
@@ -245,7 +247,7 @@ describe("EventResult", () => {
           event={mockEvent}
           params={Promise.resolve({ locale: "ja", id: "event123" })}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // ツールチップが表示されることを確認
@@ -268,7 +270,7 @@ describe("EventResult", () => {
           success: true,
           data: mockAggregatedData,
         });
-      })
+      }),
     );
 
     render(
@@ -277,7 +279,7 @@ describe("EventResult", () => {
           event={eventWithoutEmailVisibility}
           params={Promise.resolve({ locale: "ja", id: "event123" })}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // 参加者名が表示されないことを確認
@@ -297,7 +299,7 @@ describe("EventResult", () => {
           success: true,
           data: mockAggregatedData,
         });
-      })
+      }),
     );
 
     render(
@@ -306,7 +308,7 @@ describe("EventResult", () => {
           event={mockEvent}
           params={Promise.resolve({ locale: "en", id: "event123" })}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // 英語のテキストが表示されるのを待つ
@@ -325,7 +327,7 @@ describe("EventResult", () => {
           success: true,
           data: mockAggregatedData,
         });
-      })
+      }),
     );
 
     render(
@@ -334,15 +336,20 @@ describe("EventResult", () => {
           event={mockEvent}
           params={Promise.resolve({ locale: "ja", id: "event123" })}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // リンクが表示されるのを待つ
     await waitFor(() => {
       const participateLink = screen.getByText("空き状況を更新").closest("a");
-      expect(participateLink).toHaveAttribute("href", "/ja/events/event123/participate");
+      expect(participateLink).toHaveAttribute(
+        "href",
+        "/ja/events/event123/participate",
+      );
 
-      const eventDetailLink = screen.getByText("イベント詳細に戻る").closest("a");
+      const eventDetailLink = screen
+        .getByText("イベント詳細に戻る")
+        .closest("a");
       expect(eventDetailLink).toHaveAttribute("href", "/ja/events/event123");
     });
   });
@@ -355,7 +362,7 @@ describe("EventResult", () => {
           success: true,
           data: [],
         });
-      })
+      }),
     );
 
     render(
@@ -364,7 +371,7 @@ describe("EventResult", () => {
           event={mockEvent}
           params={Promise.resolve({ locale: "ja", id: "event123" })}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // 参加者がいないメッセージが表示されるのを待つ

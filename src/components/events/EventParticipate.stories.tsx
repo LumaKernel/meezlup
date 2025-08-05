@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- Storybookのモック関数使用のため */
 import type { Meta, StoryObj } from "@storybook/react";
 import { EventParticipate } from "./EventParticipate";
 import type { Event as EffectEvent } from "@/lib/effects/services/event/schemas";
@@ -13,11 +12,7 @@ import {
   ScheduleId,
   PositiveInt,
 } from "@/lib/effects";
-import * as scheduleActions from "#app/actions/schedule";
-
-// TypeScript用の型アサーション（Storybookではモック関数として扱われる）
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- TypeScriptがpackage.jsonのimportsフィールドを認識しないため
-const mockScheduleActions = scheduleActions as any;
+// サーバーアクションのモックは.storybook/main.tsのwebpack aliasで提供される
 
 const meta = {
   title: "Events/EventParticipate",
@@ -77,10 +72,12 @@ export const UnauthenticatedJapanese: Story = {
     params: Promise.resolve({ locale: "ja", id: "event123" }),
   },
   beforeEach: () => {
-    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
+    // グローバル変数を設定してモックの動作を制御
+    // @ts-expect-error グローバル変数のモック設定
+    globalThis.__mockAggregatedTimeSlots = {
       success: true,
       data: [],
-    });
+    };
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -101,11 +98,9 @@ export const UnauthenticatedJapanese: Story = {
     await expect(nameInput).toBeInTheDocument();
     await expect(emailInput).toBeInTheDocument();
 
-    // 送信ボタンが表示されていることを確認
-    const submitButton = canvas.getByRole("button", {
-      name: /保存|参加可能日時を送信/,
-    });
-    await expect(submitButton).toBeInTheDocument();
+    // スケジュールグリッドが表示されていることを確認
+    const scheduleSlots = canvas.getAllByRole("button", { name: /未選択/ });
+    await expect(scheduleSlots.length).toBeGreaterThan(0);
   },
 };
 
@@ -155,10 +150,12 @@ export const AuthenticatedUser: Story = {
     },
   },
   beforeEach: () => {
-    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
+    // グローバル変数を設定してモックの動作を制御
+    // @ts-expect-error グローバル変数のモック設定
+    globalThis.__mockAggregatedTimeSlots = {
       success: true,
       data: [],
-    });
+    };
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -245,10 +242,11 @@ export const AuthenticatedUserWithPastData: Story = {
       },
     ];
 
-    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
+    // @ts-expect-error グローバル変数のモック設定
+    globalThis.__mockAggregatedTimeSlots = {
       success: true,
       data: mockPastData,
-    });
+    };
   },
 };
 
@@ -370,16 +368,18 @@ export const ErrorNoSlotSelected: Story = {
       await expect(eventName).toBeInTheDocument();
     });
 
-    // 名前入力欄に入力
+    // 名前とメール入力欄に入力
     const nameInput = canvas.getByRole("textbox", { name: "名前" });
     await userEvent.type(nameInput, "テストユーザー");
 
-    // 送信ボタンをクリック（時間枠を選択せずに）
-    const submitButton = canvas.getByRole("button", { name: "保存" });
-    await userEvent.click(submitButton);
+    const emailInput = canvas.getByRole("textbox", { name: "メールアドレス" });
+    await userEvent.type(emailInput, "test@example.com");
 
-    // サーバーアクションの失敗によりエラーメッセージが表示されない場合がある
-    // ボタンのクリックが成功していることを確認するのみ
+    // 時間枠が未選択の状態でスケジュールグリッドが表示されていることを確認
+    const scheduleSlots = canvas.getAllByRole("button", { name: /未選択/ });
+    await expect(scheduleSlots.length).toBeGreaterThan(0);
+
+    // 自動保存は時間枠が選択されていないと動作しない
   },
 };
 
@@ -403,11 +403,9 @@ export const MobileView: Story = {
       await expect(eventName).toBeInTheDocument();
     });
 
-    // 送信ボタンが表示されていることを確認
-    const submitButton = canvas.getByRole("button", {
-      name: /保存|参加可能日時を送信/,
-    });
-    await expect(submitButton).toBeInTheDocument();
+    // スケジュールグリッドが表示されていることを確認
+    const scheduleSlots = canvas.getAllByRole("button", { name: /未選択/ });
+    await expect(scheduleSlots.length).toBeGreaterThan(0);
   },
 };
 
@@ -431,11 +429,9 @@ export const TabletView: Story = {
       await expect(eventName).toBeInTheDocument();
     });
 
-    // 送信ボタンが表示されていることを確認
-    const submitButton = canvas.getByRole("button", {
-      name: /保存|参加可能日時を送信/,
-    });
-    await expect(submitButton).toBeInTheDocument();
+    // スケジュールグリッドが表示されていることを確認
+    const scheduleSlots = canvas.getAllByRole("button", { name: /未選択/ });
+    await expect(scheduleSlots.length).toBeGreaterThan(0);
   },
 };
 
@@ -509,10 +505,11 @@ export const UnauthenticatedWithLocalStorageData: Story = {
       },
     ];
 
-    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
+    // @ts-expect-error グローバル変数のモック設定
+    globalThis.__mockAggregatedTimeSlots = {
       success: true,
       data: mockPastData,
-    });
+    };
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -560,10 +557,11 @@ export const UnauthenticatedSaveToLocalStorage: Story = {
     // LocalStorageをクリア
     localStorage.clear();
 
-    mockScheduleActions.getAggregatedTimeSlots.mockResolvedValue({
+    // @ts-expect-error グローバル変数のモック設定
+    globalThis.__mockAggregatedTimeSlots = {
       success: true,
       data: [],
-    });
+    };
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

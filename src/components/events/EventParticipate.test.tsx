@@ -202,7 +202,7 @@ describe("EventParticipate", () => {
         participantName: "テスト太郎",
         participantEmail: "test@example.com",
         // availableSlotsのチェックをスキップ（型安全性のため）
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
         availableSlots: expect.anything(),
       });
       expect(mockPush).toHaveBeenCalledWith("/ja/events/event123/result");

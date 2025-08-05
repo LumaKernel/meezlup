@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unused-vars */
 "use client";
 
 import type { UseAuthResult, UseAuthActionsResult } from "@/lib/auth/hooks";

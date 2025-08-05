@@ -10,16 +10,18 @@ interface EventCreateFormContainerProps {
   readonly params: Promise<{ locale: string }>;
 }
 
-export function EventCreateFormContainer({ params }: EventCreateFormContainerProps) {
+export function EventCreateFormContainer({
+  params,
+}: EventCreateFormContainerProps) {
   const { locale } = use(params);
   const { t } = useTranslation("event");
   const router = useRouter();
   const eventCreation = useEventCreation(locale);
-  
+
   const handleCancel = () => {
     router.back();
   };
-  
+
   return (
     <EventCreateFormPresentation
       formData={eventCreation.formData}

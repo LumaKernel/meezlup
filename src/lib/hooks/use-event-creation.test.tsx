@@ -79,9 +79,7 @@ describe("useEventCreation", () => {
         <I18nextProvider i18n={testI18n}>
           <MantineProvider>
             <NavigationProvider value={navigation}>
-              <ActionsProvider value={actions}>
-                {children}
-              </ActionsProvider>
+              <ActionsProvider value={actions}>{children}</ActionsProvider>
             </NavigationProvider>
           </MantineProvider>
         </I18nextProvider>
@@ -94,7 +92,9 @@ describe("useEventCreation", () => {
   });
 
   it("初期状態が正しい", () => {
-    const { result } = renderHook(() => useEventCreation("ja"), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useEventCreation("ja"), {
+      wrapper: createWrapper(),
+    });
 
     expect(result.current.formData).toEqual({
       name: "",
@@ -112,7 +112,9 @@ describe("useEventCreation", () => {
   });
 
   it("フィールドの更新が正しく動作する", () => {
-    const { result } = renderHook(() => useEventCreation("ja"), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useEventCreation("ja"), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       result.current.updateField("name", "テストイベント");
@@ -122,7 +124,9 @@ describe("useEventCreation", () => {
   });
 
   it("名前フィールドのバリデーションが動作する", () => {
-    const { result } = renderHook(() => useEventCreation("ja"), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useEventCreation("ja"), {
+      wrapper: createWrapper(),
+    });
 
     // 空の名前
     act(() => {
@@ -134,7 +138,9 @@ describe("useEventCreation", () => {
     act(() => {
       result.current.updateField("name", "a".repeat(101));
     });
-    expect(result.current.fieldErrors.name).toBe("イベント名は100文字以内で入力してください");
+    expect(result.current.fieldErrors.name).toBe(
+      "イベント名は100文字以内で入力してください",
+    );
 
     // 正しい名前
     act(() => {
@@ -144,22 +150,29 @@ describe("useEventCreation", () => {
   });
 
   it("日付範囲のバリデーションが動作する", () => {
-    const { result } = renderHook(() => useEventCreation("ja"), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useEventCreation("ja"), {
+      wrapper: createWrapper(),
+    });
 
     const startDate = Temporal.PlainDate.from("2024-03-10");
     const endDate = Temporal.PlainDate.from("2024-03-09"); // 開始日より前
 
     act(() => {
-      result.current.updateField("dateRange", { start: startDate, end: endDate });
+      result.current.updateField("dateRange", {
+        start: startDate,
+        end: endDate,
+      });
     });
 
-    expect(result.current.fieldErrors.dateRange).toBe("終了日は開始日以降にしてください");
+    expect(result.current.fieldErrors.dateRange).toBe(
+      "終了日は開始日以降にしてください",
+    );
 
     // 正しい日付範囲
     act(() => {
-      result.current.updateField("dateRange", { 
-        start: startDate, 
-        end: Temporal.PlainDate.from("2024-03-11") 
+      result.current.updateField("dateRange", {
+        start: startDate,
+        end: Temporal.PlainDate.from("2024-03-11"),
       });
     });
 
@@ -167,7 +180,9 @@ describe("useEventCreation", () => {
   });
 
   it("フォームの有効性が正しく判定される", () => {
-    const { result } = renderHook(() => useEventCreation("ja"), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useEventCreation("ja"), {
+      wrapper: createWrapper(),
+    });
 
     expect(result.current.isFormValid).toBe(false);
 
@@ -182,13 +197,15 @@ describe("useEventCreation", () => {
     expect(result.current.isFormValid).toBe(true);
   });
 
-  it("フォーム送信が成功した場合にナビゲートする", async () => {
+  it("フォーム送信が成功した場合にナビゲートする", () => {
     const mockEventId = Schema.decodeUnknownSync(EventId)("event123");
     mockCreate.mockResolvedValue({
       data: { eventId: mockEventId },
     });
 
-    const { result } = renderHook(() => useEventCreation("ja"), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useEventCreation("ja"), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       result.current.updateField("name", "テストイベント");
@@ -198,13 +215,29 @@ describe("useEventCreation", () => {
       });
     });
 
-    const event = { preventDefault: vi.fn() } as React.FormEvent;
+    const preventDefaultMock = vi.fn();
+    const event = {
+      preventDefault: preventDefaultMock,
+      currentTarget: {} as HTMLFormElement,
+      target: {} as HTMLFormElement,
+      type: "submit",
+      nativeEvent: {} as Event,
+      bubbles: true,
+      cancelable: true,
+      defaultPrevented: false,
+      eventPhase: 0,
+      isTrusted: false,
+      timeStamp: Date.now(),
+      stopPropagation: () => {},
+      isPropagationStopped: () => false,
+      persist: () => {},
+    } as React.FormEvent<HTMLFormElement>;
 
     act(() => {
       result.current.handleSubmit(event);
     });
 
-    expect(event.preventDefault).toHaveBeenCalled();
+    expect(preventDefaultMock).toHaveBeenCalled();
     expect(mockCreate).toHaveBeenCalledWith({
       name: "テストイベント",
       description: "",
@@ -220,12 +253,14 @@ describe("useEventCreation", () => {
     expect(mockPush).toHaveBeenCalledWith("/ja/events/event123");
   });
 
-  it("フォーム送信が失敗した場合にエラーを表示する", async () => {
+  it("フォーム送信が失敗した場合にエラーを表示する", () => {
     mockCreate.mockResolvedValue({
       error: "イベント作成に失敗しました",
     });
 
-    const { result } = renderHook(() => useEventCreation("ja"), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useEventCreation("ja"), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       result.current.updateField("name", "テストイベント");
@@ -235,7 +270,23 @@ describe("useEventCreation", () => {
       });
     });
 
-    const event = { preventDefault: vi.fn() } as React.FormEvent;
+    const preventDefaultMock = vi.fn();
+    const event = {
+      preventDefault: preventDefaultMock,
+      currentTarget: {} as HTMLFormElement,
+      target: {} as HTMLFormElement,
+      type: "submit",
+      nativeEvent: {} as Event,
+      bubbles: true,
+      cancelable: true,
+      defaultPrevented: false,
+      eventPhase: 0,
+      isTrusted: false,
+      timeStamp: Date.now(),
+      stopPropagation: () => {},
+      isPropagationStopped: () => false,
+      persist: () => {},
+    } as React.FormEvent<HTMLFormElement>;
 
     act(() => {
       result.current.handleSubmit(event);
@@ -246,10 +297,28 @@ describe("useEventCreation", () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it("無効なフォームでは送信されない", async () => {
-    const { result } = renderHook(() => useEventCreation("ja"), { wrapper: createWrapper() });
+  it("無効なフォームでは送信されない", () => {
+    const { result } = renderHook(() => useEventCreation("ja"), {
+      wrapper: createWrapper(),
+    });
 
-    const event = { preventDefault: vi.fn() } as React.FormEvent;
+    const preventDefaultMock = vi.fn();
+    const event = {
+      preventDefault: preventDefaultMock,
+      currentTarget: {} as HTMLFormElement,
+      target: {} as HTMLFormElement,
+      type: "submit",
+      nativeEvent: {} as Event,
+      bubbles: true,
+      cancelable: true,
+      defaultPrevented: false,
+      eventPhase: 0,
+      isTrusted: false,
+      timeStamp: Date.now(),
+      stopPropagation: () => {},
+      isPropagationStopped: () => false,
+      persist: () => {},
+    } as React.FormEvent<HTMLFormElement>;
 
     act(() => {
       result.current.handleSubmit(event);

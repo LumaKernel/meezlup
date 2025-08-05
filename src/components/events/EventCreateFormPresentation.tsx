@@ -22,7 +22,7 @@ interface EventCreateFormPresentationProps {
   readonly formData: Partial<CreateEventFormType>;
   readonly onFieldChange: <K extends keyof CreateEventFormType>(
     field: K,
-    value: CreateEventFormType[K]
+    value: CreateEventFormType[K],
   ) => void;
   readonly onSubmit: (e: React.FormEvent) => void;
   readonly onCancel: () => void;
@@ -64,8 +64,12 @@ export function EventCreateFormPresentation({
               placeholder={t("create.eventNamePlaceholder")}
               required
               value={formData.name || ""}
-              onChange={(e) => { onFieldChange("name", e.target.value); }}
-              onBlur={() => { onFieldChange("name", formData.name || ""); }}
+              onChange={(e) => {
+                onFieldChange("name", e.target.value);
+              }}
+              onBlur={() => {
+                onFieldChange("name", formData.name || "");
+              }}
               error={fieldErrors.name}
               maxLength={100}
               disabled={isSubmitting}
@@ -75,8 +79,12 @@ export function EventCreateFormPresentation({
               label={t("create.description")}
               placeholder={t("create.descriptionPlaceholder")}
               value={formData.description || ""}
-              onChange={(e) => { onFieldChange("description", e.target.value); }}
-              onBlur={() => { onFieldChange("description", formData.description || ""); }}
+              onChange={(e) => {
+                onFieldChange("description", e.target.value);
+              }}
+              onBlur={() => {
+                onFieldChange("description", formData.description || "");
+              }}
               error={fieldErrors.description}
               maxLength={1000}
               rows={4}
@@ -125,7 +133,10 @@ export function EventCreateFormPresentation({
               value={formData.timeSlotDuration?.toString()}
               onChange={(value) => {
                 if (value) {
-                  onFieldChange("timeSlotDuration", parseInt(value) as TimeSlotDuration);
+                  onFieldChange(
+                    "timeSlotDuration",
+                    parseInt(value) as TimeSlotDuration,
+                  );
                 }
               }}
               data={[
@@ -151,10 +162,16 @@ export function EventCreateFormPresentation({
                   : undefined
               }
               onChange={(value) => {
-                if (value && typeof value === "object" && "getFullYear" in value) {
+                if (
+                  value &&
+                  typeof value === "object" &&
+                  "getFullYear" in value
+                ) {
                   onFieldChange(
                     "changeDeadline",
-                    Temporal.PlainDate.from((value as Date).toISOString().split("T")[0])
+                    Temporal.PlainDate.from(
+                      (value as Date).toISOString().split("T")[0],
+                    ),
                   );
                 } else if (value === null) {
                   onFieldChange("changeDeadline", undefined);
@@ -170,9 +187,14 @@ export function EventCreateFormPresentation({
               placeholder={t("create.maxParticipantsPlaceholder")}
               value={formData.maxParticipants}
               onChange={(value) => {
-                onFieldChange("maxParticipants", typeof value === "number" ? value : undefined);
+                onFieldChange(
+                  "maxParticipants",
+                  typeof value === "number" ? value : undefined,
+                );
               }}
-              onBlur={() => { onFieldChange("maxParticipants", formData.maxParticipants); }}
+              onBlur={() => {
+                onFieldChange("maxParticipants", formData.maxParticipants);
+              }}
               error={fieldErrors.maxParticipants}
               min={1}
               disabled={isSubmitting}

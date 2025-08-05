@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // Prismaのモック
@@ -51,7 +51,7 @@ describe("Auth0 Callback Handler", () => {
     it("正常なログイン後にユーザーをデータベースに保存し、リダイレクトする", async () => {
       // auth0.tsをインポートして初期化
       await import("./auth0");
-      
+
       const mockSession = {
         user: {
           sub: "auth0|test123",
@@ -106,7 +106,7 @@ describe("Auth0 Callback Handler", () => {
 
     it("エラー発生時はエラーページにリダイレクトする", async () => {
       await import("./auth0");
-      
+
       const mockError = new Error("Auth0 error");
       const mockContext = {};
 
@@ -121,7 +121,7 @@ describe("Auth0 Callback Handler", () => {
 
     it("データベースエラー時もログインを継続し、エラーをログに出力する", async () => {
       await import("./auth0");
-      
+
       const mockSession = {
         user: {
           sub: "auth0|test123",
@@ -137,7 +137,9 @@ describe("Auth0 Callback Handler", () => {
       const mockError = new Error("Database error");
       mockPrismaUser.upsert.mockRejectedValue(mockError);
 
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
 
       const result = await mockOnCallback(null, mockContext, mockSession);
 
@@ -158,7 +160,7 @@ describe("Auth0 Callback Handler", () => {
 
     it("ユーザー名がない場合はnicknameまたはemailを使用する", async () => {
       await import("./auth0");
-      
+
       const mockSession = {
         user: {
           sub: "auth0|test456",
@@ -194,7 +196,7 @@ describe("Auth0 Callback Handler", () => {
 
     it("nameもnicknameもない場合はemailを使用する", async () => {
       await import("./auth0");
-      
+
       const mockSession = {
         user: {
           sub: "auth0|test789",

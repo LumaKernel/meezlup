@@ -20,7 +20,9 @@ export const waitAndAct = async (callback: () => void | Promise<void>) => {
  */
 export const submitForm = (formElement: HTMLElement) => {
   act(() => {
-    formElement.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    formElement.dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true }),
+    );
   });
 };
 
@@ -36,7 +38,10 @@ export const clickButton = async (buttonText: string | RegExp) => {
 /**
  * 入力フィールドに値を入力
  */
-export const typeInField = async (labelText: string | RegExp, value: string) => {
+export const typeInField = async (
+  labelText: string | RegExp,
+  value: string,
+) => {
   const user = setupUser();
   const input = screen.getByLabelText(labelText);
   await user.clear(input);
@@ -46,7 +51,10 @@ export const typeInField = async (labelText: string | RegExp, value: string) => 
 /**
  * セレクトボックスの値を選択
  */
-export const selectOption = async (labelText: string | RegExp, value: string) => {
+export const selectOption = async (
+  labelText: string | RegExp,
+  value: string,
+) => {
   const user = setupUser();
   const select = screen.getByLabelText(labelText);
   await user.selectOptions(select, value);

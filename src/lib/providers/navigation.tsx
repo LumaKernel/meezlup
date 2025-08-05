@@ -1,7 +1,10 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { useRouter as useNextRouter, useParams as useNextParams } from "next/navigation";
+import {
+  useRouter as useNextRouter,
+  useParams as useNextParams,
+} from "next/navigation";
 
 export interface NavigationContext {
   readonly push: (path: string) => void;
@@ -11,29 +14,39 @@ export interface NavigationContext {
   readonly params: Record<string, string>;
 }
 
-const NavigationContext = createContext<NavigationContext | undefined>(undefined);
+const NavigationContext = createContext<NavigationContext | undefined>(
+  undefined,
+);
 
 export interface NavigationProviderProps {
   readonly children: React.ReactNode;
   readonly value?: NavigationContext;
 }
 
-export function NavigationProvider({ 
-  children, 
-  value 
+export function NavigationProvider({
+  children,
+  value,
 }: NavigationProviderProps) {
   // valueが提供されている場合（テスト環境）は、Next.jsのルーターを使わない
   const router = value ? null : useNextRouter();
   const params = value ? {} : useNextParams();
-  
+
   const defaultValue: NavigationContext = value ?? {
-    push: (path) => { router!.push(path); },
-    replace: (path) => { router!.replace(path); },
-    back: () => { router!.back(); },
-    refresh: () => { router!.refresh(); },
+    push: (path) => {
+      router!.push(path);
+    },
+    replace: (path) => {
+      router!.replace(path);
+    },
+    back: () => {
+      router!.back();
+    },
+    refresh: () => {
+      router!.refresh();
+    },
     params: params as Record<string, string>,
   };
-  
+
   return (
     <NavigationContext.Provider value={defaultValue}>
       {children}

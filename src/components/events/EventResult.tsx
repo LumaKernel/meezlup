@@ -24,8 +24,8 @@ import { EventResultDateSection } from "./EventResultDateSection";
 import { Temporal } from "temporal-polyfill";
 import { useTranslation } from "react-i18next";
 import type { Event as EffectEvent, TimeSlotAggregation } from "@/lib/effects";
-import { getAggregatedTimeSlots } from "#app/actions/schedule";
 import { useQuery } from "@tanstack/react-query";
+import { useActions } from "@/lib/providers/actions";
 
 interface EventResultProps {
   readonly event: EffectEvent;
@@ -47,14 +47,15 @@ type AggregatedSlot = {
 export function EventResult({ event, params }: EventResultProps) {
   const { locale } = use(params);
   const { t } = useTranslation("event");
+  const actions = useActions();
   const {
     data: aggregationResult,
     error: queryError,
     isLoading,
-  } = useQuery({
+  } = useQuery<Array<TimeSlotAggregation>>({
     queryKey: ["schedule", "aggregation", event.id],
     queryFn: async () => {
-      const result = await getAggregatedTimeSlots(event.id);
+      const result = await actions.schedule.getAggregated(event.id);
       if (!result.success) {
         throw new Error(result.error);
       }

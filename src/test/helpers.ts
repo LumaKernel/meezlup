@@ -15,7 +15,7 @@ export const setupAuth = (user: User | null = UserFactory.create()) => {
         return HttpResponse.json(UserFactory.auth0User(user));
       }
       return new HttpResponse(null, { status: 401 });
-    })
+    }),
   );
 };
 
@@ -26,7 +26,7 @@ export const setupEventEndpoint = (event: Event) => {
   server.use(
     http.get(`/api/events/:id`, () => {
       return HttpResponse.json({ success: true, data: event });
-    })
+    }),
   );
 };
 
@@ -37,7 +37,7 @@ export const setupScheduleEndpoint = (schedule: Schedule) => {
   server.use(
     http.get(`/api/schedules/:id`, () => {
       return HttpResponse.json({ success: true, data: schedule });
-    })
+    }),
   );
 };
 
@@ -47,19 +47,22 @@ export const setupScheduleEndpoint = (schedule: Schedule) => {
 export const setupAggregationEndpoint = (eventId: string, data: unknown) => {
   server.use(
     http.post("/api/schedules/aggregate", async ({ request }) => {
-      const body = await request.json() as { eventId: string };
+      const body = (await request.json()) as { eventId: string };
       if (body.eventId === eventId) {
         return HttpResponse.json({ success: true, data });
       }
-      return HttpResponse.json({ success: false, error: "Event not found" }, { status: 404 });
-    })
+      return HttpResponse.json(
+        { success: false, error: "Event not found" },
+        { status: 404 },
+      );
+    }),
   );
 };
 
 /**
  * ローディング状態が終わるまで待つ
  */
-export const waitForLoadingToFinish = async () => 
+export const waitForLoadingToFinish = async () =>
   waitFor(() => {
     expect(screen.queryByTestId("loading-spinner")).not.toBeInTheDocument();
   });

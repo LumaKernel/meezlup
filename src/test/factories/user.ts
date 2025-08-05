@@ -1,6 +1,11 @@
 import { Schema } from "effect";
 import type { User } from "@/lib/effects";
-import { UserId, NonEmptyString, EmailString, DateTimeString } from "@/lib/effects";
+import {
+  UserId,
+  NonEmptyString,
+  EmailString,
+  DateTimeString,
+} from "@/lib/effects";
 
 export const UserFactory = {
   create: (overrides: Partial<User> = {}): User => ({
@@ -8,14 +13,18 @@ export const UserFactory = {
     email: Schema.decodeUnknownSync(EmailString)("test@example.com"),
     name: Schema.decodeUnknownSync(NonEmptyString)("テストユーザー"),
     auth0Id: Schema.decodeUnknownSync(NonEmptyString)("auth0|123456"),
-    createdAt: Schema.decodeUnknownSync(DateTimeString)("2024-01-01T00:00:00.000Z"),
-    updatedAt: Schema.decodeUnknownSync(DateTimeString)("2024-01-01T00:00:00.000Z"),
+    createdAt: Schema.decodeUnknownSync(DateTimeString)(
+      "2024-01-01T00:00:00.000Z",
+    ),
+    updatedAt: Schema.decodeUnknownSync(DateTimeString)(
+      "2024-01-01T00:00:00.000Z",
+    ),
     preferredLanguage: "ja",
     ...overrides,
   }),
-  
+
   anonymous: (): null => null,
-  
+
   // Auth0から返される形式のユーザー
   auth0User: (overrides: Record<string, unknown> = {}) => ({
     id: "user123",
@@ -27,7 +36,7 @@ export const UserFactory = {
     email_verified: true,
     ...overrides,
   }),
-  
+
   // useAuthフックで使われる形式
   authUser: (overrides: Record<string, unknown> = {}) => ({
     id: "user123",

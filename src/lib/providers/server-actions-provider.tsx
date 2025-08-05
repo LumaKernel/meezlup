@@ -1,18 +1,27 @@
 import { ActionsProvider } from "./actions";
 import type { ActionsContext } from "./actions";
-import { createEventAction, updateEvent, deleteEvent, getEvent } from "@/app/actions/event";
-import { 
-  createSchedule, 
-  updateSchedule, 
-  submitAvailability, 
+import {
+  createEventAction,
+  updateEvent,
+  deleteEvent,
+  getEvent,
+} from "@/app/actions/event";
+import {
+  createSchedule,
+  updateSchedule,
+  submitAvailability,
   getAggregatedTimeSlots,
   getSchedulesByEvent,
   getScheduleByEventAndUser,
-  deleteSchedule
+  deleteSchedule,
 } from "@/app/actions/schedule";
 
 // Server Componentで実際のServer Actionsを注入するProvider
-export function ServerActionsProvider({ children }: { children: React.ReactNode }) {
+export function ServerActionsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const actions: ActionsContext = {
     event: {
       create: createEventAction,
@@ -30,10 +39,6 @@ export function ServerActionsProvider({ children }: { children: React.ReactNode 
       delete: deleteSchedule,
     },
   };
-  
-  return (
-    <ActionsProvider value={actions}>
-      {children}
-    </ActionsProvider>
-  );
+
+  return <ActionsProvider value={actions}>{children}</ActionsProvider>;
 }

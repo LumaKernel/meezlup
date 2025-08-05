@@ -63,10 +63,7 @@ const sampleParticipants = [
 function ScheduleInputLayoutWrapper(
   args: Omit<
     Parameters<typeof ScheduleInputLayout>[0],
-    | "currentUserSlots"
-    | "onSlotsChange"
-    | "isAutoSaving"
-    | "showSavedIndicator"
+    "currentUserSlots" | "onSlotsChange" | "isAutoSaving" | "showSavedIndicator"
   > & {
     readonly currentUserSlots?: ReadonlySet<string>;
     readonly isAutoSaving?: boolean;
@@ -115,10 +112,6 @@ export const Default: Story = {
       const timeHeaders = canvas.getAllByText("時間");
       await expect(timeHeaders.length).toBeGreaterThan(0);
     });
-
-    // 保存ボタンが表示されていることを確認
-    const saveButton = canvas.getByRole("button", { name: "保存" });
-    await expect(saveButton).toBeInTheDocument();
 
     // スケジュールグリッドが表示されていることを確認
     const scheduleSlots = canvas.getAllByRole("button", { name: /未選択/ });
@@ -182,11 +175,11 @@ export const EnglishLocale: Story = {
       await expect(timeHeaders.length).toBeGreaterThan(0);
     });
 
-    // 保存ボタンが表示されていることを確認（言語が混在している場合を考慮）
-    const saveButton =
-      canvas.queryByRole("button", { name: "Save" }) ||
-      canvas.getByRole("button", { name: "保存" });
-    await expect(saveButton).toBeInTheDocument();
+    // スケジュールグリッドが表示されていることを確認
+    const scheduleSlots = canvas.getAllByRole("button", {
+      name: /未選択|Unselected/,
+    });
+    await expect(scheduleSlots.length).toBeGreaterThan(0);
   },
 };
 
@@ -232,10 +225,19 @@ export const SavingState: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // 保存ボタンが無効化されていることを確認
+    // 自動保存中の状態が表示されていることを確認
+    // Loaderコンポーネントが表示されていることを確認
     await waitFor(async () => {
-      const saveButton = canvas.getByRole("button", { name: /保存中|保存/ });
-      await expect(saveButton).toBeDisabled();
+      // 翻訳キーが見つからない場合はキーそのものが表示される
+      const savingText =
+        canvas.queryByText("input.saving") || canvas.queryByText("保存中");
+      if (savingText) {
+        await expect(savingText).toBeInTheDocument();
+      } else {
+        // もしくはLoaderが表示されていることを確認
+        const loader = canvasElement.querySelector('[class*="Loader"]');
+        await expect(loader).toBeInTheDocument();
+      }
     });
 
     // スケジュールグリッドが表示されていることを確認

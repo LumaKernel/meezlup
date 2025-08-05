@@ -10,13 +10,13 @@ describe("useAuth", () => {
     // MSWで遅延レスポンスを設定
     server.use(
       http.get("/api/user/profile", async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return new HttpResponse(null, { status: 401 });
-      })
+      }),
     );
 
-    const { result } = renderHook(() => useAuth(), { 
-      wrapper: AllTheProviders 
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: AllTheProviders,
     });
 
     expect(result.current).toEqual({
@@ -32,11 +32,11 @@ describe("useAuth", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return new HttpResponse(null, { status: 401 });
-      })
+      }),
     );
 
-    const { result } = renderHook(() => useAuth(), { 
-      wrapper: AllTheProviders 
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: AllTheProviders,
     });
 
     await waitFor(() => {
@@ -66,11 +66,11 @@ describe("useAuth", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return HttpResponse.json(mockUser);
-      })
+      }),
     );
 
-    const { result } = renderHook(() => useAuth(), { 
-      wrapper: AllTheProviders 
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: AllTheProviders,
     });
 
     await waitFor(() => {
@@ -97,11 +97,11 @@ describe("useAuth", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return new HttpResponse(null, { status: 404 });
-      })
+      }),
     );
 
-    const { result } = renderHook(() => useAuth(), { 
-      wrapper: AllTheProviders 
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: AllTheProviders,
     });
 
     await waitFor(() => {
@@ -120,11 +120,11 @@ describe("useAuth", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return new HttpResponse(null, { status: 500 });
-      })
+      }),
     );
 
-    const { result } = renderHook(() => useAuth(), { 
-      wrapper: AllTheProviders 
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: AllTheProviders,
     });
 
     await waitFor(() => {
@@ -149,11 +149,11 @@ describe("useAuth", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return HttpResponse.json(mockUser);
-      })
+      }),
     );
 
-    const { result } = renderHook(() => useAuth(), { 
-      wrapper: AllTheProviders 
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: AllTheProviders,
     });
 
     await waitFor(() => {
@@ -182,7 +182,7 @@ describe("useAuthActions", () => {
 
   beforeEach(() => {
     // locationを書き換え可能にする
-    Object.defineProperty(window, 'location', {
+    Object.defineProperty(window, "location", {
       value: {
         ...originalLocation,
         href: "",
@@ -194,7 +194,7 @@ describe("useAuthActions", () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(window, 'location', {
+    Object.defineProperty(window, "location", {
       value: originalLocation,
       writable: true,
       configurable: true,

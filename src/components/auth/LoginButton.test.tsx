@@ -16,7 +16,7 @@ describe("LoginButton", () => {
 
   beforeEach(() => {
     // locationを書き換え可能にする
-    Object.defineProperty(window, 'location', {
+    Object.defineProperty(window, "location", {
       value: {
         ...originalLocation,
         href: "",
@@ -28,7 +28,7 @@ describe("LoginButton", () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(window, 'location', {
+    Object.defineProperty(window, "location", {
       value: originalLocation,
       writable: true,
       configurable: true,
@@ -40,9 +40,9 @@ describe("LoginButton", () => {
     // MSWで遅延レスポンスを設定してローディング状態をシミュレート
     server.use(
       http.get("/api/user/profile", async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return new HttpResponse(null, { status: 401 });
-      })
+      }),
     );
 
     render(<LoginButton />, { wrapper: TestWrapper });
@@ -59,7 +59,7 @@ describe("LoginButton", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return new HttpResponse(null, { status: 401 });
-      })
+      }),
     );
 
     render(<LoginButton />, { wrapper: TestWrapper });
@@ -83,7 +83,7 @@ describe("LoginButton", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return HttpResponse.json(mockUser);
-      })
+      }),
     );
 
     render(<LoginButton />, { wrapper: TestWrapper });
@@ -101,14 +101,14 @@ describe("LoginButton", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return new HttpResponse(null, { status: 401 });
-      })
+      }),
     );
 
     render(<LoginButton returnTo="/dashboard" />, { wrapper: TestWrapper });
 
     // ログインボタンが表示されるのを待つ
     const button = await screen.findByRole("button");
-    
+
     // ボタンをクリック
     fireEvent.click(button);
 
@@ -129,7 +129,7 @@ describe("LoginButton", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return HttpResponse.json(mockUser);
-      })
+      }),
     );
 
     render(<LoginButton returnTo="/" />, { wrapper: TestWrapper });
@@ -152,7 +152,7 @@ describe("LoginButton", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return new HttpResponse(null, { status: 401 });
-      })
+      }),
     );
 
     render(<LoginButton className="custom-class" />, { wrapper: TestWrapper });
@@ -167,7 +167,7 @@ describe("LoginButton", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return new HttpResponse(null, { status: 401 });
-      })
+      }),
     );
 
     window.location.pathname = "/events/123";
@@ -176,7 +176,7 @@ describe("LoginButton", () => {
 
     // ログインボタンが表示されるのを待つ
     const button = await screen.findByRole("button");
-    
+
     // ボタンをクリック
     fireEvent.click(button);
 

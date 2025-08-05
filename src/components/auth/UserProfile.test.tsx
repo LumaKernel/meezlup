@@ -15,13 +15,13 @@ describe("UserProfile", () => {
     // MSWで遅延レスポンスを設定
     server.use(
       http.get("/api/user/profile", async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return new HttpResponse(null, { status: 401 });
-      })
+      }),
     );
 
     render(<UserProfile />, { wrapper: TestWrapper });
-    
+
     // MantineのSkeletonコンポーネントを確認
     const skeletons = screen.getAllByTestId((content, element) => {
       return element?.classList.contains("mantine-Skeleton-root") ?? false;
@@ -34,7 +34,7 @@ describe("UserProfile", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return new HttpResponse(null, { status: 401 });
-      })
+      }),
     );
 
     render(<UserProfile />, { wrapper: TestWrapper });
@@ -58,7 +58,7 @@ describe("UserProfile", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return HttpResponse.json(mockUser);
-      })
+      }),
     );
 
     render(<UserProfile />, { wrapper: TestWrapper });
@@ -85,7 +85,7 @@ describe("UserProfile", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return HttpResponse.json(mockUser);
-      })
+      }),
     );
 
     render(<UserProfile />, { wrapper: TestWrapper });
@@ -110,7 +110,7 @@ describe("UserProfile", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return HttpResponse.json(mockUser);
-      })
+      }),
     );
 
     render(<UserProfile />, { wrapper: TestWrapper });
@@ -128,13 +128,12 @@ describe("UserProfile", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return new HttpResponse(null, { status: 401 });
-      })
+      }),
     );
 
-    const { container } = render(
-      <UserProfile className="custom-class" />,
-      { wrapper: TestWrapper }
-    );
+    const { container } = render(<UserProfile className="custom-class" />, {
+      wrapper: TestWrapper,
+    });
 
     // カスタムクラスが適用されているか確認
     await screen.findByText("ログインしていません");
@@ -154,7 +153,7 @@ describe("UserProfile", () => {
     server.use(
       http.get("/api/user/profile", () => {
         return HttpResponse.json(mockUser);
-      })
+      }),
     );
 
     render(<UserProfile />, { wrapper: TestWrapper });
@@ -163,7 +162,9 @@ describe("UserProfile", () => {
     const longName = await screen.findByText("非常に長い名前のテストユーザー");
     expect(longName).toBeInTheDocument();
 
-    const longEmail = await screen.findByText("very.long.email.address@example.com");
+    const longEmail = await screen.findByText(
+      "very.long.email.address@example.com",
+    );
     expect(longEmail).toBeInTheDocument();
   });
 });

@@ -36,6 +36,14 @@ const config: StorybookConfig = {
       config.resolve.alias = {
         ...config.resolve.alias,
         "@/lib/auth/hooks": path.resolve(__dirname, "./mocks/auth-hooks.ts"),
+        "#app/actions/schedule": path.resolve(
+          __dirname,
+          "./mocks/schedule-actions.ts",
+        ),
+        "@/app/actions/schedule": path.resolve(
+          __dirname,
+          "./mocks/schedule-actions.ts",
+        ),
       };
     }
     return config;

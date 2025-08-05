@@ -103,7 +103,11 @@ describe("DateDisplay", () => {
 
     // 日本時間（UTC+9）で表示されることを確認
     const text = screen.getByText((content) => {
-      return typeof content === "string" && content.includes("2025年1月20日") && content.includes("9:00");
+      return (
+        typeof content === "string" &&
+        content.includes("2025年1月20日") &&
+        content.includes("9:00")
+      );
     });
     expect(text).toBeInTheDocument();
   });

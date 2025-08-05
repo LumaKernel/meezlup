@@ -6,13 +6,21 @@ import { consumePromise } from "@/lib/utils/promise";
 // テスト用コンポーネント
 function TestComponent() {
   const actions = useActions();
-  
+
   return (
     <div>
-      <button onClick={() => { consumePromise(actions.event.create({ name: "Test Event" })); }}>
+      <button
+        onClick={() => {
+          consumePromise(actions.event.create({ name: "Test Event" }));
+        }}
+      >
         Create Event
       </button>
-      <button onClick={() => { consumePromise(actions.schedule.submit({ eventId: "123" })); }}>
+      <button
+        onClick={() => {
+          consumePromise(actions.schedule.submit({ eventId: "123" }));
+        }}
+      >
         Submit Schedule
       </button>
     </div>
@@ -25,12 +33,12 @@ describe("ActionsProvider", () => {
       success: true,
       data: { id: "event123" },
     });
-    
+
     const mockSubmitSchedule = vi.fn().mockResolvedValue({
       success: true,
       data: { scheduleId: "schedule123" },
     });
-    
+
     const { getByText } = renderWithProviders(<TestComponent />, {
       actions: {
         event: {
@@ -41,11 +49,11 @@ describe("ActionsProvider", () => {
         },
       },
     });
-    
+
     // Create Event のテスト
     getByText("Create Event").click();
     expect(mockCreateEvent).toHaveBeenCalledWith({ name: "Test Event" });
-    
+
     // Submit Schedule のテスト
     getByText("Submit Schedule").click();
     expect(mockSubmitSchedule).toHaveBeenCalledWith({ eventId: "123" });
