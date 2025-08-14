@@ -142,6 +142,8 @@ export function useEventParticipationV2(event: EffectEvent, locale: string) {
   useReactEffect(() => {
     if (currentUserSlots.size > 0 && selectedSlots.size === 0) {
       setSelectedSlots(currentUserSlots);
+      // 初回ロード時は最後に送信されたスロットも同じ値に設定
+      lastSubmittedSlotsRef.current = currentUserSlots;
     }
   }, [currentUserSlots]); // selectedSlotsは依存配列に含めない（初回のみ実行）
 

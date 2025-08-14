@@ -9,6 +9,17 @@
     "peopleAvailable": "人参加可能",
     "more": "その他"
   },
+  "input": {
+    "selectAvailableTimes": "参加可能な時間を選択",
+    "saving": "保存中",
+    "saved": "保存済み",
+    "unsaved": "未保存",
+    "participantCount": "{{count}}人の参加者",
+    "backToEdit": "編集に戻る",
+    "dragToSelect": "ドラッグして選択",
+    "overallAvailability": "全体の参加可能状況",
+    "hoverOrClickCells": "セルをホバーまたはクリックして詳細を表示"
+  },
   "weekdays": {
     "sun": "日",
     "mon": "月",

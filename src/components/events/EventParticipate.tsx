@@ -35,6 +35,7 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
   const {
     error,
     handleSubmit,
+    hasUnsavedChanges,
     isAutoSaving,
     isLoading,
     participantInfo,
@@ -149,6 +150,7 @@ export function EventParticipate({ event, params }: EventParticipateProps) {
           participants={participants}
           onSlotsChange={setSelectedSlots}
           isAutoSaving={isAutoSaving}
+          hasUnsavedChanges={hasUnsavedChanges}
           showSavedIndicator={showSavedIndicator}
           showEmails={event.creatorCanSeeEmails}
         />

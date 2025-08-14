@@ -14,6 +14,7 @@ const meta = {
     currentUserSlots: { table: { disable: true } },
     onSlotsChange: { table: { disable: true } },
     isAutoSaving: { table: { disable: true } },
+    hasUnsavedChanges: { table: { disable: true } },
     showSavedIndicator: { table: { disable: true } },
   },
 } satisfies Meta<typeof ScheduleInputLayout>;
@@ -63,10 +64,15 @@ const sampleParticipants = [
 function ScheduleInputLayoutWrapper(
   args: Omit<
     Parameters<typeof ScheduleInputLayout>[0],
-    "currentUserSlots" | "onSlotsChange" | "isAutoSaving" | "showSavedIndicator"
+    | "currentUserSlots"
+    | "onSlotsChange"
+    | "isAutoSaving"
+    | "hasUnsavedChanges"
+    | "showSavedIndicator"
   > & {
     readonly currentUserSlots?: ReadonlySet<string>;
     readonly isAutoSaving?: boolean;
+    readonly hasUnsavedChanges?: boolean;
     readonly showSavedIndicator?: boolean;
   },
 ) {
@@ -87,6 +93,7 @@ function ScheduleInputLayoutWrapper(
         currentUserSlots={currentUserSlots}
         onSlotsChange={setCurrentUserSlots}
         isAutoSaving={args.isAutoSaving ?? false}
+        hasUnsavedChanges={args.hasUnsavedChanges ?? false}
         showSavedIndicator={args.showSavedIndicator ?? false}
       />
     </div>
@@ -269,6 +276,76 @@ export const NoParticipants: Story = {
     // スケジュールグリッドが表示されていることを確認
     const scheduleSlots = canvas.getAllByRole("button", { name: /未選択/ });
     await expect(scheduleSlots.length).toBeGreaterThan(0);
+  },
+};
+
+export const UnsavedState: Story = {
+  render: (args) => <ScheduleInputLayoutWrapper {...args} />,
+  /* @ts-expect-error Storybook args type issue */
+  args: {
+    dateRangeStart: Temporal.PlainDate.from("2025-01-20"),
+    dateRangeEnd: Temporal.PlainDate.from("2025-01-26"),
+    timeSlotDuration: 30,
+    currentUserSlots: new Set(["2025-01-20_10:00:00", "2025-01-20_10:30:00"]),
+    participants: sampleParticipants,
+    isAutoSaving: false,
+    hasUnsavedChanges: true,
+    showSavedIndicator: false,
+    showEmails: false,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // 未保存状態が表示されていることを確認
+    await waitFor(async () => {
+      const unsavedText =
+        canvas.queryByText("未保存") || canvas.queryByText("Unsaved");
+      if (unsavedText) {
+        await expect(unsavedText).toBeInTheDocument();
+      }
+    });
+
+    // スケジュールグリッドが表示されていることを確認
+    const timeHeaders = canvas.getAllByText("時間");
+    await expect(timeHeaders.length).toBeGreaterThan(0);
+  },
+};
+
+export const SavedState: Story = {
+  render: (args) => <ScheduleInputLayoutWrapper {...args} />,
+  /* @ts-expect-error Storybook args type issue */
+  args: {
+    dateRangeStart: Temporal.PlainDate.from("2025-01-20"),
+    dateRangeEnd: Temporal.PlainDate.from("2025-01-26"),
+    timeSlotDuration: 30,
+    currentUserSlots: new Set(["2025-01-20_10:00:00"]),
+    participants: sampleParticipants,
+    isAutoSaving: false,
+    hasUnsavedChanges: false,
+    showSavedIndicator: true,
+    showEmails: false,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // 保存済み状態が表示されていることを確認
+    await waitFor(async () => {
+      const savedText =
+        canvas.queryByText("保存済み") || canvas.queryByText("Saved");
+      if (savedText) {
+        await expect(savedText).toBeInTheDocument();
+      } else {
+        // チェックアイコンが表示されていることを確認
+        const checkIcon = canvasElement.querySelector(
+          '[class*="tabler-icon-check"]',
+        );
+        await expect(checkIcon).toBeInTheDocument();
+      }
+    });
+
+    // スケジュールグリッドが表示されていることを確認
+    const timeHeaders = canvas.getAllByText("時間");
+    await expect(timeHeaders.length).toBeGreaterThan(0);
   },
 };
 

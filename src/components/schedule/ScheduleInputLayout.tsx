@@ -34,6 +34,7 @@ interface ScheduleInputLayoutProps {
   readonly participants: ReadonlyArray<Participant>;
   readonly onSlotsChange: (slots: ReadonlySet<string>) => void;
   readonly isAutoSaving: boolean;
+  readonly hasUnsavedChanges: boolean;
   readonly showSavedIndicator: boolean;
   readonly showEmails: boolean;
 }
@@ -42,6 +43,7 @@ export function ScheduleInputLayout({
   currentUserSlots,
   dateRangeEnd,
   dateRangeStart,
+  hasUnsavedChanges,
   isAutoSaving,
   onSlotsChange,
   participants,
@@ -105,6 +107,10 @@ export function ScheduleInputLayout({
                       {t("input.saved")}
                     </Text>
                   </>
+                ) : hasUnsavedChanges ? (
+                  <Text size="sm" c="dimmed">
+                    {t("input.unsaved")}
+                  </Text>
                 ) : null}
               </Group>
             </Group>

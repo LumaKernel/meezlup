@@ -9,6 +9,17 @@
     "peopleAvailable": "available",
     "more": "more"
   },
+  "input": {
+    "selectAvailableTimes": "Select Available Times",
+    "saving": "Saving",
+    "saved": "Saved",
+    "unsaved": "Unsaved",
+    "participantCount": "{{count}} participants",
+    "backToEdit": "Back to Edit",
+    "dragToSelect": "Drag to select",
+    "overallAvailability": "Overall Availability",
+    "hoverOrClickCells": "Hover or click cells for details"
+  },
   "weekdays": {
     "sun": "Sun",
     "mon": "Mon",
