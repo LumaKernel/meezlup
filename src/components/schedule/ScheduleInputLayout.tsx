@@ -11,7 +11,9 @@ import {
   Group,
   Paper,
   Loader,
+  Modal,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { IconCalendarEvent, IconUsers, IconCheck } from "@tabler/icons-react";
 import { type Temporal } from "temporal-polyfill";
 import { useTranslation } from "react-i18next";
@@ -52,27 +54,42 @@ export function ScheduleInputLayout({
   timeSlotDuration,
 }: ScheduleInputLayoutProps) {
   const { t } = useTranslation("schedule");
+  const isDesktop = useMediaQuery("(min-width: 75em)"); // 1200px
   const [showParticipantList, setShowParticipantList] = useState(false);
   const [focusedParticipants, setFocusedParticipants] = useState<
+    ReadonlyArray<Participant>
+  >([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalParticipants, setModalParticipants] = useState<
     ReadonlyArray<Participant>
   >([]);
 
   // 右側グリッドのスロットホバー時の処理
   const handleSlotHover = useCallback(
     (slotId: string, slotParticipants: ReadonlyArray<Participant>) => {
-      setFocusedParticipants(slotParticipants);
-      setShowParticipantList(true);
+      // デスクトップでのみホバー動作を有効化
+      if (isDesktop) {
+        setFocusedParticipants(slotParticipants);
+        setShowParticipantList(true);
+      }
     },
-    [],
+    [isDesktop],
   );
 
   // 右側グリッドのスロットクリック時の処理
   const handleSlotClick = useCallback(
     (slotId: string, slotParticipants: ReadonlyArray<Participant>) => {
-      setFocusedParticipants(slotParticipants);
-      setShowParticipantList(true);
+      if (isDesktop) {
+        // デスクトップでは従来通りの動作
+        setFocusedParticipants(slotParticipants);
+        setShowParticipantList(true);
+      } else {
+        // モバイルではモーダルを開く
+        setModalParticipants(slotParticipants);
+        setIsModalOpen(true);
+      }
     },
-    [],
+    [isDesktop],
   );
 
   // 編集モードに戻る
@@ -186,6 +203,40 @@ export function ScheduleInputLayout({
           </Stack>
         </Grid.Col>
       </Grid>
+
+      {/* モバイル用モーダル */}
+      <Modal
+        opened={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+        }}
+        title={t("input.participantCount", {
+          count: modalParticipants.length,
+        })}
+        size="sm"
+        closeButtonProps={{
+          "aria-label": t("input.close") || "Close",
+        }}
+      >
+        <Stack gap="xs">
+          {modalParticipants.length > 0 ? (
+            modalParticipants.map((participant) => (
+              <Group key={participant.id} gap="xs">
+                <Text size="sm">{participant.name}</Text>
+                {showEmails && participant.email && (
+                  <Text size="xs" c="dimmed">
+                    ({participant.email})
+                  </Text>
+                )}
+              </Group>
+            ))
+          ) : (
+            <Text size="sm" c="dimmed">
+              {t("aggregate.noParticipants")}
+            </Text>
+          )}
+        </Stack>
+      </Modal>
     </Box>
   );
 }
