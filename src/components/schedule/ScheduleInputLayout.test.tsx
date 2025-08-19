@@ -88,7 +88,7 @@ describe("ScheduleInputLayout", () => {
       expect(screen.getByText("全体の参加可能状況")).toBeInTheDocument();
     });
 
-    it("ホバー時に参加者リストが表示に切り替わること", async () => {
+    it("ホバー時に参加者リストが表示され、グリッドも表示されたままであること", async () => {
       render(
         <TestWrapper>
           <ScheduleInputLayout {...baseProps} />
@@ -105,6 +105,12 @@ describe("ScheduleInputLayout", () => {
       await waitFor(() => {
         expect(screen.getByText("2人が参加可能")).toBeInTheDocument();
       });
+
+      // グリッドも表示されたままであることを確認
+      const scheduleSlots = screen.getAllByRole("button", {
+        name: /未選択|選択済み/,
+      });
+      expect(scheduleSlots.length).toBeGreaterThan(0);
     });
 
     it("モーダルが表示されないこと", () => {

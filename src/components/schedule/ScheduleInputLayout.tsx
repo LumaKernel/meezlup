@@ -132,38 +132,42 @@ export function ScheduleInputLayout({
               </Group>
             </Group>
 
-            {showParticipantList && focusedParticipants.length > 0 ? (
-              <Paper shadow="sm" p="md" withBorder>
-                <Stack gap="sm">
-                  <Group justify="space-between">
-                    <Text fw={500}>
-                      {t("input.participantCount", {
-                        count: focusedParticipants.length,
-                      })}
-                    </Text>
-                    <Button
-                      size="xs"
-                      variant="subtle"
-                      onClick={handleBackToEdit}
+            <Box style={{ minHeight: "600px" }}>
+              {showParticipantList && focusedParticipants.length > 0 && (
+                <Paper shadow="sm" p="md" withBorder mb="md">
+                  <Stack gap="sm">
+                    <Group justify="space-between">
+                      <Text fw={500}>
+                        {t("input.participantCount", {
+                          count: focusedParticipants.length,
+                        })}
+                      </Text>
+                      <Button
+                        size="xs"
+                        variant="subtle"
+                        onClick={handleBackToEdit}
+                      >
+                        {t("input.backToEdit")}
+                      </Button>
+                    </Group>
+                    <Stack
+                      gap="xs"
+                      style={{ maxHeight: "150px", overflowY: "auto" }}
                     >
-                      {t("input.backToEdit")}
-                    </Button>
-                  </Group>
-                  <Stack gap="xs">
-                    {focusedParticipants.map((participant) => (
-                      <Group key={participant.id} gap="xs">
-                        <Text size="sm">{participant.name}</Text>
-                        {showEmails && participant.email && (
-                          <Text size="xs" c="dimmed">
-                            ({participant.email})
-                          </Text>
-                        )}
-                      </Group>
-                    ))}
+                      {focusedParticipants.map((participant) => (
+                        <Group key={participant.id} gap="xs">
+                          <Text size="sm">{participant.name}</Text>
+                          {showEmails && participant.email && (
+                            <Text size="xs" c="dimmed">
+                              ({participant.email})
+                            </Text>
+                          )}
+                        </Group>
+                      ))}
+                    </Stack>
                   </Stack>
-                </Stack>
-              </Paper>
-            ) : (
+                </Paper>
+              )}
               <ScheduleGrid
                 dateRangeStart={dateRangeStart}
                 dateRangeEnd={dateRangeEnd}
@@ -171,7 +175,7 @@ export function ScheduleInputLayout({
                 selectedSlots={currentUserSlots}
                 onSlotsChange={onSlotsChange}
               />
-            )}
+            </Box>
 
             <Text size="sm" c="dimmed">
               {t("input.dragToSelect")}
