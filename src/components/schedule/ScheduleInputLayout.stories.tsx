@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { useState } from "react";
 import { Temporal } from "temporal-polyfill";
 import { ScheduleInputLayout } from "./ScheduleInputLayout";
-import { expect, within, waitFor, fireEvent } from "@storybook/test";
+import { expect, within, waitFor } from "@storybook/test";
 
 const meta = {
   title: "Schedule/ScheduleInputLayout",
@@ -387,6 +387,27 @@ export const ManyParticipants: Story = {
   },
 };
 
+export const WithModal: Story = {
+  render: (args) => <ScheduleInputLayoutWrapper {...args} />,
+  /* @ts-expect-error Storybook args type issue */
+  args: {
+    dateRangeStart: Temporal.PlainDate.from("2025-01-20"),
+    dateRangeEnd: Temporal.PlainDate.from("2025-01-26"),
+    timeSlotDuration: 30,
+    participants: sampleParticipants,
+    isAutoSaving: false,
+    showEmails: false,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "クリックすると参加者詳細モーダルが開き、CSVとJSONダウンロードボタンが表示されます。",
+      },
+    },
+  },
+};
+
 export const MobileView: Story = {
   render: (args) => <ScheduleInputLayoutWrapper {...args} />,
   /* @ts-expect-error Storybook args type issue */
@@ -402,34 +423,6 @@ export const MobileView: Story = {
     viewport: {
       defaultViewport: "mobile1",
     },
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    // 時間ヘッダーが表示されていることを確認
-    await waitFor(async () => {
-      const timeHeaders = canvas.getAllByText("時間");
-      await expect(timeHeaders.length).toBeGreaterThan(0);
-    });
-
-    // 参加者がいるセルをクリック
-    const cellWith3Participants = canvas.getAllByText("3")[0];
-    const button = cellWith3Participants.closest('[role="button"]');
-    if (button) {
-      await fireEvent.click(button);
-    }
-
-    // モーダルが表示されることを確認
-    await waitFor(async () => {
-      const modal = canvas.getByRole("dialog");
-      await expect(modal).toBeInTheDocument();
-
-      // 参加者リストが表示されていることを確認
-      await expect(canvas.getByText("3人が参加可能")).toBeInTheDocument();
-      await expect(canvas.getByText("田中太郎")).toBeInTheDocument();
-      await expect(canvas.getByText("鈴木花子")).toBeInTheDocument();
-      await expect(canvas.getByText("佐藤次郎")).toBeInTheDocument();
-    });
   },
 };
 
@@ -449,31 +442,9 @@ export const TabletView: Story = {
       defaultViewport: "ipad",
     },
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    // 時間ヘッダーが表示されていることを確認
-    await waitFor(async () => {
-      const timeHeaders = canvas.getAllByText("時間");
-      await expect(timeHeaders.length).toBeGreaterThan(0);
-    });
-
-    // タブレット（768px）では、モーダルが開くことを確認
-    const cellWith3Participants = canvas.getAllByText("3")[0];
-    const button = cellWith3Participants.closest('[role="button"]');
-    if (button) {
-      await fireEvent.click(button);
-    }
-
-    // モーダルが表示されることを確認
-    await waitFor(async () => {
-      const modal = canvas.getByRole("dialog");
-      await expect(modal).toBeInTheDocument();
-    });
-  },
 };
 
-export const ResponsiveBreakpoint: Story = {
+export const WithEmailsInModal: Story = {
   render: (args) => <ScheduleInputLayoutWrapper {...args} />,
   /* @ts-expect-error Storybook args type issue */
   args: {
@@ -485,37 +456,11 @@ export const ResponsiveBreakpoint: Story = {
     showEmails: true,
   },
   parameters: {
-    viewport: {
-      defaultViewport: "responsive",
-      viewports: {
-        nearBreakpoint: {
-          name: "Near Breakpoint (1199px)",
-          styles: {
-            width: "1199px",
-            height: "800px",
-          },
-        },
-        atBreakpoint: {
-          name: "At Breakpoint (1200px)",
-          styles: {
-            width: "1200px",
-            height: "800px",
-          },
-        },
+    docs: {
+      description: {
+        story:
+          "showEmailsがtrueの場合、モーダル内でメールアドレスが表示されます。",
       },
     },
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    // 時間ヘッダーが表示されていることを確認
-    await waitFor(async () => {
-      const timeHeaders = canvas.getAllByText("時間");
-      await expect(timeHeaders.length).toBeGreaterThan(0);
-    });
-
-    // スケジュールグリッドが表示されていることを確認
-    const scheduleSlots = canvas.getAllByRole("button", { name: /未選択/ });
-    await expect(scheduleSlots.length).toBeGreaterThan(0);
   },
 };

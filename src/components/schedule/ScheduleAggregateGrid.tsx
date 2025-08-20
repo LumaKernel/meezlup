@@ -1,17 +1,8 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import {
-  Box,
-  Stack,
-  Group,
-  Text,
-  Paper,
-  Tooltip,
-  Button,
-  Badge,
-} from "@mantine/core";
-import { IconDownload, IconUsers } from "@tabler/icons-react";
+import { Box, Stack, Group, Text, Paper, Tooltip, Badge } from "@mantine/core";
+import { IconUsers } from "@tabler/icons-react";
 import { Temporal } from "temporal-polyfill";
 import { useTranslation } from "react-i18next";
 import classes from "./ScheduleAggregateGrid.module.css";
@@ -45,7 +36,7 @@ export function ScheduleAggregateGrid({
   onSlotClick,
   onSlotHover,
   participants,
-  showEmails,
+  showEmails: _showEmails,
   timeSlotDuration,
 }: ScheduleAggregateGridProps) {
   const { t } = useTranslation("schedule");
@@ -109,7 +100,9 @@ export function ScheduleAggregateGrid({
       setHoveredSlot(slotId);
       const participants =
         slotParticipantCounts.slotParticipants.get(slotId) || [];
-      onSlotHover?.(slotId, participants);
+      if (onSlotHover) {
+        onSlotHover(slotId, participants);
+      }
     },
     [slotParticipantCounts.slotParticipants, onSlotHover],
   );
@@ -125,65 +118,6 @@ export function ScheduleAggregateGrid({
     [focusedSlot, slotParticipantCounts.slotParticipants, onSlotClick],
   );
 
-  // CSVダウンロード
-  const downloadCSV = useCallback(() => {
-    const headers = ["Date", "Time", "Participants", "Count"];
-    const rows: Array<Array<string>> = [];
-
-    dates.forEach((date) => {
-      timeSlots.forEach((time) => {
-        const slotId = getSlotId(date, time);
-        const slotParticipants =
-          slotParticipantCounts.slotParticipants.get(slotId) || [];
-        const names = slotParticipants.map((p) => p.name).join(", ");
-        rows.push([
-          date.toString(),
-          time.toString(),
-          names,
-          slotParticipants.length.toString(),
-        ]);
-      });
-    });
-
-    const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `schedule_${new Date().toISOString().split("T")[0] satisfies string}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [dates, timeSlots, slotParticipantCounts.slotParticipants]);
-
-  // JSONダウンロード
-  const downloadJSON = useCallback(() => {
-    const data = dates.flatMap((date) =>
-      timeSlots.map((time) => {
-        const slotId = getSlotId(date, time);
-        const slotParticipants =
-          slotParticipantCounts.slotParticipants.get(slotId) || [];
-        return {
-          date: date.toString(),
-          time: time.toString(),
-          participants: slotParticipants.map((p) => ({
-            name: p.name,
-            ...(showEmails && { email: p.email }),
-          })),
-          count: slotParticipants.length,
-        };
-      }),
-    );
-
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `schedule_${new Date().toISOString().split("T")[0] satisfies string}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [dates, timeSlots, slotParticipantCounts.slotParticipants, showEmails]);
-
   // 曜日を取得
   const getDayOfWeek = (date: Temporal.PlainDate) => {
     const dayKeys = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
@@ -193,34 +127,12 @@ export function ScheduleAggregateGrid({
   return (
     <Paper shadow="sm" p="md" withBorder>
       <Stack gap="md">
-        <Group justify="space-between">
-          <Group gap="xs">
-            <IconUsers size={20} />
-            <Text fw={500}>{t("aggregate.availableTimes")}</Text>
-            <Badge color="blue">
-              {participants.length} {t("aggregate.participants")}
-            </Badge>
-          </Group>
-          {focusedSlot && (
-            <Group gap="xs">
-              <Button
-                size="xs"
-                variant="light"
-                leftSection={<IconDownload size={14} />}
-                onClick={downloadCSV}
-              >
-                CSV
-              </Button>
-              <Button
-                size="xs"
-                variant="light"
-                leftSection={<IconDownload size={14} />}
-                onClick={downloadJSON}
-              >
-                JSON
-              </Button>
-            </Group>
-          )}
+        <Group gap="xs">
+          <IconUsers size={20} />
+          <Text fw={500}>{t("aggregate.availableTimes")}</Text>
+          <Badge color="blue">
+            {participants.length} {t("aggregate.participants")}
+          </Badge>
         </Group>
 
         <Box className={classes.gridContainer}>

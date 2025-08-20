@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MantineProvider } from "@mantine/core";
 import { I18nextProvider } from "react-i18next";
@@ -6,18 +6,21 @@ import i18n from "@/lib/i18n/client";
 import { Temporal } from "temporal-polyfill";
 import { ScheduleInputLayout } from "./ScheduleInputLayout";
 
-import { useMediaQuery } from "@mantine/hooks";
+// URL.createObjectURLとURL.revokeObjectURLのモック
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const originalCreateObjectURL = global.URL.createObjectURL;
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const originalRevokeObjectURL = global.URL.revokeObjectURL;
 
-// MantineのuseMediaQueryをモック
-vi.mock("@mantine/hooks", async () => {
-  const actual = await vi.importActual("@mantine/hooks");
-  return {
-    ...actual,
-    useMediaQuery: vi.fn(),
-  };
+beforeAll(() => {
+  global.URL.createObjectURL = vi.fn(() => "blob:mock-url");
+  global.URL.revokeObjectURL = vi.fn();
 });
 
-const mockUseMediaQuery = vi.mocked(useMediaQuery);
+afterAll(() => {
+  global.URL.createObjectURL = originalCreateObjectURL;
+  global.URL.revokeObjectURL = originalRevokeObjectURL;
+});
 
 // テスト用のラッパーコンポーネント
 function TestWrapper({ children }: { readonly children: React.ReactNode }) {
@@ -67,15 +70,7 @@ const baseProps = {
 };
 
 describe("ScheduleInputLayout", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  describe("デスクトップ表示", () => {
-    beforeEach(() => {
-      mockUseMediaQuery.mockReturnValue(true); // デスクトップ
-    });
-
+  describe("基本的な表示", () => {
     it("コンポーネントが正しくレンダリングされること", () => {
       render(
         <TestWrapper>
@@ -88,79 +83,19 @@ describe("ScheduleInputLayout", () => {
       expect(screen.getByText("全体の参加可能状況")).toBeInTheDocument();
     });
 
-    it("ホバー時に参加者リストが表示され、グリッドも表示されたままであること", async () => {
+    it("初期状態でモーダルが表示されないこと", () => {
       render(
         <TestWrapper>
           <ScheduleInputLayout {...baseProps} />
         </TestWrapper>,
       );
 
-      // 参加者がいるセルを探す（"2"と表示されているセル）
-      const cellWith2Participants = screen.getAllByText("2")[0];
-
-      // ホバーをシミュレート
-      fireEvent.mouseEnter(cellWith2Participants.closest('[role="button"]')!);
-
-      // 参加者リストが表示されることを確認
-      await waitFor(() => {
-        expect(screen.getByText("2人が参加可能")).toBeInTheDocument();
-      });
-
-      // グリッドも表示されたままであることを確認
-      const scheduleSlots = screen.getAllByRole("button", {
-        name: /未選択|選択済み/,
-      });
-      expect(scheduleSlots.length).toBeGreaterThan(0);
-    });
-
-    it("モーダルが表示されないこと", () => {
-      render(
-        <TestWrapper>
-          <ScheduleInputLayout {...baseProps} />
-        </TestWrapper>,
-      );
-
-      // モーダルのタイトルが表示されていないことを確認
+      // モーダルが表示されていないことを確認
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 
-  describe("モバイル表示", () => {
-    beforeEach(() => {
-      mockUseMediaQuery.mockReturnValue(false); // モバイル
-    });
-
-    it("コンポーネントが正しくレンダリングされること", () => {
-      render(
-        <TestWrapper>
-          <ScheduleInputLayout {...baseProps} />
-        </TestWrapper>,
-      );
-
-      // タイトルが表示されることを確認
-      expect(screen.getByText("参加可能時間を選択")).toBeInTheDocument();
-      expect(screen.getByText("全体の参加可能状況")).toBeInTheDocument();
-    });
-
-    it("ホバー時に参加者リストが切り替わらないこと", async () => {
-      render(
-        <TestWrapper>
-          <ScheduleInputLayout {...baseProps} />
-        </TestWrapper>,
-      );
-
-      // 参加者がいるセルを探す
-      const cellWith2Participants = screen.getAllByText("2")[0];
-
-      // ホバーをシミュレート
-      fireEvent.mouseEnter(cellWith2Participants.closest('[role="button"]')!);
-
-      // 参加者リストが表示されないことを確認（編集に戻るボタンが表示されない）
-      await waitFor(() => {
-        expect(screen.queryByText("編集に戻る")).not.toBeInTheDocument();
-      });
-    });
-
+  describe("モーダル表示", () => {
     it("クリック時にモーダルが開くこと", async () => {
       render(
         <TestWrapper>
@@ -180,6 +115,26 @@ describe("ScheduleInputLayout", () => {
         expect(screen.getByText("2人が参加可能")).toBeInTheDocument();
         expect(screen.getByText("田中太郎")).toBeInTheDocument();
         expect(screen.getByText("鈴木花子")).toBeInTheDocument();
+      });
+    });
+
+    it("モーダルにダウンロードボタンが表示されること", async () => {
+      render(
+        <TestWrapper>
+          <ScheduleInputLayout {...baseProps} />
+        </TestWrapper>,
+      );
+
+      // 参加者がいるセルをクリック
+      const cellWith2Participants = screen.getAllByText("2")[0];
+      fireEvent.click(cellWith2Participants.closest('[role="button"]')!);
+
+      // ダウンロードボタンが表示されることを確認
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: "CSV" })).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: "JSON" }),
+        ).toBeInTheDocument();
       });
     });
 
@@ -229,10 +184,6 @@ describe("ScheduleInputLayout", () => {
   });
 
   describe("保存状態の表示", () => {
-    beforeEach(() => {
-      mockUseMediaQuery.mockReturnValue(true);
-    });
-
     it("保存中状態が正しく表示されること", () => {
       render(
         <TestWrapper>
@@ -264,40 +215,95 @@ describe("ScheduleInputLayout", () => {
     });
   });
 
-  describe("レスポンシブ切り替え", () => {
-    it("画面サイズ変更時に適切に動作が切り替わること", async () => {
-      // 最初はデスクトップ
-      mockUseMediaQuery.mockReturnValue(true);
+  describe("ダウンロード機能", () => {
+    it("CSVダウンロードボタンのクリックでダウンロード処理が実行されること", async () => {
+      // createElementとclickをモック
+      // eslint-disable-next-line @typescript-eslint/unbound-method, @typescript-eslint/no-deprecated
+      const originalCreateElement = document.createElement;
+      const clickSpy = vi.fn();
+      let createElementCalled = false;
 
-      const { rerender } = render(
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      document.createElement = vi.fn((tagName: string) => {
+        const element = originalCreateElement.call(document, tagName);
+        if (tagName === "a" && !createElementCalled) {
+          element.click = clickSpy;
+          createElementCalled = true;
+        }
+        return element;
+      });
+
+      render(
         <TestWrapper>
           <ScheduleInputLayout {...baseProps} />
         </TestWrapper>,
       );
 
-      // 参加者がいるセルを探す
+      // 参加者がいるセルをクリック
       const cellWith2Participants = screen.getAllByText("2")[0];
-      const cell = cellWith2Participants.closest('[role="button"]')!;
+      fireEvent.click(cellWith2Participants.closest('[role="button"]')!);
 
-      // デスクトップでホバー
-      fireEvent.mouseEnter(cell);
+      // CSVボタンが表示されるのを待つ
       await waitFor(() => {
-        expect(screen.getByText("編集に戻る")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "CSV" })).toBeInTheDocument();
       });
 
-      // モバイルに切り替え
-      mockUseMediaQuery.mockReturnValue(false);
-      rerender(
+      // CSVボタンをクリック
+      fireEvent.click(screen.getByRole("button", { name: "CSV" }));
+
+      // ダウンロード処理が実行されたことを確認
+      // eslint-disable-next-line @typescript-eslint/unbound-method, @typescript-eslint/no-deprecated
+      expect(document.createElement).toHaveBeenCalledWith("a");
+      expect(clickSpy).toHaveBeenCalled();
+
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      document.createElement = originalCreateElement;
+    });
+
+    it("JSONダウンロードボタンのクリックでダウンロード処理が実行されること", async () => {
+      // createElementとclickをモック
+      // eslint-disable-next-line @typescript-eslint/unbound-method, @typescript-eslint/no-deprecated
+      const originalCreateElement = document.createElement;
+      const clickSpy = vi.fn();
+      let createElementCalled = false;
+
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      document.createElement = vi.fn((tagName: string) => {
+        const element = originalCreateElement.call(document, tagName);
+        if (tagName === "a" && !createElementCalled) {
+          element.click = clickSpy;
+          createElementCalled = true;
+        }
+        return element;
+      });
+
+      render(
         <TestWrapper>
           <ScheduleInputLayout {...baseProps} />
         </TestWrapper>,
       );
 
-      // モバイルでクリック
-      fireEvent.click(cell);
+      // 参加者がいるセルをクリック
+      const cellWith2Participants = screen.getAllByText("2")[0];
+      fireEvent.click(cellWith2Participants.closest('[role="button"]')!);
+
+      // JSONボタンが表示されるのを待つ
       await waitFor(() => {
-        expect(screen.getByRole("dialog")).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: "JSON" }),
+        ).toBeInTheDocument();
       });
+
+      // JSONボタンをクリック
+      fireEvent.click(screen.getByRole("button", { name: "JSON" }));
+
+      // ダウンロード処理が実行されたことを確認
+      // eslint-disable-next-line @typescript-eslint/unbound-method, @typescript-eslint/no-deprecated
+      expect(document.createElement).toHaveBeenCalledWith("a");
+      expect(clickSpy).toHaveBeenCalled();
+
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      document.createElement = originalCreateElement;
     });
   });
 });

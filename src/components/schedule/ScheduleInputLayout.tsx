@@ -9,12 +9,15 @@ import {
   Text,
   Button,
   Group,
-  Paper,
   Loader,
   Modal,
 } from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
-import { IconCalendarEvent, IconUsers, IconCheck } from "@tabler/icons-react";
+import {
+  IconCalendarEvent,
+  IconUsers,
+  IconCheck,
+  IconDownload,
+} from "@tabler/icons-react";
 import { type Temporal } from "temporal-polyfill";
 import { useTranslation } from "react-i18next";
 import { ScheduleGrid } from "./ScheduleGrid";
@@ -54,49 +57,61 @@ export function ScheduleInputLayout({
   timeSlotDuration,
 }: ScheduleInputLayoutProps) {
   const { t } = useTranslation("schedule");
-  const isDesktop = useMediaQuery("(min-width: 75em)"); // 1200px
-  const [showParticipantList, setShowParticipantList] = useState(false);
-  const [focusedParticipants, setFocusedParticipants] = useState<
-    ReadonlyArray<Participant>
-  >([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalParticipants, setModalParticipants] = useState<
     ReadonlyArray<Participant>
   >([]);
-
-  // 右側グリッドのスロットホバー時の処理
-  const handleSlotHover = useCallback(
-    (slotId: string, slotParticipants: ReadonlyArray<Participant>) => {
-      // デスクトップでのみホバー動作を有効化
-      if (isDesktop) {
-        setFocusedParticipants(slotParticipants);
-        setShowParticipantList(true);
-      }
-    },
-    [isDesktop],
-  );
+  const [modalSlotId, setModalSlotId] = useState<string>("");
 
   // 右側グリッドのスロットクリック時の処理
   const handleSlotClick = useCallback(
     (slotId: string, slotParticipants: ReadonlyArray<Participant>) => {
-      if (isDesktop) {
-        // デスクトップでは従来通りの動作
-        setFocusedParticipants(slotParticipants);
-        setShowParticipantList(true);
-      } else {
-        // モバイルではモーダルを開く
-        setModalParticipants(slotParticipants);
-        setIsModalOpen(true);
-      }
+      setModalSlotId(slotId);
+      setModalParticipants(slotParticipants);
+      setIsModalOpen(true);
     },
-    [isDesktop],
+    [],
   );
 
-  // 編集モードに戻る
-  const handleBackToEdit = useCallback(() => {
-    setShowParticipantList(false);
-    setFocusedParticipants([]);
-  }, []);
+  // CSVダウンロード
+  const downloadCSV = useCallback(() => {
+    if (!modalSlotId || modalParticipants.length === 0) return;
+
+    const headers = ["Name", showEmails ? "Email" : null].filter(Boolean);
+    const rows = modalParticipants.map((p) => {
+      const row = [p.name];
+      if (showEmails && p.email) row.push(p.email);
+      return row;
+    });
+
+    const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `participants_${modalSlotId satisfies string}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [modalSlotId, modalParticipants, showEmails]);
+
+  // JSONダウンロード
+  const downloadJSON = useCallback(() => {
+    if (!modalSlotId || modalParticipants.length === 0) return;
+
+    const data = modalParticipants.map((p) => ({
+      name: p.name,
+      ...(showEmails && p.email ? { email: p.email } : {}),
+    }));
+
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `participants_${modalSlotId satisfies string}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [modalSlotId, modalParticipants, showEmails]);
 
   return (
     <Box className={classes.container}>
@@ -132,50 +147,13 @@ export function ScheduleInputLayout({
               </Group>
             </Group>
 
-            <Box style={{ minHeight: "600px" }}>
-              {showParticipantList && focusedParticipants.length > 0 && (
-                <Paper shadow="sm" p="md" withBorder mb="md">
-                  <Stack gap="sm">
-                    <Group justify="space-between">
-                      <Text fw={500}>
-                        {t("input.participantCount", {
-                          count: focusedParticipants.length,
-                        })}
-                      </Text>
-                      <Button
-                        size="xs"
-                        variant="subtle"
-                        onClick={handleBackToEdit}
-                      >
-                        {t("input.backToEdit")}
-                      </Button>
-                    </Group>
-                    <Stack
-                      gap="xs"
-                      style={{ maxHeight: "150px", overflowY: "auto" }}
-                    >
-                      {focusedParticipants.map((participant) => (
-                        <Group key={participant.id} gap="xs">
-                          <Text size="sm">{participant.name}</Text>
-                          {showEmails && participant.email && (
-                            <Text size="xs" c="dimmed">
-                              ({participant.email})
-                            </Text>
-                          )}
-                        </Group>
-                      ))}
-                    </Stack>
-                  </Stack>
-                </Paper>
-              )}
-              <ScheduleGrid
-                dateRangeStart={dateRangeStart}
-                dateRangeEnd={dateRangeEnd}
-                timeSlotDuration={timeSlotDuration}
-                selectedSlots={currentUserSlots}
-                onSlotsChange={onSlotsChange}
-              />
-            </Box>
+            <ScheduleGrid
+              dateRangeStart={dateRangeStart}
+              dateRangeEnd={dateRangeEnd}
+              timeSlotDuration={timeSlotDuration}
+              selectedSlots={currentUserSlots}
+              onSlotsChange={onSlotsChange}
+            />
 
             <Text size="sm" c="dimmed">
               {t("input.dragToSelect")}
@@ -197,7 +175,6 @@ export function ScheduleInputLayout({
               timeSlotDuration={timeSlotDuration}
               participants={participants}
               showEmails={showEmails}
-              onSlotHover={handleSlotHover}
               onSlotClick={handleSlotClick}
             />
 
@@ -208,7 +185,7 @@ export function ScheduleInputLayout({
         </Grid.Col>
       </Grid>
 
-      {/* モバイル用モーダル */}
+      {/* 参加者詳細モーダル */}
       <Modal
         opened={isModalOpen}
         onClose={() => {
@@ -217,28 +194,51 @@ export function ScheduleInputLayout({
         title={t("input.participantCount", {
           count: modalParticipants.length,
         })}
-        size="sm"
+        size="md"
         closeButtonProps={{
           "aria-label": t("input.close") || "Close",
         }}
       >
-        <Stack gap="xs">
-          {modalParticipants.length > 0 ? (
-            modalParticipants.map((participant) => (
-              <Group key={participant.id} gap="xs">
-                <Text size="sm">{participant.name}</Text>
-                {showEmails && participant.email && (
-                  <Text size="xs" c="dimmed">
-                    ({participant.email})
-                  </Text>
-                )}
-              </Group>
-            ))
-          ) : (
-            <Text size="sm" c="dimmed">
-              {t("aggregate.noParticipants")}
-            </Text>
+        <Stack gap="md">
+          {modalParticipants.length > 0 && (
+            <Group gap="xs">
+              <Button
+                size="xs"
+                variant="light"
+                leftSection={<IconDownload size={14} />}
+                onClick={downloadCSV}
+              >
+                CSV
+              </Button>
+              <Button
+                size="xs"
+                variant="light"
+                leftSection={<IconDownload size={14} />}
+                onClick={downloadJSON}
+              >
+                JSON
+              </Button>
+            </Group>
           )}
+
+          <Stack gap="xs" style={{ maxHeight: "400px", overflowY: "auto" }}>
+            {modalParticipants.length > 0 ? (
+              modalParticipants.map((participant) => (
+                <Group key={participant.id} gap="xs">
+                  <Text size="sm">{participant.name}</Text>
+                  {showEmails && participant.email && (
+                    <Text size="xs" c="dimmed">
+                      ({participant.email})
+                    </Text>
+                  )}
+                </Group>
+              ))
+            ) : (
+              <Text size="sm" c="dimmed">
+                {t("aggregate.noParticipants")}
+              </Text>
+            )}
+          </Stack>
         </Stack>
       </Modal>
     </Box>
